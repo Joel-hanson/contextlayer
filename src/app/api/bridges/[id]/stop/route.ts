@@ -1,0 +1,50 @@
+import { BridgeService } from '@/lib/bridge-service'
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function POST(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id: bridgeId } = await params
+
+        // Update bridge status to disabled
+        await BridgeService.updateBridgeStatus(bridgeId, false, 'inactive')
+
+        // Log the stop action
+        await BridgeService.addBridgeLog(
+            bridgeId,
+            'info',
+            'Bridge stopped successfully',
+            {
+                action: 'stop',
+                timestamp: new Date().toISOString()
+            }
+        )
+
+        return NextResponse.json({
+            success: true,
+            message: `Bridge ${bridgeId} stopped successfully`
+        })
+    } catch (error) {
+        const { id: bridgeId } = await params
+        console.error(`Error stopping bridge ${bridgeId}:`, error)
+
+        // Log the error
+        await BridgeService.addBridgeLog(
+            bridgeId,
+            'error',
+            'Failed to stop bridge',
+            {
+                action: 'stop',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            }
+        )
+
+        return NextResponse.json(
+            { success: false, error: 'Failed to stop bridge' },
+            { status: 500 }
+        )
+    }
+}

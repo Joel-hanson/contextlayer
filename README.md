@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MCP Bridge
+
+Transform any REST API into a Model Context Protocol (MCP) server, making your APIs accessible to AI tools like Claude, VS Code Copilot, and more.
+
+## Features
+
+- 🌉 **Bridge REST APIs to MCP**: Convert any REST API into an MCP server
+- 🛠️ **Visual Configuration**: Easy-to-use web interface for API configuration
+- 🚀 **One-Click Deployment**: Start and stop MCP servers with a single click
+- 📊 **Real-time Monitoring**: Monitor server status and uptime
+- 🎨 **Modern UI**: Clean, responsive interface built with shadcn/ui
+- 💾 **Persistent Storage**: Configurations saved locally in browser storage
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn package manager
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd mcp-bridge
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How It Works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Configure Your API
 
-## Learn More
+- Add your REST API base URL
+- Define authentication (Bearer token, API key, Basic auth)
+- Configure endpoints with parameters and schemas
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Generate MCP Tools
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Automatically converts API endpoints to MCP tool definitions
+- Maps HTTP methods and parameters to MCP input schemas
+- Handles request/response transformation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Start the Bridge
 
-## Deploy on Vercel
+- Creates an MCP server that proxies requests to your REST API
+- Provides MCP-compliant interface for AI tools
+- Manages authentication and error handling
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4. Connect AI Tools
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Use the generated MCP server with Claude Desktop
+- Integrate with VS Code extensions
+- Connect to any MCP-compatible client
+
+## Technology Stack
+
+- **Framework**: Next.js 15 with TypeScript
+- **UI Components**: shadcn/ui with Tailwind CSS
+- **MCP SDK**: @modelcontextprotocol/sdk
+- **API Client**: Axios
+- **Validation**: Zod schemas
+
+## Model Context Protocol (MCP)
+
+This project implements the Model Context Protocol specification. For more information:
+
+- [MCP Documentation](https://modelcontextprotocol.io)
+- [MCP GitHub Repository](https://github.com/modelcontextprotocol)

@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum AuthenticationType {
+    none
+    bearer
+    apikey
+    basic
+}
+
+enum HttpMethod {
+    GET
+    POST
+    PUT
+    DELETE
+    PATCH
+}
+
+enum ParameterType {
+    string
+    number
+    boolean
+    object
+    array
+}
+
+enum BridgeStatus {
+    active
+    inactive
+    error
+}
+
+model Bridge {
+    id             String             @id @default(uuid()) @db.Uuid
+    name           String
+    slug           String? // URL-friendly version of name
+    description    String?
+    baseUrl        String
+    headers        Json? // Store as JSONB for custom headers
+    authType       AuthenticationType @default(none)
+    authToken      String?
+    authApiKey     String?
+    authUsername   String?
+    authPassword   String?
+    authHeaderName String?
+    enabled        Boolean            @default(false)
+    status         BridgeStatus       @default(inactive)
+
+    // Path-based routing configuration
+    routingType  String  @default("path") // 'path', 'subdomain', 'websocket'
+    customDomain String?
+    pathPrefix   String?
+
+    // Access control
+    isPublic       Boolean @default(true)
+    allowedOrigins Json? // Array of allowed origins as JSONB
+    authRequired   Boolean @default(false)
+    apiKey         String?
+
+    // Performance settings stored as JSONB
+    performanceConfig Json? // Rate limiting, caching, timeout settings
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    endpoints ApiEndpoint[]
+    logs      BridgeLog[]
+    requests  ApiRequest[]
+
+    @@map("bridges")
+}
+
+model ApiEndpoint {
+    id             String     @id @default(uuid()) @db.Uuid
+    bridgeId       String     @db.Uuid
+    name           String
+    method         HttpMethod
+    path           String
+    description    String?
+    parameters     Json? // Store parameters schema as JSONB
+    requestBody    Json? // Store request body schema as JSONB
+    responseSchema Json? // Store response schema as JSONB
+    createdAt      DateTime   @default(now())
+    updatedAt      DateTime   @updatedAt
+
+    // Relations
+    bridge   Bridge       @relation(fields: [bridgeId], references: [id], onDelete: Cascade)
+    requests ApiRequest[]
+
+    @@map("api_endpoints")
+}
+
+model BridgeLog {
+    id        String   @id @default(uuid()) @db.Uuid
+    bridgeId  String   @db.Uuid
+    level     String // info, warn, error, debug
+    message   String
+    metadata  Json? // Additional structured data
+    createdAt DateTime @default(now())
+
+    // Relations
+    bridge Bridge @relation(fields: [bridgeId], references: [id], onDelete: Cascade)
+
+    @@map("bridge_logs")
+}
+
+model ApiRequest {
+    id           String   @id @default(uuid()) @db.Uuid
+    bridgeId     String   @db.Uuid
+    endpointId   String?  @db.Uuid
+    method       String
+    path         String
+    headers      Json?
+    body         Json?
+    response     Json?
+    statusCode   Int?
+    responseTime Int? // in milliseconds
+    success      Boolean  @default(false)
+    errorMessage String?
+    createdAt    DateTime @default(now())
+
+    // Relations
+    bridge   Bridge       @relation(fields: [bridgeId], references: [id], onDelete: Cascade)
+    endpoint ApiEndpoint? @relation(fields: [endpointId], references: [id], onDelete: SetNull)
+
+    @@map("api_requests")
+}
