@@ -33,7 +33,7 @@ export function DashboardLayout({ children }: SidebarProps) {
     ];
 
     return (
-        <div className="flex h-screen bg-background">
+        <div className="min-h-screen bg-background font-mono">
             {/* Mobile sidebar */}
             <div className={cn(
                 "fixed inset-0 z-50 lg:hidden",
@@ -46,14 +46,14 @@ export function DashboardLayout({ children }: SidebarProps) {
             </div>
 
             {/* Desktop sidebar */}
-            <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+            <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
                 <SidebarContent navigation={navigation} />
             </div>
 
             {/* Main content */}
-            <div className="flex flex-1 flex-col lg:ml-64">
+            <div className="lg:pl-72">
                 {/* Mobile header */}
-                <div className="flex h-16 items-center gap-x-4 border-b px-4 shadow-sm lg:hidden">
+                <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
                     <Button
                         variant="ghost"
                         size="sm"
@@ -70,8 +70,10 @@ export function DashboardLayout({ children }: SidebarProps) {
                 </div>
 
                 {/* Page content */}
-                <main className="flex-1 overflow-y-auto">
-                    {children}
+                <main className="py-10">
+                    <div className="px-4 sm:px-6 lg:px-8">
+                        {children}
+                    </div>
                 </main>
             </div>
         </div>
@@ -90,13 +92,13 @@ interface SidebarContentProps {
 
 function SidebarContent({ navigation, onClose }: SidebarContentProps) {
     return (
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-background px-6 pb-4">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center justify-between">
                 <Link href="/" className="flex items-center gap-x-2">
-                    <div className="h-6 w-6 bg-primary rounded-sm flex items-center justify-center">
-                        <Network className="h-4 w-4 text-primary-foreground" />
+                    <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+                        <Network className="h-5 w-5 text-primary-foreground" />
                     </div>
-                    <span className="font-bold">MCP Bridge</span>
+                    <span className="text-xl font-semibold">MCP Bridge</span>
                 </Link>
                 {onClose && (
                     <Button variant="ghost" size="sm" onClick={onClose} className="lg:hidden">
@@ -114,7 +116,7 @@ function SidebarContent({ navigation, onClose }: SidebarContentProps) {
                                         href={item.href}
                                         className={cn(
                                             item.current
-                                                ? 'bg-primary text-primary-foreground'
+                                                ? 'bg-muted text-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                                             'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-medium transition-colors'
                                         )}
@@ -122,7 +124,7 @@ function SidebarContent({ navigation, onClose }: SidebarContentProps) {
                                     >
                                         <item.icon
                                             className={cn(
-                                                item.current ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground',
+                                                item.current ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground',
                                                 'h-5 w-5 shrink-0'
                                             )}
                                             aria-hidden="true"
@@ -135,9 +137,13 @@ function SidebarContent({ navigation, onClose }: SidebarContentProps) {
                     </li>
                     <li className="mt-auto">
                         <Link
-                            href="/dashboard/new"
-                            className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-medium leading-6 text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                            onClick={onClose}
+                            href="/dashboard"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                // You can add create bridge logic here or trigger a modal
+                                onClose?.();
+                            }}
+                            className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-medium leading-6 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                         >
                             <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
                             Create Bridge

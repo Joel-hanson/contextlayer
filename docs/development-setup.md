@@ -65,7 +65,7 @@ JWT_SECRET=your-jwt-secret-here
 ENCRYPTION_KEY=your-encryption-key-here
 
 # MCP Configuration
-MCP_SERVER_PORT_RANGE_START=3001
+MCP_SERVER_PORT_RANGE_START=3000
 MCP_SERVER_PORT_RANGE_END=4000
 
 # Logging

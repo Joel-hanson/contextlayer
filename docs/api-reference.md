@@ -122,7 +122,7 @@ curl -X POST http://localhost:3000/api/bridges/bridge-123/start \
         },
         "endpoints": [...]
       },
-      "port": 3001
+      "port": 3000
     }
   }'
 ```
@@ -134,7 +134,7 @@ curl -X POST http://localhost:3000/api/bridges/bridge-123/start \
   "success": true,
   "data": {
     "bridgeId": "bridge-123",
-    "port": 3001,
+    "port": 3000,
     "status": "running",
     "pid": 12345
   }

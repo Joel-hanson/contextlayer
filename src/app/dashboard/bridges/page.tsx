@@ -4,8 +4,11 @@ import { BridgeForm } from '@/components/BridgeForm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBridges } from '@/hooks/useBridges';
 import { BridgeConfig } from '@/lib/types';
+import { getBaseUrl } from '@/lib/url';
 import {
     AlertCircle,
     Copy,
@@ -14,12 +17,14 @@ import {
     Play,
     Plus,
     RefreshCw,
+    Settings,
     Square,
     Trash2
 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function BridgesPage() {
+    const baseUrl = getBaseUrl();
     const {
         bridges,
         loading,
@@ -101,7 +106,7 @@ export default function BridgesPage() {
     };
 
     return (
-        <div className="p-6 space-y-8">
+        <div className="flex-1 space-y-4 font-mono">
             {/* Loading State */}
             {loading && (
                 <div className="flex items-center justify-center py-12">
@@ -114,13 +119,13 @@ export default function BridgesPage() {
 
             {/* Error State */}
             {error && (
-                <Card className="border-red-200 bg-red-50">
+                <Card className="border-destructive/50 bg-destructive/5">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-3">
-                            <AlertCircle className="h-5 w-5 text-red-600" />
+                            <AlertCircle className="h-5 w-5 text-destructive" />
                             <div>
-                                <h3 className="font-semibold text-red-900">Error Loading Bridges</h3>
-                                <p className="text-red-700">{error}</p>
+                                <h3 className="font-semibold text-destructive">Error Loading Bridges</h3>
+                                <p className="text-destructive/80">{error}</p>
                             </div>
                             <Button
                                 variant="outline"
@@ -140,38 +145,38 @@ export default function BridgesPage() {
             {!loading && !error && (
                 <>
                     {/* Header */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between space-y-2">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight">Bridges</h1>
+                            <h2 className="text-3xl font-bold tracking-tight">Bridges</h2>
                             <p className="text-muted-foreground">
                                 Manage your API bridges and their configurations
                             </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex items-center space-x-2">
                             <Button
                                 variant="outline"
                                 onClick={refreshBridges}
                                 disabled={loading}
                             >
-                                <RefreshCw className="h-4 w-4 mr-2" />
+                                <RefreshCw className="mr-2 h-4 w-4" />
                                 Refresh
                             </Button>
-                            <Button onClick={createNewBridge} size="lg">
-                                <Plus className="h-5 w-5 mr-2" />
+                            <Button onClick={createNewBridge}>
+                                <Plus className="mr-2 h-4 w-4" />
                                 Create Bridge
                             </Button>
                         </div>
                     </div>
 
                     {/* MCP Usage Info */}
-                    <Card className="bg-blue-50 border-blue-200">
+                    <Card>
                         <CardContent className="p-4">
                             <div className="flex items-start gap-3">
-                                <Database className="h-5 w-5 text-blue-600 mt-0.5" />
+                                <Database className="h-5 w-5 text-muted-foreground mt-0.5" />
                                 <div className="space-y-2">
-                                    <h3 className="font-semibold text-blue-900">Using MCP Endpoints</h3>
-                                    <p className="text-blue-800 text-sm">
-                                        Copy the MCP endpoint URL and configure it in your MCP client (Claude Desktop, VS Code Copilot, etc.). 
+                                    <h3 className="font-semibold">Using MCP Endpoints</h3>
+                                    <p className="text-muted-foreground text-sm">
+                                        Copy the MCP endpoint URL and configure it in your MCP client (Claude Desktop, VS Code Copilot, etc.).
                                         The endpoint supports JSON-RPC 2.0 protocol for tools/list and tools/call methods.
                                     </p>
                                 </div>
@@ -180,7 +185,7 @@ export default function BridgesPage() {
                     </Card>
 
                     {/* Bridges Grid */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         {bridges.length === 0 ? (
                             <Card className="border-dashed">
                                 <CardContent className="flex flex-col items-center justify-center py-12">
@@ -196,7 +201,7 @@ export default function BridgesPage() {
                                 </CardContent>
                             </Card>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {bridges.map((bridge) => {
                                     const status = serverStatuses[bridge.id];
                                     const isRunning = bridge.enabled && status?.running;
@@ -211,53 +216,184 @@ export default function BridgesPage() {
                                                             {bridge.description || 'No description provided'}
                                                         </CardDescription>
                                                     </div>
-                                                    <Badge variant={isRunning ? 'success' : 'secondary'}>
+                                                    <Badge variant={isRunning ? 'default' : 'secondary'}>
                                                         {isRunning ? 'Running' : 'Stopped'}
                                                     </Badge>
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="space-y-4">
+                                                {/* API Info - Simplified */}
+                                                <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
+                                                    <div className="flex items-center gap-2">
+                                                        <Database className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="text-sm font-medium">{bridge.apiConfig.name}</span>
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {bridge.apiConfig.endpoints?.length || 0} endpoint{(bridge.apiConfig.endpoints?.length || 0) !== 1 ? 's' : ''}
+                                                    </span>
+                                                </div>
+
+                                                {/* MCP Endpoint - More prominent */}
                                                 <div className="space-y-2">
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-muted-foreground">API:</span>
-                                                        <span className="font-medium">{bridge.apiConfig.name}</span>
-                                                    </div>
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-muted-foreground">Endpoints:</span>
-                                                        <span className="font-medium">{bridge.apiConfig.endpoints?.length || 0}</span>
-                                                    </div>
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-muted-foreground">MCP Endpoint:</span>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-medium text-xs font-mono bg-gray-100 px-2 py-1 rounded">
-                                                                http://localhost:3001/mcp/{bridge.slug || bridge.id}
-                                                            </span>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium">MCP Endpoint</span>
+                                                        <div className="flex items-center gap-1">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 onClick={() => {
-                                                                    navigator.clipboard.writeText(`http://localhost:3001/mcp/${bridge.slug || bridge.id}`);
+                                                                    navigator.clipboard.writeText(`${baseUrl}/mcp/${bridge.slug || bridge.id}`);
                                                                 }}
-                                                                className="h-6 w-6 p-0"
+                                                                className="h-7 w-7 p-0"
+                                                                title="Copy URL"
                                                             >
                                                                 <Copy className="h-3 w-3" />
                                                             </Button>
+                                                            <Dialog>
+                                                                <DialogTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-7 w-7 p-0"
+                                                                        title="Setup Instructions"
+                                                                    >
+                                                                        <Settings className="h-3 w-3" />
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>MCP Client Setup for &ldquo;{bridge.name}&rdquo;</DialogTitle>
+                                                                        <DialogDescription>
+                                                                            Configure your MCP client to use this bridge
+                                                                        </DialogDescription>
+                                                                    </DialogHeader>
+
+                                                                    <Tabs defaultValue="claude" className="w-full">
+                                                                        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
+                                                                            <TabsTrigger value="claude" className="text-xs sm:text-sm">Claude Desktop</TabsTrigger>
+                                                                            <TabsTrigger value="vscode" className="text-xs sm:text-sm">VS Code</TabsTrigger>
+                                                                            <TabsTrigger value="http" className="text-xs sm:text-sm">HTTP Client</TabsTrigger>
+                                                                        </TabsList>
+
+                                                                        <TabsContent value="claude" className="space-y-4">
+                                                                            <div className="space-y-3">
+                                                                                <h4 className="font-semibold">Claude Desktop Configuration</h4>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    Edit your Claude Desktop config file:
+                                                                                </p>
+                                                                                <div className="bg-muted p-2 rounded text-xs font-mono">
+                                                                                    macOS: ~/Library/Application Support/Claude/claude_desktop_config.json<br />
+                                                                                    Windows: %APPDATA%\Claude\claude_desktop_config.json
+                                                                                </div>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    Add this configuration:
+                                                                                </p>
+                                                                                <div className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto">
+                                                                                    <pre className="whitespace-pre-wrap break-words">{`{
+  "mcpServers": {
+    "${bridge.name.toLowerCase().replace(/\s+/g, '-')}": {
+      "command": "node",
+      "args": [
+        "-e",
+        "const fetch = require('node-fetch'); const url = '${baseUrl}/mcp/${bridge.slug || bridge.id}'; process.stdin.on('data', async (data) => { try { const request = JSON.parse(data.toString()); const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request) }); const result = await response.json(); process.stdout.write(JSON.stringify(result) + '\\\\n'); } catch (error) { process.stdout.write(JSON.stringify({ jsonrpc: '2.0', error: { code: -32603, message: error.message }, id: request?.id || null }) + '\\\\n'); } });"
+      ]
+    }
+  }
+}`}</pre>
+                                                                                </div>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    Restart Claude Desktop after saving the configuration.
+                                                                                </p>
+                                                                            </div>
+                                                                        </TabsContent>
+
+                                                                        <TabsContent value="vscode" className="space-y-4">
+                                                                            <div className="space-y-3">
+                                                                                <h4 className="font-semibold">VS Code Configuration</h4>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    Create or edit your MCP configuration file:
+                                                                                </p>
+                                                                                <div className="bg-muted p-2 rounded text-xs font-mono">
+                                                                                    ~/.config/mcp/mcp.json
+                                                                                </div>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    Add this server configuration:
+                                                                                </p>
+                                                                                <div className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto">
+                                                                                    <pre className="whitespace-pre-wrap break-words">{`{
+  "servers": {
+    "${bridge.name.toLowerCase().replace(/\s+/g, '-')}": {
+      "transport": {
+        "type": "http",
+        "url": "${baseUrl}/mcp/${bridge.slug || bridge.id}"
+      }
+    }
+  }
+}`}</pre>
+                                                                                </div>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    Restart VS Code to load the new configuration.
+                                                                                </p>
+                                                                            </div>
+                                                                        </TabsContent>
+
+                                                                        <TabsContent value="http" className="space-y-4">
+                                                                            <div className="space-y-3">
+                                                                                <h4 className="font-semibold">HTTP Client Configuration</h4>
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    Direct HTTP endpoint configuration:
+                                                                                </p>
+                                                                                <div className="bg-muted p-3 rounded text-xs font-mono">
+                                                                                    Protocol: JSON-RPC 2.0 over HTTP<br />
+                                                                                    Method: POST<br />
+                                                                                    Content-Type: application/json<br />
+                                                                                    URL: ${baseUrl}/mcp/{bridge.slug || bridge.id}
+                                                                                </div>
+                                                                                <h5 className="font-medium mt-4">Test Commands:</h5>
+                                                                                <div className="space-y-2">
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Initialize:</p>
+                                                                                        <div className="bg-muted p-2 rounded text-xs font-mono">
+                                                                                            <pre className="whitespace-pre-wrap break-words">{`curl -X POST ${baseUrl}/mcp/${bridge.slug || bridge.id} \\
+  -H "Content-Type: application/json" \\
+  -d '{"jsonrpc": "2.0", "method": "initialize", "id": 1}'`}</pre>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">List Tools:</p>
+                                                                                        <div className="bg-muted p-2 rounded text-xs font-mono">
+                                                                                            <pre className="whitespace-pre-wrap break-words">{`curl -X POST ${baseUrl}/mcp/${bridge.slug || bridge.id} \\
+  -H "Content-Type: application/json" \\
+  -d '{"jsonrpc": "2.0", "method": "tools/list", "id": 2}'`}</pre>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </TabsContent>
+                                                                    </Tabs>
+                                                                </DialogContent>
+                                                            </Dialog>
                                                         </div>
                                                     </div>
-                                                    {isRunning && status?.url && (
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-muted-foreground">Status:</span>
-                                                            <span className="flex items-center gap-1">
-                                                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                                                <span className="text-green-600 font-medium">Live at {status.url}</span>
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                    <div className="flex items-center gap-2 p-2 bg-muted rounded border">
+                                                        <span className="font-mono text-xs text-muted-foreground truncate">
+                                                            {typeof window !== 'undefined' ? `${window.location.host}/mcp/${bridge.slug || bridge.id}` : `${getBaseUrl()}/mcp/${bridge.slug || bridge.id}`}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
-                                                <div className="flex flex-wrap gap-2 pt-2">
+                                                {/* Status Indicator */}
+                                                {isRunning && status?.url && (
+                                                    <div className="flex items-center gap-2 text-sm py-1">
+                                                        <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                                                        <span className="font-medium text-muted-foreground">Live</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Action Buttons */}
+                                                <div className="flex gap-2 pt-2">
                                                     <Button
-                                                        variant={isRunning ? "destructive" : "default"}
+                                                        variant={isRunning ? "outline" : "default"}
                                                         size="sm"
                                                         onClick={() => handleToggleBridge(bridge.id)}
                                                         disabled={operatingBridges.has(bridge.id)}
@@ -292,7 +428,7 @@ export default function BridgesPage() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleDeleteBridge(bridge.id)}
-                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        className="hover:bg-muted"
                                                         title="Delete Bridge"
                                                     >
                                                         <Trash2 className="h-4 w-4" />

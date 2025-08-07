@@ -45,15 +45,15 @@ async function handleMcpJsonRpc(
 
         if (!bridge) {
             return NextResponse.json(
-                { 
+                {
                     jsonrpc: '2.0',
-                    error: { 
-                        code: -32602, 
-                        message: 'Bridge not found' 
+                    error: {
+                        code: -32602,
+                        message: 'Bridge not found'
                     },
-                    id: null 
+                    id: null
                 },
-                { 
+                {
                     status: 404,
                     headers: {
                         'Content-Type': 'application/json',
@@ -65,15 +65,15 @@ async function handleMcpJsonRpc(
 
         if (!bridge.enabled) {
             return NextResponse.json(
-                { 
+                {
                     jsonrpc: '2.0',
-                    error: { 
-                        code: -32602, 
-                        message: 'Bridge is disabled' 
+                    error: {
+                        code: -32602,
+                        message: 'Bridge is disabled'
                     },
-                    id: null 
+                    id: null
                 },
-                { 
+                {
                     status: 403,
                     headers: {
                         'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ async function handleMcpJsonRpc(
 
         // Parse JSON-RPC request
         const jsonRpcRequest = await request.json();
-        
+
         if (!jsonRpcRequest.jsonrpc || jsonRpcRequest.jsonrpc !== '2.0') {
             return NextResponse.json(
                 {
@@ -109,13 +109,13 @@ async function handleMcpJsonRpc(
         switch (jsonRpcRequest.method) {
             case 'initialize':
                 return handleInitialize(jsonRpcRequest, bridge);
-            
+
             case 'tools/list':
                 return handleToolsList(jsonRpcRequest, bridge);
-            
+
             case 'tools/call':
                 return handleToolCall(jsonRpcRequest, bridge);
-            
+
             default:
                 return NextResponse.json(
                     {
@@ -213,7 +213,7 @@ async function handleToolsList(jsonRpcRequest: any, bridge: any) {
 
 async function handleToolCall(jsonRpcRequest: any, bridge: any) {
     const { name: toolName, arguments: toolArgs } = jsonRpcRequest.params;
-    
+
     // Find the matching endpoint
     const endpoint = bridge.endpoints.find((ep: any) => {
         const endpointName = ep.name || `${ep.method.toLowerCase()}_${ep.path.replace(/[^a-zA-Z0-9]/g, '_')}`;
@@ -242,7 +242,7 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
     try {
         // Execute the API call
         const result = await executeApiCall(bridge, endpoint, toolArgs || {});
-        
+
         return NextResponse.json(
             {
                 jsonrpc: '2.0',
@@ -311,7 +311,7 @@ function buildInputSchema(endpoint: any) {
 async function executeApiCall(bridge: any, endpoint: any, args: any) {
     // Build the full URL
     let url = endpoint.path;
-    
+
     // Handle path parameters
     if (endpoint.parameters) {
         endpoint.parameters.forEach((param: any) => {
@@ -363,7 +363,7 @@ async function executeApiCall(bridge: any, endpoint: any, args: any) {
 
     // Make the API call
     const response = await fetch(fullUrl, requestOptions);
-    
+
     if (!response.ok) {
         throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
