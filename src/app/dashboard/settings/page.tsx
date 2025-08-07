@@ -1,6 +1,5 @@
 'use client';
 
-import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import {
     Bell,
     Download,
@@ -19,6 +19,7 @@ import {
     User,
     Zap
 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
 interface AppSettings {
@@ -101,40 +102,60 @@ export default function SettingsPage() {
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('profile');
-    const { theme, setTheme } = useTheme();
+    const { data: session } = useSession();
+    const { toast } = useToast();
 
+    // Load settings from database on mount
     useEffect(() => {
-        const savedSettings = localStorage.getItem('mcp-bridge-settings');
-        const savedTheme = localStorage.getItem('mcp-bridge-theme') as 'light' | 'dark' | 'system';
+        const loadSettings = async () => {
+            if (!session?.user) {
+                return;
+            }
 
-        if (savedSettings) {
             try {
-                const parsed = JSON.parse(savedSettings);
-                setSettings({ ...defaultSettings, ...parsed });
+                const response = await fetch('/api/user/settings');
+                if (response.ok) {
+                    const settingsData = await response.json();
 
-                // Use saved theme from theme provider if it exists, otherwise use settings theme
-                const themeToUse = savedTheme || parsed.preferences?.theme || theme;
-                if (themeToUse !== theme) {
-                    setTheme(themeToUse);
+                    // API returns the settings directly, not nested under userData
+                    const loadedSettings: AppSettings = {
+                        profile: {
+                            displayName: settingsData.profile?.displayName || 'MCP Bridge User',
+                            email: settingsData.profile?.email || '',
+                            organization: settingsData.profile?.organization || '',
+                            timezone: settingsData.profile?.timezone || 'UTC',
+                        },
+                        bridgeDefaults: settingsData.bridgeDefaults || defaultSettings.bridgeDefaults,
+                        notifications: settingsData.notifications || defaultSettings.notifications,
+                        apiKeys: settingsData.apiKeys || defaultSettings.apiKeys,
+                        preferences: {
+                            ...defaultSettings.preferences,
+                            ...settingsData.preferences,
+                            theme: 'light' as const, // Always use light theme
+                        },
+                    };
+
+                    setSettings(loadedSettings);
+                } else {
+                    console.error('Failed to load settings from database');
+                    // Fallback to localStorage
+                    const savedSettings = localStorage.getItem('mcp-bridge-settings');
+                    if (savedSettings) {
+                        try {
+                            const parsed = JSON.parse(savedSettings);
+                            setSettings({ ...defaultSettings, ...parsed });
+                        } catch {
+                            console.error('Failed to parse localStorage settings');
+                        }
+                    }
                 }
-            } catch {
-                console.error('Failed to parse settings');
+            } catch (error) {
+                console.error('Error loading settings:', error);
             }
-        } else {
-            // If no saved settings, sync with current theme provider state
-            const initialTheme = savedTheme || theme;
-            setSettings(prev => ({
-                ...prev,
-                preferences: {
-                    ...prev.preferences,
-                    theme: initialTheme
-                }
-            }));
-            if (initialTheme !== theme) {
-                setTheme(initialTheme);
-            }
-        }
-    }, [setTheme, theme]);
+        };
+
+        loadSettings();
+    }, [session]);
 
     const updateSettings = (section: keyof AppSettings, key: string, value: unknown) => {
         setSettings(prev => ({
@@ -162,7 +183,45 @@ export default function SettingsPage() {
     const saveSettings = async () => {
         setSaving(true);
         try {
-            localStorage.setItem('mcp-bridge-settings', JSON.stringify(settings));
+            if (session?.user) {
+                // Save to database
+                const response = await fetch('/api/user/settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        profile: {
+                            name: settings.profile.displayName,
+                            organization: settings.profile.organization,
+                            timezone: settings.profile.timezone,
+                        },
+                        bridgeDefaults: settings.bridgeDefaults,
+                        notifications: settings.notifications,
+                        apiKeys: settings.apiKeys,
+                        preferences: {
+                            ...settings.preferences,
+                            theme: 'light', // Always save as light theme
+                        },
+                    }),
+                });
+
+                if (response.ok) {
+                    toast({
+                        title: "Success",
+                        description: "Settings saved successfully!",
+                    });
+                } else {
+                    throw new Error('Failed to save settings to database');
+                }
+            } else {
+                // Fallback to localStorage if not authenticated
+                localStorage.setItem('mcp-bridge-settings', JSON.stringify(settings));
+                toast({
+                    title: "Success",
+                    description: "Settings saved locally!",
+                });
+            }
 
             // Ensure theme is synced with theme provider
             // DISABLED: Theme changing functionality temporarily disabled
@@ -197,6 +256,11 @@ export default function SettingsPage() {
             }
         } catch (error) {
             console.error('Failed to save settings:', error);
+            toast({
+                title: "Error",
+                description: "Failed to save settings. Please try again.",
+                variant: "destructive",
+            });
         } finally {
             setSaving(false);
         }
@@ -400,10 +464,11 @@ export default function SettingsPage() {
                                         onChange={(e) => updateSettings('bridgeDefaults', 'cacheDuration', parseInt(e.target.value))}
                                         min="0"
                                         max="3600"
-                                        disabled={!settings.bridgeDefaults.enableCaching}
+                                        disabled={true}
+                                        className="opacity-50"
                                     />
                                     <p className="text-xs text-muted-foreground">
-                                        Response cache duration (0-3600 sec)
+                                        Coming soon - Response cache duration (0-3600 sec)
                                     </p>
                                 </div>
                                 <div className="space-y-2">
@@ -415,14 +480,17 @@ export default function SettingsPage() {
                                         onChange={(e) => updateSettings('bridgeDefaults', 'requestsPerMinute', parseInt(e.target.value))}
                                         min="1"
                                         max="1000"
-                                        disabled={!settings.bridgeDefaults.enableRateLimiting}
+                                        disabled={true}
+                                        className="opacity-50"
                                     />
                                     <p className="text-xs text-muted-foreground">
-                                        Max requests per minute (1-1000)
+                                        Coming soon - Max requests per minute (1-1000)
                                     </p>
                                 </div>
                             </div>
                             <div className="space-y-3">
+                                {/* DISABLED: Caching functionality not implemented yet */}
+                                {/*
                                 <div className="flex items-center space-x-2">
                                     <Switch
                                         id="enableCaching"
@@ -431,6 +499,21 @@ export default function SettingsPage() {
                                     />
                                     <Label htmlFor="enableCaching">Enable caching by default</Label>
                                 </div>
+                                */}
+                                <div className="flex items-center space-x-2 opacity-50">
+                                    <Switch
+                                        id="enableCaching"
+                                        checked={false}
+                                        disabled={true}
+                                    />
+                                    <div>
+                                        <Label htmlFor="enableCaching" className="text-muted-foreground">Enable caching by default</Label>
+                                        <p className="text-xs text-muted-foreground">Coming soon - Response caching functionality</p>
+                                    </div>
+                                </div>
+
+                                {/* DISABLED: Rate limiting functionality not implemented yet */}
+                                {/*
                                 <div className="flex items-center space-x-2">
                                     <Switch
                                         id="enableRateLimiting"
@@ -438,6 +521,18 @@ export default function SettingsPage() {
                                         onCheckedChange={(checked: boolean) => updateSettings('bridgeDefaults', 'enableRateLimiting', checked)}
                                     />
                                     <Label htmlFor="enableRateLimiting">Enable rate limiting by default</Label>
+                                </div>
+                                */}
+                                <div className="flex items-center space-x-2 opacity-50">
+                                    <Switch
+                                        id="enableRateLimiting"
+                                        checked={false}
+                                        disabled={true}
+                                    />
+                                    <div>
+                                        <Label htmlFor="enableRateLimiting" className="text-muted-foreground">Enable rate limiting by default</Label>
+                                        <p className="text-xs text-muted-foreground">Coming soon - Rate limiting functionality</p>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
@@ -458,6 +553,8 @@ export default function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-3">
+                                {/* DISABLED: Email notification system not implemented yet */}
+                                {/*
                                 <div className="flex items-center space-x-2">
                                     <Switch
                                         id="emailNotifications"
@@ -471,73 +568,92 @@ export default function SettingsPage() {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                */}
+                                <div className="flex items-center space-x-2 opacity-50">
+                                    <Switch
+                                        id="emailNotifications"
+                                        checked={false}
+                                        disabled={true}
+                                    />
+                                    <div>
+                                        <Label htmlFor="emailNotifications" className="text-muted-foreground">Email notifications</Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            Coming soon - General email updates about your bridges
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center space-x-2 opacity-50">
                                     <Switch
                                         id="bridgeFailureAlerts"
-                                        checked={settings.notifications.bridgeFailureAlerts}
-                                        onCheckedChange={(checked: boolean) => updateSettings('notifications', 'bridgeFailureAlerts', checked)}
+                                        checked={false}
+                                        disabled={true}
                                     />
                                     <div>
-                                        <Label htmlFor="bridgeFailureAlerts">Failure alerts</Label>
+                                        <Label htmlFor="bridgeFailureAlerts" className="text-muted-foreground">Failure alerts</Label>
                                         <p className="text-xs text-muted-foreground">
-                                            Immediate notifications when bridges fail
+                                            Coming soon - Immediate notifications when bridges fail
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
+
+                                <div className="flex items-center space-x-2 opacity-50">
                                     <Switch
                                         id="weeklyReports"
-                                        checked={settings.notifications.weeklyReports}
-                                        onCheckedChange={(checked: boolean) => updateSettings('notifications', 'weeklyReports', checked)}
+                                        checked={false}
+                                        disabled={true}
                                     />
                                     <div>
-                                        <Label htmlFor="weeklyReports">Weekly reports</Label>
+                                        <Label htmlFor="weeklyReports" className="text-muted-foreground">Weekly reports</Label>
                                         <p className="text-xs text-muted-foreground">
-                                            Weekly summaries of bridge activity
+                                            Coming soon - Weekly summaries of bridge activity
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
+
+                                <div className="flex items-center space-x-2 opacity-50">
                                     <Switch
                                         id="maintenanceUpdates"
-                                        checked={settings.notifications.maintenanceUpdates}
-                                        onCheckedChange={(checked: boolean) => updateSettings('notifications', 'maintenanceUpdates', checked)}
+                                        checked={false}
+                                        disabled={true}
                                     />
                                     <div>
-                                        <Label htmlFor="maintenanceUpdates">Maintenance updates</Label>
+                                        <Label htmlFor="maintenanceUpdates" className="text-muted-foreground">Maintenance updates</Label>
                                         <p className="text-xs text-muted-foreground">
-                                            Platform maintenance and new features
+                                            Coming soon - Platform maintenance and new features
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="pt-4 border-t">
-                                    <h4 className="text-sm font-medium mb-3">Webhook Integrations</h4>
+                                    <h4 className="text-sm font-medium mb-3 text-muted-foreground">Webhook Integrations (Coming Soon)</h4>
                                     <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="webhookUrl">Generic Webhook URL</Label>
+                                        <div className="space-y-2 opacity-50">
+                                            <Label htmlFor="webhookUrl" className="text-muted-foreground">Generic Webhook URL</Label>
                                             <Input
                                                 id="webhookUrl"
                                                 type="url"
                                                 placeholder="https://your-webhook-endpoint.com/notify"
                                                 value={settings.notifications.webhookUrl}
                                                 onChange={(e) => updateSettings('notifications', 'webhookUrl', e.target.value)}
+                                                disabled={true}
                                             />
                                             <p className="text-xs text-muted-foreground">
-                                                JSON payload will be sent to this endpoint for bridge events
+                                                Coming soon - JSON payload will be sent to this endpoint for bridge events
                                             </p>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="slackWebhookUrl">Slack Webhook URL</Label>
+                                        <div className="space-y-2 opacity-50">
+                                            <Label htmlFor="slackWebhookUrl" className="text-muted-foreground">Slack Webhook URL</Label>
                                             <Input
                                                 id="slackWebhookUrl"
                                                 type="url"
                                                 placeholder="https://hooks.slack.com/services/..."
                                                 value={settings.notifications.slackWebhookUrl}
                                                 onChange={(e) => updateSettings('notifications', 'slackWebhookUrl', e.target.value)}
+                                                disabled={true}
                                             />
                                             <p className="text-xs text-muted-foreground">
-                                                Formatted Slack messages for bridge notifications
+                                                Coming soon - Formatted Slack messages for bridge notifications
                                             </p>
                                         </div>
                                     </div>
@@ -606,10 +722,12 @@ export default function SettingsPage() {
                                     <div>
                                         <Label htmlFor="autoSaveBridges">Auto-save bridges</Label>
                                         <p className="text-xs text-muted-foreground">
-                                            Automatically save as you work
+                                            Coming soon - Automatically save as you work
                                         </p>
                                     </div>
                                 </div>
+                                {/* DISABLED: Show advanced options functionality not implemented yet */}
+                                {/*
                                 <div className="flex items-center space-x-2">
                                     <Switch
                                         id="showAdvancedOptions"
@@ -623,6 +741,7 @@ export default function SettingsPage() {
                                         </p>
                                     </div>
                                 </div>
+                                */}
                             </div>
                         </CardContent>
                     </Card>
