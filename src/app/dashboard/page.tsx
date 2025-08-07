@@ -1,6 +1,6 @@
 'use client';
 
-import { BridgeForm } from '@/components/BridgeForm';
+import { BridgeForm } from '@/components/bridge-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

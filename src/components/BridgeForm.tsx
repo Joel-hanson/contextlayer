@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import { BridgeConfig } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Info, Lightbulb, LinkIcon, Plus, Save, TestTube, Trash2 } from 'lucide-react';
@@ -74,6 +75,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
     const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showGuide, setShowGuide] = useState(false);
+    const { toast } = useToast();
 
     const form = useForm<BridgeFormData>({
         resolver: zodResolver(bridgeFormSchema),
@@ -265,7 +267,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
             onOpenChange(false);
         } catch (error) {
             console.error('Error saving bridge:', error);
-            alert('Failed to save bridge. Please check your configuration and try again.');
+            toast({
+                title: "Save Failed",
+                description: "Failed to save bridge. Please check your configuration and try again.",
+                variant: "destructive",
+            });
         }
     };
 
@@ -320,7 +326,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
             onOpenChange(false);
         } catch (error) {
             console.error('Error creating bridge copy:', error);
-            alert('Failed to create bridge copy. Please check your configuration and try again.');
+            toast({
+                title: "Copy Failed",
+                description: "Failed to create bridge copy. Please check your configuration and try again.",
+                variant: "destructive",
+            });
         }
     };
 
@@ -336,10 +346,79 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
 
     const testEndpoint = async (index: number) => {
         setTestingEndpoint(`endpoint-${index}`);
-        // Simulate API test
-        setTimeout(() => {
+        try {
+            // Get form values to build the request
+            const formValues = form.getValues();
+            const endpoint = formValues.apiConfig.endpoints[index];
+            const baseUrl = formValues.apiConfig.baseUrl;
+            const auth = formValues.apiConfig.authentication;
+
+            // Build the full URL
+            const url = `${baseUrl.replace(/\/$/, '')}${endpoint.path.startsWith('/') ? '' : '/'}${endpoint.path}`;
+
+            // Build headers
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                ...formValues.apiConfig.headers,
+            };
+
+            // Add authentication headers
+            if (auth?.type === 'bearer' && auth.token) {
+                headers['Authorization'] = `Bearer ${auth.token}`;
+            } else if (auth?.type === 'apikey' && auth.apiKey) {
+                const headerName = auth.headerName || 'X-API-Key';
+                headers[headerName] = auth.apiKey;
+            } else if (auth?.type === 'basic' && auth.username && auth.password) {
+                headers['Authorization'] = `Basic ${btoa(`${auth.username}:${auth.password}`)}`;
+            }
+
+            // Make the request with a timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            const response = await fetch(url, {
+                method: endpoint.method,
+                headers,
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            // Check if the response is ok
+            if (response.ok) {
+                toast({
+                    title: "Test Successful",
+                    description: `Endpoint "${endpoint.name}" responded with status ${response.status}`,
+                    variant: "default",
+                });
+            } else {
+                toast({
+                    title: "Test Failed",
+                    description: `Endpoint "${endpoint.name}" returned status ${response.status}: ${response.statusText}`,
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            let errorMessage = 'Endpoint test failed';
+
+            if (error instanceof Error) {
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Request timed out after 10 seconds';
+                } else if (error.message.includes('fetch')) {
+                    errorMessage = 'Failed to connect to the API endpoint';
+                } else {
+                    errorMessage = error.message;
+                }
+            }
+
+            toast({
+                title: "Test Failed",
+                description: errorMessage,
+                variant: "destructive",
+            });
+        } finally {
             setTestingEndpoint(null);
-        }, 2000);
+        }
     };
 
     return (

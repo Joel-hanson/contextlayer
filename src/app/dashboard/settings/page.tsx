@@ -292,7 +292,11 @@ export default function SettingsPage() {
                     setSettings({ ...defaultSettings, ...imported });
                     setHasChanges(true);
                 } catch {
-                    alert('Failed to import settings file.');
+                    toast({
+                        title: "Import Failed",
+                        description: "Failed to import settings file. Please check the file format.",
+                        variant: "destructive",
+                    });
                 }
             };
             reader.readAsText(file);
