@@ -10,6 +10,114 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+// Authentication and User Management Models
+model User {
+    id            String    @id @default(uuid()) @db.Uuid
+    username      String?   @unique
+    email         String    @unique
+    emailVerified DateTime?
+    name          String?
+    image         String?
+    password      String? // Hashed password for username/password login
+    role          UserRole  @default(USER)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+
+    // Relations
+    accounts Account[]
+    sessions Session[]
+    bridges  Bridge[] // User-owned bridges
+    settings UserSettings?
+
+    @@map("users")
+}
+
+model Account {
+    id                String  @id @default(uuid()) @db.Uuid
+    userId            String  @db.Uuid
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+    @@map("accounts")
+}
+
+model Session {
+    id           String   @id @default(uuid()) @db.Uuid
+    sessionToken String   @unique
+    userId       String   @db.Uuid
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("sessions")
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+    @@map("verificationtokens")
+}
+
+// User Settings Model
+model UserSettings {
+    id                  String  @id @default(uuid()) @db.Uuid
+    userId              String  @unique @db.Uuid
+    displayName         String?
+    organization        String?
+    timezone            String  @default("UTC")
+    theme               String  @default("system") // light, dark, system
+    autoSaveBridges     Boolean @default(true)
+    showAdvancedOptions Boolean @default(false)
+    defaultAuthType     String  @default("none")
+
+    // Bridge defaults
+    defaultTimeout       Int     @default(30000)
+    defaultRetryAttempts Int     @default(3)
+    enableCaching        Boolean @default(true)
+    cacheDuration        Int     @default(300)
+    enableRateLimiting   Boolean @default(false)
+    requestsPerMinute    Int     @default(100)
+
+    // Notifications
+    emailNotifications  Boolean @default(true)
+    bridgeFailureAlerts Boolean @default(true)
+    weeklyReports       Boolean @default(false)
+    maintenanceUpdates  Boolean @default(true)
+    webhookUrl          String?
+    slackWebhookUrl     String?
+
+    // API Keys
+    enableApiAccess   Boolean @default(false)
+    allowPublicAccess Boolean @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("user_settings")
+}
+
+enum UserRole {
+    USER
+    ADMIN
+    MODERATOR
+}
+
 enum AuthenticationType {
     none
     bearer
@@ -41,6 +149,7 @@ enum BridgeStatus {
 
 model Bridge {
     id             String             @id @default(uuid()) @db.Uuid
+    userId         String             @db.Uuid // Associate bridges with users
     name           String
     slug           String? // URL-friendly version of name
     description    String?
@@ -73,6 +182,7 @@ model Bridge {
     updatedAt DateTime @updatedAt
 
     // Relations
+    user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
     endpoints ApiEndpoint[]
     logs      BridgeLog[]
     requests  ApiRequest[]

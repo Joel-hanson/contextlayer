@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 
 const prisma = new PrismaClient()
@@ -9,6 +10,28 @@ async function main() {
     await prisma.bridgeLog.deleteMany()
     await prisma.apiEndpoint.deleteMany()
     await prisma.bridge.deleteMany()
+    await prisma.userSettings.deleteMany()
+    await prisma.account.deleteMany()
+    await prisma.session.deleteMany()
+    await prisma.user.deleteMany()
+
+    // Create a test user for seeding bridges
+    const hashedPassword = await bcrypt.hash('password123', 12)
+    const testUser = await prisma.user.create({
+        data: {
+            id: randomUUID(),
+            email: 'test@example.com',
+            name: 'Test User',
+            username: 'testuser',
+            password: hashedPassword,
+            role: 'USER',
+            settings: {
+                create: {
+                    displayName: 'Test User',
+                }
+            }
+        },
+    })
 
     // Generate UUIDs for bridges
     const bridge1Id = randomUUID()
@@ -24,6 +47,7 @@ async function main() {
             authType: 'none',
             enabled: false,
             status: 'inactive',
+            userId: testUser.id,
             endpoints: {
                 create: [
                     {
@@ -82,6 +106,7 @@ async function main() {
             authType: 'none',
             enabled: false,
             status: 'inactive',
+            userId: testUser.id,
             endpoints: {
                 create: [
                     {
