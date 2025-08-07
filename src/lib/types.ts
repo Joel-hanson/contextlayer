@@ -54,7 +54,7 @@ export type McpTool = z.infer<typeof McpToolSchema>;
 // Bridge Configuration
 export const BridgeConfigSchema = z.object({
     id: z.string(),
-    slug: z.string().optional(), // URL-friendly version of name
+    slug: z.string(), // UUID-based identifier for routing
     name: z.string(),
     description: z.string(),
     apiConfig: ApiConfigSchema,

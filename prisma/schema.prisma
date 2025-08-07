@@ -151,7 +151,7 @@ model Bridge {
     id             String             @id @default(uuid()) @db.Uuid
     userId         String             @db.Uuid // Associate bridges with users
     name           String
-    slug           String? // URL-friendly version of name
+    slug           String // UUID-based identifier for routing
     description    String?
     baseUrl        String
     headers        Json? // Store as JSONB for custom headers

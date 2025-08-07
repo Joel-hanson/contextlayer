@@ -20,7 +20,7 @@ export async function OPTIONS() {
         headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
         },
     });
 }
@@ -103,6 +103,71 @@ async function handleMcpJsonRpc(
                     }
                 }
             );
+        }
+
+        // Check bridge access control authentication
+        if (bridge.authRequired) {
+            if (!bridge.apiKey) {
+                return NextResponse.json(
+                    {
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32603,
+                            message: 'Bridge access control is enabled but no API key is configured'
+                        },
+                        id: null
+                    },
+                    {
+                        status: 500,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*',
+                        }
+                    }
+                );
+            }
+
+            // Check for API key in Authorization header (Bearer token format)
+            const authHeader = request.headers.get('authorization');
+            let providedApiKey: string | null = null;
+
+            if (authHeader) {
+                if (authHeader.startsWith('Bearer ')) {
+                    providedApiKey = authHeader.substring(7);
+                } else if (authHeader.startsWith('ApiKey ')) {
+                    providedApiKey = authHeader.substring(7);
+                }
+            }
+
+            // Also check for API key in X-API-Key header
+            if (!providedApiKey) {
+                providedApiKey = request.headers.get('x-api-key');
+            }
+
+            // Validate the API key
+            if (!providedApiKey || providedApiKey !== bridge.apiKey) {
+                return NextResponse.json(
+                    {
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32401,
+                            message: 'Unauthorized: Invalid or missing API key',
+                            data: {
+                                help: 'Include your API key in the Authorization header as "Bearer <api-key>" or in the X-API-Key header'
+                            }
+                        },
+                        id: null
+                    },
+                    {
+                        status: 401,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*',
+                            'WWW-Authenticate': 'Bearer realm="MCP Bridge"'
+                        }
+                    }
+                );
+            }
         }
 
         // Parse JSON-RPC request

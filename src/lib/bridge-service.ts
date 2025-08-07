@@ -15,7 +15,7 @@ interface EndpointParameter {
 function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint[] }): BridgeConfig {
     return {
         id: bridge.id,
-        slug: bridge.slug || undefined,
+        slug: bridge.slug || bridge.id, // Fallback to id if slug is somehow missing
         name: bridge.name,
         description: bridge.description || '',
         apiConfig: {
@@ -85,17 +85,10 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
 
 // Transform BridgeConfig to Prisma data
 function transformBridgeConfigToPrismaData(config: BridgeConfig) {
-    // Generate slug from name if not provided
-    const generateSlug = (name: string) => {
-        return name.toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-    };
-
     return {
         id: config.id,
         name: config.name,
-        slug: config.slug || generateSlug(config.name),
+        slug: config.slug, // Now always provided as UUID
         description: config.description,
         baseUrl: config.apiConfig.baseUrl,
         headers: config.apiConfig.headers || {},

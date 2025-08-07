@@ -44,6 +44,18 @@ export async function PATCH(
     return handleMcpRequest(request, bridgeId, 'PATCH', path);
 }
 
+// Handle OPTIONS for CORS
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
+        },
+    });
+}
+
 async function handleMcpRequest(
     request: NextRequest,
     bridgeId: string,
@@ -76,6 +88,49 @@ async function handleMcpRequest(
                 { error: 'Bridge is disabled' },
                 { status: 403 }
             );
+        }
+
+        // Check bridge access control authentication
+        if (bridge.authRequired) {
+            if (!bridge.apiKey) {
+                return NextResponse.json(
+                    { error: 'Bridge access control is enabled but no API key is configured' },
+                    { status: 500 }
+                );
+            }
+
+            // Check for API key in Authorization header (Bearer token format)
+            const authHeader = request.headers.get('authorization');
+            let providedApiKey: string | null = null;
+
+            if (authHeader) {
+                if (authHeader.startsWith('Bearer ')) {
+                    providedApiKey = authHeader.substring(7);
+                } else if (authHeader.startsWith('ApiKey ')) {
+                    providedApiKey = authHeader.substring(7);
+                }
+            }
+
+            // Also check for API key in X-API-Key header
+            if (!providedApiKey) {
+                providedApiKey = request.headers.get('x-api-key');
+            }
+
+            // Validate the API key
+            if (!providedApiKey || providedApiKey !== bridge.apiKey) {
+                return NextResponse.json(
+                    {
+                        error: 'Unauthorized: Invalid or missing API key',
+                        help: 'Include your API key in the Authorization header as "Bearer <api-key>" or in the X-API-Key header'
+                    },
+                    {
+                        status: 401,
+                        headers: {
+                            'WWW-Authenticate': 'Bearer realm="MCP Bridge"'
+                        }
+                    }
+                );
+            }
         }
 
         // Construct the full API path

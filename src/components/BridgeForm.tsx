@@ -12,14 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { BridgeConfig } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Info, Lightbulb, Plus, Save, TestTube, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Info, Lightbulb, LinkIcon, Plus, Save, TestTube, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const bridgeFormSchema = z.object({
     name: z.string().min(1, 'Bridge name is required'),
-    slug: z.string().optional(),
     description: z.string().optional(),
     apiConfig: z.object({
         name: z.string().min(1, 'API name is required'),
@@ -80,7 +79,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
         mode: 'onChange',
         defaultValues: {
             name: '',
-            slug: '',
             description: '',
             apiConfig: {
                 name: '',
@@ -120,7 +118,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                 // Editing existing bridge - populate form with current values
                 form.reset({
                     name: bridge.name,
-                    slug: bridge.slug,
                     description: bridge.description,
                     apiConfig: {
                         name: bridge.apiConfig.name,
@@ -137,7 +134,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                 // Creating new bridge - reset to defaults
                 form.reset({
                     name: '',
-                    slug: '',
                     description: '',
                     apiConfig: {
                         name: '',
@@ -215,17 +211,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
 
     const onSubmit: SubmitHandler<BridgeFormData> = (data) => {
         try {
-            // Auto-generate slug if not provided
-            let slug = data.slug;
-            if (!slug) {
-                slug = data.name.toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '');
-            }
+            // Generate UUID for the bridge
+            const bridgeId = bridge?.id || crypto.randomUUID();
 
             const bridgeConfig: BridgeConfig = {
-                id: bridge?.id || crypto.randomUUID(),
-                slug,
+                id: bridgeId,
+                slug: bridgeId, // Use UUID as slug
                 name: data.name,
                 description: data.description || '',
                 apiConfig: {
@@ -279,17 +270,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
 
     const onSaveAsCopy: SubmitHandler<BridgeFormData> = (data) => {
         try {
-            // Auto-generate slug if not provided
-            let slug = data.slug;
-            if (!slug) {
-                slug = data.name.toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '');
-            }
+            // Generate UUIDs for the copy
+            const bridgeId = crypto.randomUUID();
 
             const bridgeConfig: BridgeConfig = {
-                id: crypto.randomUUID(),
-                slug: `${slug}-copy`,
+                id: bridgeId,
+                slug: bridgeId, // Use UUID as slug
                 name: `${data.name} (Copy)`,
                 description: data.description || '',
                 apiConfig: {
@@ -421,18 +407,18 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                             <TabsList className="grid w-full grid-cols-2 h-auto p-1">
                                 <TabsTrigger
                                     value="bridge"
-                                    className={`flex flex-col items-center gap-1 p-2 data-[state=active]:bg-background ${form.formState.errors.name || form.formState.errors.slug || form.formState.errors.routing ? 'text-red-600' : ''
+                                    className={`flex flex-col items-center gap-1 p-2 data-[state=active]:bg-background ${form.formState.errors.name || form.formState.errors.routing ? 'text-red-600' : ''
                                         }`}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium ${form.getValues('name') && (form.getValues('slug') || form.getValues('name'))
+                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium ${form.getValues('name')
                                             ? 'bg-zinc-900 text-white'
                                             : 'bg-zinc-200 text-zinc-600'
                                             }`}>
                                             1
                                         </div>
                                         <span className="font-medium text-sm">Bridge Setup</span>
-                                        {(form.formState.errors.name || form.formState.errors.slug || form.formState.errors.routing) && (
+                                        {(form.formState.errors.name || form.formState.errors.routing) && (
                                             <AlertTriangle className="h-3 w-3" />
                                         )}
                                     </div>
@@ -471,7 +457,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-4">
                                             <div className="space-y-1.5">
                                                 <Label htmlFor="name" className="text-sm font-medium">
                                                     Bridge Name <span className="text-red-500">*</span>
@@ -488,17 +474,8 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                                                         {form.formState.errors.name.message}
                                                     </p>
                                                 )}
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="slug" className="text-sm font-medium">URL Slug</Label>
-                                                <Input
-                                                    id="slug"
-                                                    {...form.register('slug')}
-                                                    placeholder="my-api-bridge"
-                                                    className="font-mono text-sm h-9"
-                                                />
                                                 <p className="text-xs text-muted-foreground">
-                                                    Leave empty to auto-generate from name. Used in bridge URL.
+                                                    A unique identifier will be automatically generated for your bridge URL.
                                                 </p>
                                             </div>
                                         </div>
@@ -534,8 +511,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                                             <p className="text-xs text-zinc-700">
                                                 Your bridge will be accessible at:
                                                 <code className="bg-zinc-200 px-1.5 py-0.5 rounded ml-1 font-mono text-zinc-800 text-xs">
-                                                    /mcp/{form.watch('slug') || form.watch('name')?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'your-bridge-slug'}
+                                                    /mcp/{bridge?.slug || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'}
                                                 </code>
+                                                {!bridge && (
+                                                    <span className="ml-2 text-zinc-500 text-xs">(Generated automatically)</span>
+                                                )}
                                             </p>
                                         </div>
 
@@ -840,7 +820,9 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                                         {endpointFields.length === 0 && (
                                             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
                                                 <div className="text-muted-foreground">
-                                                    <div className="text-2xl mb-2">🔗</div>
+                                                    <div className="text-2xl mb-2 flex justify-center items-center">
+                                                        <LinkIcon className="h-8 w-8" />
+                                                    </div>
                                                     <div className="text-sm font-medium mb-1">No endpoints added yet</div>
                                                     <div className="text-xs mb-3">Click &quot;Add&quot; to create your first MCP tool</div>
                                                     <Button type="button" onClick={addEndpoint} variant="outline" size="sm">
@@ -958,57 +940,169 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                             </TabsContent>
                         </Tabs>
 
-                        {/* Progress Indicator */}
-                        <Card className="mt-4 bg-zinc-50">
-                            <CardContent className="p-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="text-sm font-medium text-zinc-700">Setup Progress</div>
-                                    <div className="text-xs text-zinc-500">
-                                        {[
-                                            form.getValues('name') && (form.getValues('slug') || form.getValues('name')),
+                        {/* Enhanced Progress Indicator */}
+                        <Card className="mt-4 bg-gradient-to-r from-zinc-50 to-slate-50 border-zinc-200">
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-sm font-semibold text-zinc-800">Setup Progress</div>
+                                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${[
+                                            form.getValues('name'),
                                             form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl'),
                                             endpointFields.length > 0
-                                        ].filter(Boolean).length} / 3 steps completed
+                                        ].filter(Boolean).length === 3
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-amber-100 text-amber-700'
+                                            }`}>
+                                            {[
+                                                form.getValues('name'),
+                                                form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl'),
+                                                endpointFields.length > 0
+                                            ].filter(Boolean).length === 3 ? 'Complete' : 'In Progress'}
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-zinc-500 font-medium">
+                                        {[
+                                            form.getValues('name'),
+                                            form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl'),
+                                            endpointFields.length > 0
+                                        ].filter(Boolean).length} of 3 steps completed
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-3 gap-3 mt-2">
-                                    <div className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${form.getValues('name') && (form.getValues('slug') || form.getValues('name'))
-                                        ? 'bg-zinc-900 text-white'
-                                        : 'bg-zinc-200 text-zinc-600'
-                                        }`}>
-                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold ${form.getValues('name') && (form.getValues('slug') || form.getValues('name'))
-                                            ? 'bg-white text-zinc-900'
-                                            : 'bg-zinc-300 text-zinc-600'
+
+                                {/* Progress Bar */}
+                                <div className="w-full bg-zinc-200 rounded-full h-2 mb-4">
+                                    <div
+                                        className="bg-gradient-to-r from-zinc-800 to-zinc-700 h-2 rounded-full transition-all duration-300 ease-in-out"
+                                        style={{
+                                            width: `${([
+                                                form.getValues('name'),
+                                                form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl'),
+                                                endpointFields.length > 0
+                                            ].filter(Boolean).length / 3) * 100}%`
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Step Details */}
+                                <div className="space-y-3">
+                                    <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer ${form.getValues('name')
+                                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                                        : activeTab === 'bridge'
+                                            ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200'
+                                            : 'bg-white border-zinc-200 hover:bg-zinc-50'
+                                        }`} onClick={() => setActiveTab('bridge')}>
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${form.getValues('name')
+                                            ? 'bg-green-600 text-white'
+                                            : activeTab === 'bridge'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-zinc-300 text-zinc-600'
                                             }`}>
-                                            {form.getValues('name') && (form.getValues('slug') || form.getValues('name')) ? '✓' : '1'}
+                                            {form.getValues('name') ? '✓' : '1'}
                                         </div>
-                                        <span className="text-xs font-medium">Bridge Info</span>
+                                        <div className="flex-1">
+                                            <div className="text-sm font-medium text-zinc-900">Bridge Information</div>
+                                            <div className="text-xs text-zinc-500">
+                                                {form.getValues('name')
+                                                    ? `${form.getValues('name')} • Ready`
+                                                    : 'Name and basic configuration required'
+                                                }
+                                            </div>
+                                        </div>
+                                        {form.getValues('name') && (
+                                            <div className="text-green-600">
+                                                <CheckCircle2 className="w-4 h-4" />
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl')
-                                        ? 'bg-zinc-900 text-white'
-                                        : 'bg-zinc-200 text-zinc-600'
-                                        }`}>
-                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold ${form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl')
-                                            ? 'bg-white text-zinc-900'
-                                            : 'bg-zinc-300 text-zinc-600'
+
+                                    <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer ${form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl')
+                                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                                        : activeTab === 'api'
+                                            ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200'
+                                            : 'bg-white border-zinc-200 hover:bg-zinc-50'
+                                        }`} onClick={() => setActiveTab('api')}>
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl')
+                                            ? 'bg-green-600 text-white'
+                                            : activeTab === 'api'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-zinc-300 text-zinc-600'
                                             }`}>
                                             {form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl') ? '✓' : '2'}
                                         </div>
-                                        <span className="text-xs font-medium">API Config</span>
+                                        <div className="flex-1">
+                                            <div className="text-sm font-medium text-zinc-900">API Configuration</div>
+                                            <div className="text-xs text-zinc-500">
+                                                {form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl')
+                                                    ? `${form.getValues('apiConfig.name')} • ${(() => {
+                                                        try {
+                                                            return new URL(form.getValues('apiConfig.baseUrl') || '').hostname;
+                                                        } catch {
+                                                            return 'Invalid URL';
+                                                        }
+                                                    })()}`
+                                                    : 'API details and authentication required'
+                                                }
+                                            </div>
+                                        </div>
+                                        {form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl') && (
+                                            <div className="text-green-600">
+                                                <CheckCircle2 className="w-4 h-4" />
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${endpointFields.length > 0
-                                        ? 'bg-zinc-900 text-white'
-                                        : 'bg-zinc-200 text-zinc-600'
-                                        }`}>
-                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold ${endpointFields.length > 0
-                                            ? 'bg-white text-zinc-900'
-                                            : 'bg-zinc-300 text-zinc-600'
+
+                                    <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer ${endpointFields.length > 0
+                                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                                        : activeTab === 'api'
+                                            ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200'
+                                            : 'bg-white border-zinc-200 hover:bg-zinc-50'
+                                        }`} onClick={() => setActiveTab('api')}>
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${endpointFields.length > 0
+                                            ? 'bg-green-600 text-white'
+                                            : activeTab === 'api'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-zinc-300 text-zinc-600'
                                             }`}>
                                             {endpointFields.length > 0 ? '✓' : '3'}
                                         </div>
-                                        <span className="text-xs font-medium">Endpoints ({endpointFields.length})</span>
+                                        <div className="flex-1">
+                                            <div className="text-sm font-medium text-zinc-900">API Endpoints</div>
+                                            <div className="text-xs text-zinc-500">
+                                                {endpointFields.length > 0
+                                                    ? `${endpointFields.length} endpoint${endpointFields.length === 1 ? '' : 's'} configured`
+                                                    : 'Add at least one endpoint to create MCP tools'
+                                                }
+                                            </div>
+                                        </div>
+                                        {endpointFields.length > 0 && (
+                                            <div className="text-green-600">
+                                                <CheckCircle2 className="w-4 h-4" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
+
+                                {/* Next Action Hint */}
+                                {[
+                                    form.getValues('name'),
+                                    form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl'),
+                                    endpointFields.length > 0
+                                ].filter(Boolean).length < 3 && (
+                                        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-amber-600">
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </div>
+                                                <div className="text-sm text-amber-800">
+                                                    <strong>Next: </strong>
+                                                    {!form.getValues('name') ? 'Add bridge name and description' :
+                                                        !form.getValues('apiConfig.name') || !form.getValues('apiConfig.baseUrl') ? 'Configure your API details' :
+                                                            endpointFields.length === 0 ? 'Add at least one API endpoint' : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                             </CardContent>
                         </Card>
                     </form>
@@ -1016,7 +1110,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
 
                 <Separator />
 
-                <DialogFooter className="p-4">
+                <DialogFooter className="p-1">
                     <div className="flex items-center justify-between w-full">
                         <Button
                             type="button"
