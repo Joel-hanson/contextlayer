@@ -7,7 +7,6 @@ import { BookOpen, Code, ExternalLink, Terminal } from 'lucide-react';
 export default function DocsPage() {
     // Dynamic URL generation for examples
     const baseUrl = getBaseUrl();
-    const exampleUrl = `${baseUrl}/mcp/YOUR_BRIDGE_ID`;
 
     return (
         <div className="flex-1 space-y-4 font-mono">

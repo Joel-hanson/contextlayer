@@ -1,4 +1,6 @@
+import { authOptions } from '@/lib/auth'
 import { BridgeService } from '@/lib/bridge-service'
+import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(
@@ -6,12 +8,21 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const session = await getServerSession(authOptions)
+
+        if (!session?.user.id) {
+            return NextResponse.json(
+                { error: 'Authentication required' },
+                { status: 401 }
+            )
+        }
+
         const { id: bridgeId } = await params
         const body = await request.json()
         const { bridgeConfig } = body
 
-        // Update bridge status to enabled
-        await BridgeService.updateBridgeStatus(bridgeId, true, 'active')
+        // Update bridge status to enabled (with user filtering)
+        await BridgeService.updateBridgeStatus(bridgeId, true, 'active', session.user.id)
 
         // Log the start action
         await BridgeService.addBridgeLog(
@@ -21,7 +32,8 @@ export async function POST(
             {
                 action: 'start',
                 timestamp: new Date().toISOString(),
-                config: bridgeConfig
+                config: bridgeConfig,
+                userId: session.user.id
             }
         )
 
@@ -46,8 +58,12 @@ export async function POST(
             }
         )
 
-        // Update bridge status to error
-        await BridgeService.updateBridgeStatus(bridgeId, false, 'error')
+        // Update bridge status to error (try without user filtering for error logging)
+        try {
+            await BridgeService.updateBridgeStatus(bridgeId, false, 'error')
+        } catch (err) {
+            console.error('Failed to update bridge status to error:', err)
+        }
 
         return NextResponse.json(
             { error: 'Failed to start bridge' },

@@ -1,18 +1,28 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import {
     Database,
     FileText,
     Home,
+    LogOut,
     LucideIcon,
     Menu,
     Network,
-    Plus,
     Settings,
+    User,
     X
 } from 'lucide-react';
+import { signOut, useSession } from 'next-auth/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -24,6 +34,7 @@ interface SidebarProps {
 export function DashboardLayout({ children }: SidebarProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const pathname = usePathname();
+    const { data: session } = useSession();
 
     const navigation = [
         { name: 'Overview', href: '/dashboard', icon: Home, current: pathname === '/dashboard' },
@@ -31,6 +42,10 @@ export function DashboardLayout({ children }: SidebarProps) {
         { name: 'Documentation', href: '/dashboard/docs', icon: FileText, current: pathname === '/dashboard/docs' },
         { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: pathname === '/dashboard/settings' },
     ];
+
+    const handleSignOut = () => {
+        signOut({ callbackUrl: '/' });
+    };
 
     return (
         <div className="min-h-screen bg-background font-mono">
@@ -41,13 +56,22 @@ export function DashboardLayout({ children }: SidebarProps) {
             )}>
                 <div className="fixed inset-0 bg-black/20" onClick={() => setSidebarOpen(false)} />
                 <div className="fixed left-0 top-0 h-full w-64 bg-background border-r shadow-lg">
-                    <SidebarContent navigation={navigation} onClose={() => setSidebarOpen(false)} />
+                    <SidebarContent
+                        navigation={navigation}
+                        onClose={() => setSidebarOpen(false)}
+                        session={session}
+                        onSignOut={handleSignOut}
+                    />
                 </div>
             </div>
 
             {/* Desktop sidebar */}
             <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-                <SidebarContent navigation={navigation} />
+                <SidebarContent
+                    navigation={navigation}
+                    session={session}
+                    onSignOut={handleSignOut}
+                />
             </div>
 
             {/* Main content */}
@@ -88,9 +112,18 @@ interface SidebarContentProps {
         current: boolean;
     }>;
     onClose?: () => void;
+    session?: {
+        user: {
+            name?: string | null;
+            email?: string | null;
+            username?: string | null;
+            image?: string | null;
+        }
+    } | null;
+    onSignOut?: () => void;
 }
 
-function SidebarContent({ navigation, onClose }: SidebarContentProps) {
+function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarContentProps) {
     return (
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center justify-between">
@@ -135,7 +168,56 @@ function SidebarContent({ navigation, onClose }: SidebarContentProps) {
                             ))}
                         </ul>
                     </li>
-                    <li className="mt-auto">
+
+                    {/* User Profile Section */}
+                    {session?.user && (
+                        <li className="mt-auto">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="w-full -mx-2 justify-start h-auto p-2 font-normal">
+                                        <div className="flex items-center gap-x-3 w-full">
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground overflow-hidden">
+                                                {session.user.image ? (
+                                                    <Image
+                                                        src={session.user.image}
+                                                        alt={session.user.name || session.user.username || 'User'}
+                                                        width={32}
+                                                        height={32}
+                                                        className="h-full w-full object-cover rounded-full"
+                                                    />
+                                                ) : (
+                                                    <User className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                                <p className="text-sm font-medium truncate">
+                                                    {session.user.name || session.user.username || 'User'}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground truncate">
+                                                    {session.user.email}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/dashboard/settings" onClick={onClose}>
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            Settings
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={onSignOut}>
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Sign out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </li>
+                    )}
+
+                    {/* <li className="mt-2">
                         <Link
                             href="/dashboard"
                             onClick={(e) => {
@@ -148,7 +230,7 @@ function SidebarContent({ navigation, onClose }: SidebarContentProps) {
                             <Plus className="h-5 w-5 shrink-0" aria-hidden="true" />
                             Create Bridge
                         </Link>
-                    </li>
+                    </li> */}
                 </ul>
             </nav>
         </div>

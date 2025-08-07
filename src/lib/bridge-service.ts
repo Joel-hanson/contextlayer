@@ -128,10 +128,11 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
 }
 
 export class BridgeService {
-    // Get all bridges
-    static async getAllBridges(): Promise<BridgeConfig[]> {
+    // Get all bridges for a specific user
+    static async getAllBridges(userId?: string): Promise<BridgeConfig[]> {
         try {
             const bridges = await prisma.bridge.findMany({
+                where: userId ? { userId } : undefined,
                 include: {
                     endpoints: true,
                 },
@@ -147,11 +148,14 @@ export class BridgeService {
         }
     }
 
-    // Get bridge by ID
-    static async getBridgeById(id: string): Promise<BridgeConfig | null> {
+    // Get bridge by ID (with user filtering)
+    static async getBridgeById(id: string, userId?: string): Promise<BridgeConfig | null> {
         try {
             const bridge = await prisma.bridge.findUnique({
-                where: { id },
+                where: {
+                    id,
+                    ...(userId && { userId })
+                },
                 include: {
                     endpoints: true,
                 },
@@ -166,13 +170,14 @@ export class BridgeService {
     }
 
     // Create new bridge
-    static async createBridge(config: BridgeConfig): Promise<BridgeConfig> {
+    static async createBridge(config: BridgeConfig, userId: string): Promise<BridgeConfig> {
         try {
             const bridgeData = transformBridgeConfigToPrismaData(config)
 
             const bridge = await prisma.bridge.create({
                 data: {
                     ...bridgeData,
+                    userId, // Add userId to bridge creation
                     endpoints: {
                         create: config.apiConfig.endpoints.map(endpoint => ({
                             id: endpoint.id,
@@ -198,8 +203,8 @@ export class BridgeService {
         }
     }
 
-    // Update bridge
-    static async updateBridge(id: string, config: BridgeConfig): Promise<BridgeConfig> {
+    // Update bridge (with user filtering)
+    static async updateBridge(id: string, config: BridgeConfig, userId?: string): Promise<BridgeConfig> {
         try {
             const bridgeData = transformBridgeConfigToPrismaData(config)
 
@@ -209,7 +214,10 @@ export class BridgeService {
             })
 
             const bridge = await prisma.bridge.update({
-                where: { id },
+                where: {
+                    id,
+                    ...(userId && { userId })
+                },
                 data: {
                     ...bridgeData,
                     endpoints: {
@@ -237,11 +245,14 @@ export class BridgeService {
         }
     }
 
-    // Delete bridge
-    static async deleteBridge(id: string): Promise<void> {
+    // Delete bridge (with user filtering)
+    static async deleteBridge(id: string, userId?: string): Promise<void> {
         try {
             await prisma.bridge.delete({
-                where: { id },
+                where: {
+                    id,
+                    ...(userId && { userId })
+                },
             })
         } catch (error) {
             console.error(`Error deleting bridge ${id}:`, error)
@@ -249,11 +260,14 @@ export class BridgeService {
         }
     }
 
-    // Update bridge status
-    static async updateBridgeStatus(id: string, enabled: boolean, status: BridgeStatus = 'inactive'): Promise<void> {
+    // Update bridge status (with user filtering)
+    static async updateBridgeStatus(id: string, enabled: boolean, status: BridgeStatus = 'inactive', userId?: string): Promise<void> {
         try {
             await prisma.bridge.update({
-                where: { id },
+                where: {
+                    id,
+                    ...(userId && { userId })
+                },
                 data: {
                     enabled,
                     status,

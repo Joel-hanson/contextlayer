@@ -1,4 +1,6 @@
+import { authOptions } from '@/lib/auth'
 import { BridgeService } from '@/lib/bridge-service'
+import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(
@@ -6,10 +8,19 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const session = await getServerSession(authOptions)
+
+        if (!session?.user.id) {
+            return NextResponse.json(
+                { error: 'Authentication required' },
+                { status: 401 }
+            )
+        }
+
         const { id: bridgeId } = await params
 
-        // Update bridge status to disabled
-        await BridgeService.updateBridgeStatus(bridgeId, false, 'inactive')
+        // Update bridge status to disabled (with user filtering)
+        await BridgeService.updateBridgeStatus(bridgeId, false, 'inactive', session.user.id)
 
         // Log the stop action
         await BridgeService.addBridgeLog(
@@ -18,7 +29,8 @@ export async function POST(
             'Bridge stopped successfully',
             {
                 action: 'stop',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                userId: session.user.id
             }
         )
 
