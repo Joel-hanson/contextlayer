@@ -175,7 +175,7 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="w-full -mx-2 justify-start h-auto p-2 font-normal">
-                                        <div className="flex items-center gap-x-3 w-full">
+                                        <div className="flex items-center gap-x-3 min-w-0 flex-1">
                                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground overflow-hidden">
                                                 {session.user.image ? (
                                                     <Image
@@ -189,11 +189,11 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
                                                     <User className="h-4 w-4" />
                                                 )}
                                             </div>
-                                            <div className="flex flex-col items-start min-w-0 flex-1">
-                                                <p className="text-sm font-medium truncate">
+                                            <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
+                                                <p className="text-sm font-medium truncate w-full">
                                                     {session.user.name || session.user.username || 'User'}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground truncate">
+                                                <p className="text-xs text-muted-foreground truncate w-full">
                                                     {session.user.email}
                                                 </p>
                                             </div>

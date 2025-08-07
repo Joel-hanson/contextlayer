@@ -30,26 +30,48 @@ async function handleMcpJsonRpc(
     bridgeId: string
 ) {
     try {
-        // Find the bridge by ID or slug
-        const bridge = await prisma.bridge.findFirst({
-            where: {
-                OR: [
-                    { id: bridgeId },
-                    { slug: bridgeId }
-                ]
-            },
-            include: {
-                endpoints: true
-            }
-        });
+        let bridge = null;
 
+        // First try to find in database if bridgeId looks like a UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+        if (uuidRegex.test(bridgeId)) {
+            // Try database lookup for UUID
+            bridge = await prisma.bridge.findFirst({
+                where: {
+                    id: bridgeId
+                },
+                include: {
+                    endpoints: true
+                }
+            });
+        }
+
+        // If not found in database, try slug-based lookup
+        if (!bridge) {
+            try {
+                bridge = await prisma.bridge.findFirst({
+                    where: {
+                        slug: bridgeId
+                    },
+                    include: {
+                        endpoints: true
+                    }
+                });
+            } catch {
+                // If slug lookup fails, bridge doesn't exist in database
+                console.log('Bridge not found in database, this is expected for localStorage-based bridges');
+            }
+        }
+
+        // If still not found, return appropriate error
         if (!bridge) {
             return NextResponse.json(
                 {
                     jsonrpc: '2.0',
                     error: {
                         code: -32602,
-                        message: 'Bridge not found'
+                        message: 'Bridge not found. Please ensure the bridge is properly saved and enabled in the dashboard.'
                     },
                     id: null
                 },
@@ -184,6 +206,7 @@ async function handleInitialize(jsonRpcRequest: any, bridge: any) {
 }
 
 async function handleToolsList(jsonRpcRequest: any, bridge: any) {
+    console.log('Listing tools for bridge:', bridge.name);
     const tools = bridge.endpoints.map((endpoint: any) => ({
         name: endpoint.name || `${endpoint.method.toLowerCase()}_${endpoint.path.replace(/[^a-zA-Z0-9]/g, '_')}`,
         description: endpoint.description || `Call ${endpoint.method} ${endpoint.path} on ${bridge.baseUrl}`,
@@ -328,22 +351,31 @@ async function executeApiCall(bridge: any, endpoint: any, args: any) {
         'Content-Type': 'application/json',
     };
 
-    // Add authentication
-    if (bridge.authentication) {
-        switch (bridge.authentication.type) {
+    // Add custom headers from bridge configuration
+    if (bridge.headers && typeof bridge.headers === 'object') {
+        Object.entries(bridge.headers).forEach(([key, value]) => {
+            if (typeof value === 'string') {
+                headers[key] = value;
+            }
+        });
+    }
+
+    // Add authentication - Updated to work with database structure
+    if (bridge.authType && bridge.authType !== 'none') {
+        switch (bridge.authType) {
             case 'bearer':
-                if (bridge.authentication.token) {
-                    headers['Authorization'] = `Bearer ${bridge.authentication.token}`;
+                if (bridge.authToken) {
+                    headers['Authorization'] = `Bearer ${bridge.authToken}`;
                 }
                 break;
             case 'apikey':
-                if (bridge.authentication.apiKey && bridge.authentication.header) {
-                    headers[bridge.authentication.header] = bridge.authentication.apiKey;
+                if (bridge.authApiKey && bridge.authHeaderName) {
+                    headers[bridge.authHeaderName] = bridge.authApiKey;
                 }
                 break;
             case 'basic':
-                if (bridge.authentication.username && bridge.authentication.password) {
-                    const credentials = btoa(`${bridge.authentication.username}:${bridge.authentication.password}`);
+                if (bridge.authUsername && bridge.authPassword) {
+                    const credentials = btoa(`${bridge.authUsername}:${bridge.authPassword}`);
                     headers['Authorization'] = `Basic ${credentials}`;
                 }
                 break;

@@ -41,9 +41,9 @@ export default function Dashboard() {
       if (editingBridge) {
         await updateBridge(bridge.id, bridge);
       } else {
-        // Generate unique ID if not provided
+        // Generate unique ID if not provided (should be UUID)
         if (!bridge.id) {
-          bridge.id = `bridge-${Date.now()}`;
+          bridge.id = crypto.randomUUID();
         }
         await createBridge(bridge);
       }
@@ -58,9 +58,7 @@ export default function Dashboard() {
   const createNewBridge = () => {
     setEditingBridge(undefined);
     setShowBridgeForm(true);
-  };
-
-  const runningBridges = bridges.filter(b => b.enabled).length;
+  }; const runningBridges = bridges.filter(b => b.enabled).length;
   const activeBridges = bridges.filter(b => b.enabled);
 
   return (

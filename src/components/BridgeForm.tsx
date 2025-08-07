@@ -1,15 +1,18 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { BridgeConfig } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, Plus, Save, TestTube, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Info, Lightbulb, Plus, Save, TestTube, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -70,6 +73,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
     const [activeTab, setActiveTab] = useState('bridge');
     const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
 
     const form = useForm<BridgeFormData>({
         resolver: zodResolver(bridgeFormSchema),
@@ -353,426 +357,711 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        {bridge ? 'Edit Bridge' : 'Create New Bridge'}
-                        {hasUnsavedChanges && (
-                            <div className="flex items-center gap-1 text-orange-600">
-                                <AlertTriangle className="h-4 w-4" />
-                                <span className="text-sm">Unsaved changes</span>
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+                <DialogHeader className="space-y-2">
+                    <DialogTitle className="flex items-center justify-between text-lg">
+                        <span className="flex items-center gap-2">
+                            {bridge ? 'Edit Bridge' : 'Create New Bridge'}
+                            {hasUnsavedChanges && (
+                                <Badge variant="outline" className="text-amber-600 border-amber-300">
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    Unsaved
+                                </Badge>
+                            )}
+                        </span>
+                    </DialogTitle>
+                    <DialogDescription className="text-sm text-zinc-600">
+                        Transform your REST API into an MCP server that AI assistants can use.
+                    </DialogDescription>
+
+                    {/* Collapsible Quick Setup Guide */}
+                    <div className="border border-zinc-200 rounded-lg">
+                        <button
+                            type="button"
+                            onClick={() => setShowGuide(!showGuide)}
+                            className="w-full flex items-center justify-between p-3 text-left hover:bg-zinc-50 transition-colors rounded-lg"
+                        >
+                            <div className="flex items-center gap-2">
+                                <div className="p-1 bg-zinc-100 rounded">
+                                    <Lightbulb className="h-3 w-3 text-zinc-600" />
+                                </div>
+                                <h4 className="font-medium text-sm text-zinc-900">Quick Setup Guide</h4>
+                            </div>
+                            {showGuide ? (
+                                <ChevronUp className="h-4 w-4 text-zinc-500" />
+                            ) : (
+                                <ChevronDown className="h-4 w-4 text-zinc-500" />
+                            )}
+                        </button>
+
+                        {showGuide && (
+                            <div className="px-3 pb-3">
+                                <div className="space-y-1 text-xs text-zinc-700">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-zinc-400" />
+                                        Fill in basic info in <strong>Bridge Configuration</strong>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-zinc-400" />
+                                        Add your API details and endpoints in <strong>API Configuration</strong>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-zinc-400" />
+                                        Save to create your MCP server
+                                    </div>
+                                </div>
                             </div>
                         )}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Configure your API bridge to convert REST endpoints into MCP tools.
-                        {hasUnsavedChanges && (
-                            <span className="block text-orange-600 mt-1">
-                                Make sure to save your changes before closing.
-                            </span>
-                        )}
-                    </DialogDescription>
+                    </div>
                 </DialogHeader>
 
-                <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="bridge" className={form.formState.errors.name || form.formState.errors.slug || form.formState.errors.routing ? 'text-red-600' : ''}>
-                                Bridge Configuration
-                                {(form.formState.errors.name || form.formState.errors.slug || form.formState.errors.routing) && (
-                                    <AlertTriangle className="h-3 w-3 ml-1" />
-                                )}
-                            </TabsTrigger>
-                            <TabsTrigger value="api" className={form.formState.errors.apiConfig?.name || form.formState.errors.apiConfig?.baseUrl || form.formState.errors.apiConfig?.endpoints ? 'text-red-600' : ''}>
-                                API Configuration
-                                {(form.formState.errors.apiConfig?.name || form.formState.errors.apiConfig?.baseUrl || form.formState.errors.apiConfig?.endpoints) && (
-                                    <AlertTriangle className="h-3 w-3 ml-1" />
-                                )}
-                            </TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="bridge" className="space-y-6">
-                            {/* Basic Bridge Information */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">Bridge Information</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Bridge Name</Label>
-                                        <Input
-                                            id="name"
-                                            {...form.register('name')}
-                                            placeholder="My API Bridge"
-                                        />
-                                        {form.formState.errors.name && (
-                                            <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                <div className="flex-1 overflow-y-auto">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+                                <TabsTrigger
+                                    value="bridge"
+                                    className={`flex flex-col items-center gap-1 p-2 data-[state=active]:bg-background ${form.formState.errors.name || form.formState.errors.slug || form.formState.errors.routing ? 'text-red-600' : ''
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium ${form.getValues('name') && (form.getValues('slug') || form.getValues('name'))
+                                            ? 'bg-zinc-900 text-white'
+                                            : 'bg-zinc-200 text-zinc-600'
+                                            }`}>
+                                            1
+                                        </div>
+                                        <span className="font-medium text-sm">Bridge Setup</span>
+                                        {(form.formState.errors.name || form.formState.errors.slug || form.formState.errors.routing) && (
+                                            <AlertTriangle className="h-3 w-3" />
                                         )}
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="slug">URL Slug</Label>
-                                        <Input
-                                            id="slug"
-                                            {...form.register('slug')}
-                                            placeholder="my-api-bridge"
-                                            className="font-mono text-sm"
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            Leave empty to auto-generate from name. Will be used in the bridge URL.
-                                        </p>
-                                        {form.formState.errors.slug && (
-                                            <p className="text-sm text-red-500">{form.formState.errors.slug.message}</p>
+                                    <span className="text-xs text-muted-foreground">Name & Basic Info</span>
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="api"
+                                    className={`flex flex-col items-center gap-1 p-2 data-[state=active]:bg-background ${form.formState.errors.apiConfig?.name || form.formState.errors.apiConfig?.baseUrl || form.formState.errors.apiConfig?.endpoints ? 'text-red-600' : ''
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium ${form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl') && endpointFields.length > 0
+                                            ? 'bg-zinc-900 text-white'
+                                            : 'bg-zinc-200 text-zinc-600'
+                                            }`}>
+                                            2
+                                        </div>
+                                        <span className="font-medium text-sm">API Configuration</span>
+                                        {(form.formState.errors.apiConfig?.name || form.formState.errors.apiConfig?.baseUrl || form.formState.errors.apiConfig?.endpoints) && (
+                                            <AlertTriangle className="h-3 w-3" />
                                         )}
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="description">Description</Label>
-                                    <Input
-                                        id="description"
-                                        {...form.register('description')}
-                                        placeholder="Describe what this bridge does..."
-                                    />
-                                </div>
-                            </div>
+                                    <span className="text-xs text-muted-foreground">Endpoints & Auth</span>
+                                </TabsTrigger>
+                            </TabsList>
 
-                            {/* Routing Configuration */}
-                            <div className="space-y-4 border-t pt-6">
-                                <h3 className="text-lg font-semibold">Routing Configuration</h3>
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <h4 className="font-medium text-blue-900 mb-2">Path-Based Routing</h4>
-                                    <p className="text-sm text-blue-700">
-                                        Your bridge will be accessible at: <code className="bg-blue-100 px-1 rounded">/mcp/{form.watch('slug') || 'your-bridge-slug'}</code>
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Routing Type</Label>
-                                        <Select
-                                            value={form.watch('routing.type') || 'path'}
-                                            onValueChange={(value) => form.setValue('routing.type', value as 'path' | 'subdomain' | 'websocket')}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select routing type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="path">Path-based (/mcp/bridge-name)</SelectItem>
-                                                <SelectItem value="subdomain">Subdomain (bridge.domain.com)</SelectItem>
-                                                <SelectItem value="websocket">WebSocket (/ws/bridge-name)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {form.watch('routing.type') === 'subdomain' && (
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customDomain">Custom Domain</Label>
-                                            <Input
-                                                id="customDomain"
-                                                {...form.register('routing.customDomain')}
-                                                placeholder="api.yourdomain.com"
+                            <TabsContent value="bridge" className="mt-4 space-y-4">
+                                {/* Basic Bridge Information */}
+                                <Card>
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <div className="p-1.5 bg-zinc-100 rounded">
+                                                <Info className="h-3 w-3 text-zinc-600" />
+                                            </div>
+                                            Bridge Information
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="name" className="text-sm font-medium">
+                                                    Bridge Name <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="name"
+                                                    {...form.register('name')}
+                                                    placeholder="My API Bridge"
+                                                    className={form.formState.errors.name ? 'border-red-300 focus:border-red-500 h-9' : 'h-9'}
+                                                />
+                                                {form.formState.errors.name && (
+                                                    <p className="text-xs text-red-500 flex items-center gap-1">
+                                                        <AlertTriangle className="h-3 w-3" />
+                                                        {form.formState.errors.name.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="slug" className="text-sm font-medium">URL Slug</Label>
+                                                <Input
+                                                    id="slug"
+                                                    {...form.register('slug')}
+                                                    placeholder="my-api-bridge"
+                                                    className="font-mono text-sm h-9"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Leave empty to auto-generate from name. Used in bridge URL.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                                            <Textarea
+                                                id="description"
+                                                {...form.register('description')}
+                                                placeholder="Describe what this bridge does..."
+                                                rows={2}
+                                                className="resize-none"
                                             />
-                                            <p className="text-xs text-muted-foreground">
-                                                Optional custom domain for subdomain routing
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Routing Configuration */}
+                                <Card>
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <div className="p-1.5 bg-zinc-100 rounded">
+                                                <ArrowRight className="h-3 w-3 text-zinc-600" />
+                                            </div>
+                                            Routing Configuration
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-3">
+                                            <h4 className="font-medium text-zinc-900 mb-1 flex items-center gap-2 text-sm">
+                                                <CheckCircle2 className="h-3 w-3 text-zinc-600" />
+                                                Path-Based Routing
+                                            </h4>
+                                            <p className="text-xs text-zinc-700">
+                                                Your bridge will be accessible at:
+                                                <code className="bg-zinc-200 px-1.5 py-0.5 rounded ml-1 font-mono text-zinc-800 text-xs">
+                                                    /mcp/{form.watch('slug') || form.watch('name')?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'your-bridge-slug'}
+                                                </code>
                                             </p>
                                         </div>
-                                    )}
 
-                                    {(form.watch('routing.type') === 'path' || form.watch('routing.type') === 'websocket') && (
-                                        <div className="space-y-2">
-                                            <Label htmlFor="pathPrefix">Path Prefix</Label>
-                                            <Input
-                                                id="pathPrefix"
-                                                {...form.register('routing.pathPrefix')}
-                                                placeholder="/api/v1"
-                                            />
-                                            <p className="text-xs text-muted-foreground">
-                                                Optional prefix to add before the bridge path
-                                            </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-sm font-medium">Routing Type</Label>
+                                                <Select
+                                                    value={form.watch('routing.type') || 'path'}
+                                                    onValueChange={(value) => form.setValue('routing.type', value as 'path' | 'subdomain' | 'websocket')}
+                                                >
+                                                    <SelectTrigger className="h-9">
+                                                        <SelectValue placeholder="Select routing type" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="path">Path-based (/mcp/bridge-name)</SelectItem>
+                                                        <SelectItem value="subdomain">Subdomain (bridge.domain.com)</SelectItem>
+                                                        <SelectItem value="websocket">WebSocket (/ws/bridge-name)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {form.watch('routing.type') === 'path' && (
+                                                <div className="space-y-1.5">
+                                                    <Label htmlFor="pathPrefix" className="text-sm font-medium">Path Prefix</Label>
+                                                    <Input
+                                                        id="pathPrefix"
+                                                        {...form.register('routing.pathPrefix')}
+                                                        placeholder="/api/v1"
+                                                        className="font-mono text-sm h-9"
+                                                    />
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Optional prefix to add before the bridge path
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            </div>
+                                    </CardContent>
+                                </Card>
 
-                            {/* Access Control */}
-                            <div className="space-y-4 border-t pt-6">
-                                <h3 className="text-lg font-semibold">Access Control</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id="publicAccess"
-                                            {...form.register('access.public')}
-                                            className="rounded"
-                                        />
-                                        <Label htmlFor="publicAccess">Public Access</Label>
-                                    </div>
+                                {/* Access Control */}
+                                <Card>
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <div className="p-1.5 bg-zinc-100 rounded">
+                                                <CheckCircle2 className="h-3 w-3 text-zinc-600" />
+                                            </div>
+                                            Access Control
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="publicAccess"
+                                                    checked={form.watch('access.public')}
+                                                    onChange={(e) => form.setValue('access.public', e.target.checked)}
+                                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <Label htmlFor="publicAccess" className="text-sm font-medium cursor-pointer">
+                                                    Public Access
+                                                </Label>
+                                            </div>
 
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id="authRequired"
-                                            {...form.register('access.authRequired')}
-                                            className="rounded"
-                                        />
-                                        <Label htmlFor="authRequired">Require Authentication</Label>
-                                    </div>
-                                </div>
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="authRequired"
+                                                    checked={form.watch('access.authRequired')}
+                                                    onChange={(e) => form.setValue('access.authRequired', e.target.checked)}
+                                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <Label htmlFor="authRequired" className="text-sm font-medium cursor-pointer">
+                                                    Require Authentication
+                                                </Label>
+                                            </div>
+                                        </div>
 
-                                {form.watch('access.authRequired') && (
-                                    <div className="space-y-2">
-                                        <Label htmlFor="apiKey">API Key</Label>
-                                        <Input
-                                            id="apiKey"
-                                            {...form.register('access.apiKey')}
-                                            placeholder="Enter API key for access control"
-                                            type="password"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="api" className="space-y-6">
-                            {/* API Configuration */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">API Configuration</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="apiName">API Name</Label>
-                                        <Input
-                                            id="apiName"
-                                            {...form.register('apiConfig.name')}
-                                            placeholder="My REST API"
-                                        />
-                                        {form.formState.errors.apiConfig?.name && (
-                                            <p className="text-sm text-red-500">{form.formState.errors.apiConfig.name.message}</p>
+                                        {form.watch('access.authRequired') && (
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="apiKey" className="text-sm font-medium">API Key</Label>
+                                                <Input
+                                                    id="apiKey"
+                                                    {...form.register('access.apiKey')}
+                                                    placeholder="Enter API key for access control"
+                                                    type="password"
+                                                    className="h-9"
+                                                />
+                                            </div>
                                         )}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="baseUrl">Base URL</Label>
-                                        <Input
-                                            id="baseUrl"
-                                            {...form.register('apiConfig.baseUrl')}
-                                            placeholder="https://api.example.com"
-                                        />
-                                        {form.formState.errors.apiConfig?.baseUrl && (
-                                            <p className="text-sm text-red-500">{form.formState.errors.apiConfig.baseUrl.message}</p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="apiDescription">API Description</Label>
-                                    <Input
-                                        id="apiDescription"
-                                        {...form.register('apiConfig.description')}
-                                        placeholder="Describe the API..."
-                                    />
-                                </div>
-                            </div>
+                                    </CardContent>
+                                </Card>
 
-                            {/* Authentication */}
-                            <div className="space-y-4 border-t pt-6">
-                                <h3 className="text-lg font-semibold">Authentication</h3>
-                                <div className="space-y-2">
-                                    <Label>Authentication Type</Label>
-                                    <Select
-                                        value={form.watch('apiConfig.authentication.type')}
-                                        onValueChange={(value) => form.setValue('apiConfig.authentication.type', value as 'none' | 'bearer' | 'apikey' | 'basic')}
+                                {/* Next Step Button */}
+                                <div className="flex justify-end pt-2">
+                                    <Button
+                                        type="button"
+                                        onClick={() => setActiveTab('api')}
+                                        className="flex items-center gap-2"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select authentication type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">None</SelectItem>
-                                            <SelectItem value="bearer">Bearer Token</SelectItem>
-                                            <SelectItem value="apikey">API Key</SelectItem>
-                                            <SelectItem value="basic">Basic Auth</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {form.watch('apiConfig.authentication.type') === 'bearer' && (
-                                    <div className="space-y-2">
-                                        <Label htmlFor="token">Bearer Token</Label>
-                                        <Input
-                                            id="token"
-                                            type="password"
-                                            {...form.register('apiConfig.authentication.token')}
-                                            placeholder="Enter bearer token"
-                                        />
-                                    </div>
-                                )}
-
-                                {form.watch('apiConfig.authentication.type') === 'apikey' && (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="apiKey">API Key</Label>
-                                            <Input
-                                                id="apiKey"
-                                                type="password"
-                                                {...form.register('apiConfig.authentication.apiKey')}
-                                                placeholder="Enter API key"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="headerName">Header Name</Label>
-                                            <Input
-                                                id="headerName"
-                                                {...form.register('apiConfig.authentication.headerName')}
-                                                placeholder="X-API-Key"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {form.watch('apiConfig.authentication.type') === 'basic' && (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="username">Username</Label>
-                                            <Input
-                                                id="username"
-                                                {...form.register('apiConfig.authentication.username')}
-                                                placeholder="Enter username"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="password">Password</Label>
-                                            <Input
-                                                id="password"
-                                                type="password"
-                                                {...form.register('apiConfig.authentication.password')}
-                                                placeholder="Enter password"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* API Endpoints */}
-                            <div className="space-y-4 border-t pt-6">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="text-lg font-semibold">API Endpoints</h3>
-                                    <Button type="button" onClick={addEndpoint} size="sm">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Endpoint
+                                        Next: Configure API
+                                        <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 </div>
+                            </TabsContent>
 
-                                <div className="space-y-4">
-                                    {endpointFields.map((field, index) => (
-                                        <Card key={field.id}>
-                                            <CardHeader className="pb-3">
-                                                <div className="flex justify-between items-center">
-                                                    <CardTitle className="text-base">Endpoint {index + 1}</CardTitle>
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => testEndpoint(index)}
-                                                            disabled={testingEndpoint === `endpoint-${index}`}
-                                                        >
-                                                            <TestTube className="h-4 w-4 mr-2" />
-                                                            {testingEndpoint === `endpoint-${index}` ? 'Testing...' : 'Test'}
-                                                        </Button>
-                                                        <Button
-                                                            type="button"
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() => removeEndpoint(index)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="space-y-4">
-                                                <div className="grid grid-cols-3 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label>Name</Label>
-                                                        <Input
-                                                            {...form.register(`apiConfig.endpoints.${index}.name`)}
-                                                            placeholder="getUserById"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Method</Label>
-                                                        <Select
-                                                            value={form.watch(`apiConfig.endpoints.${index}.method`)}
-                                                            onValueChange={(value) => form.setValue(`apiConfig.endpoints.${index}.method`, value as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH')}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="GET">GET</SelectItem>
-                                                                <SelectItem value="POST">POST</SelectItem>
-                                                                <SelectItem value="PUT">PUT</SelectItem>
-                                                                <SelectItem value="DELETE">DELETE</SelectItem>
-                                                                <SelectItem value="PATCH">PATCH</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Path</Label>
-                                                        <Input
-                                                            {...form.register(`apiConfig.endpoints.${index}.path`)}
-                                                            placeholder="/users/{id}"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Description</Label>
+                            <TabsContent value="api" className="mt-4 space-y-4">
+                                {/* API Configuration */}
+                                <Card>
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <div className="p-1.5 bg-zinc-100 rounded">
+                                                <Info className="h-3 w-3 text-zinc-600" />
+                                            </div>
+                                            API Configuration
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="apiName" className="text-sm font-medium">
+                                                    API Name <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="apiName"
+                                                    {...form.register('apiConfig.name')}
+                                                    placeholder="My REST API"
+                                                    className={form.formState.errors.apiConfig?.name ? 'border-red-300 focus:border-red-500 h-9' : 'h-9'}
+                                                />
+                                                {form.formState.errors.apiConfig?.name && (
+                                                    <p className="text-xs text-red-500 flex items-center gap-1">
+                                                        <AlertTriangle className="h-3 w-3" />
+                                                        {form.formState.errors.apiConfig.name.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="baseUrl" className="text-sm font-medium">
+                                                    Base URL <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="baseUrl"
+                                                    {...form.register('apiConfig.baseUrl')}
+                                                    placeholder="https://api.example.com"
+                                                    className={form.formState.errors.apiConfig?.baseUrl ? 'border-red-300 focus:border-red-500 h-9' : 'h-9'}
+                                                />
+                                                {form.formState.errors.apiConfig?.baseUrl && (
+                                                    <p className="text-xs text-red-500 flex items-center gap-1">
+                                                        <AlertTriangle className="h-3 w-3" />
+                                                        {form.formState.errors.apiConfig.baseUrl.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label htmlFor="apiDescription" className="text-sm font-medium">API Description</Label>
+                                            <Textarea
+                                                id="apiDescription"
+                                                {...form.register('apiConfig.description')}
+                                                placeholder="Describe the API..."
+                                                rows={2}
+                                                className="resize-none"
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Authentication */}
+                                <Card>
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <div className="p-1.5 bg-zinc-100 rounded">
+                                                <CheckCircle2 className="h-3 w-3 text-zinc-600" />
+                                            </div>
+                                            Authentication
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-sm font-medium">Authentication Type</Label>
+                                            <Select
+                                                value={form.watch('apiConfig.authentication.type')}
+                                                onValueChange={(value) => form.setValue('apiConfig.authentication.type', value as 'none' | 'bearer' | 'apikey' | 'basic')}
+                                            >
+                                                <SelectTrigger className="h-9">
+                                                    <SelectValue placeholder="Select authentication type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="none">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-zinc-400" />
+                                                            None
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="bearer">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-zinc-500" />
+                                                            Bearer Token
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="apikey">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-zinc-600" />
+                                                            API Key
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="basic">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-zinc-700" />
+                                                            Basic Auth
+                                                        </div>
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        {form.watch('apiConfig.authentication.type') === 'bearer' && (
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="token" className="text-sm font-medium">Bearer Token</Label>
+                                                <Input
+                                                    id="token"
+                                                    type="password"
+                                                    {...form.register('apiConfig.authentication.token')}
+                                                    placeholder="Enter bearer token"
+                                                    className="h-9"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {form.watch('apiConfig.authentication.type') === 'apikey' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <Label htmlFor="apiKey" className="text-sm font-medium">API Key</Label>
                                                     <Input
-                                                        {...form.register(`apiConfig.endpoints.${index}.description`)}
-                                                        placeholder="Describe what this endpoint does..."
+                                                        id="apiKey"
+                                                        type="password"
+                                                        {...form.register('apiConfig.authentication.apiKey')}
+                                                        placeholder="Enter API key"
+                                                        className="h-9"
                                                     />
                                                 </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
+                                                <div className="space-y-1.5">
+                                                    <Label htmlFor="headerName" className="text-sm font-medium">Header Name</Label>
+                                                    <Input
+                                                        id="headerName"
+                                                        {...form.register('apiConfig.authentication.headerName')}
+                                                        placeholder="X-API-Key"
+                                                        className="h-9"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
 
-                    <DialogFooter className="mt-6">
-                        <div className="flex gap-2 w-full">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleClose}
-                            >
-                                Cancel
-                            </Button>
-                            <div className="flex-1" />
+                                        {form.watch('apiConfig.authentication.type') === 'basic' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+                                                    <Input
+                                                        id="username"
+                                                        {...form.register('apiConfig.authentication.username')}
+                                                        placeholder="Enter username"
+                                                        className="h-9"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                                                    <Input
+                                                        id="password"
+                                                        type="password"
+                                                        {...form.register('apiConfig.authentication.password')}
+                                                        placeholder="Enter password"
+                                                        className="h-9"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* API Endpoints */}
+                                <Card>
+                                    <CardHeader className="pb-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <CardTitle className="flex items-center gap-2 text-base">
+                                                    <div className="p-1.5 bg-zinc-100 rounded">
+                                                        <ArrowRight className="h-3 w-3 text-zinc-600" />
+                                                    </div>
+                                                    API Endpoints → MCP Tools
+                                                </CardTitle>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Each endpoint becomes an MCP tool that AI assistants can use.
+                                                </p>
+                                            </div>
+                                            <Button type="button" onClick={addEndpoint} size="sm" className="shrink-0">
+                                                <Plus className="h-3 w-3 mr-1" />
+                                                Add
+                                            </Button>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                        {endpointFields.length === 0 && (
+                                            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                                                <div className="text-muted-foreground">
+                                                    <div className="text-2xl mb-2">🔗</div>
+                                                    <div className="text-sm font-medium mb-1">No endpoints added yet</div>
+                                                    <div className="text-xs mb-3">Click &quot;Add&quot; to create your first MCP tool</div>
+                                                    <Button type="button" onClick={addEndpoint} variant="outline" size="sm">
+                                                        <Plus className="h-3 w-3 mr-1" />
+                                                        Add Your First Endpoint
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-3">
+                                            {endpointFields.map((field, index) => (
+                                                <Card key={field.id} className="border-l-2 border-l-zinc-300">
+                                                    <CardHeader className="pb-2">
+                                                        <div className="flex justify-between items-center">
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge variant="outline" className="px-1.5 py-0.5 text-xs">
+                                                                    #{index + 1}
+                                                                </Badge>
+                                                                <CardTitle className="text-sm">
+                                                                    {form.watch(`apiConfig.endpoints.${index}.name`) || `Endpoint ${index + 1}`}
+                                                                </CardTitle>
+                                                                <Badge
+                                                                    variant={form.watch(`apiConfig.endpoints.${index}.method`) === 'GET' ? 'secondary' : 'default'}
+                                                                    className="text-xs px-1.5 py-0.5"
+                                                                >
+                                                                    {form.watch(`apiConfig.endpoints.${index}.method`) || 'GET'}
+                                                                </Badge>
+                                                            </div>
+                                                            <div className="flex gap-1">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => testEndpoint(index)}
+                                                                    disabled={testingEndpoint === `endpoint-${index}`}
+                                                                    className="h-7 px-2"
+                                                                >
+                                                                    <TestTube className="h-3 w-3" />
+                                                                </Button>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="destructive"
+                                                                    size="sm"
+                                                                    onClick={() => removeEndpoint(index)}
+                                                                    className="h-7 px-2"
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent className="space-y-3">
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs font-medium">
+                                                                    Tool Name <span className="text-red-500">*</span>
+                                                                </Label>
+                                                                <Input
+                                                                    {...form.register(`apiConfig.endpoints.${index}.name`)}
+                                                                    placeholder="Get User Profile"
+                                                                    className="h-8 text-sm"
+                                                                />
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    What AI assistants will see
+                                                                </p>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs font-medium">Method</Label>
+                                                                <Select
+                                                                    value={form.watch(`apiConfig.endpoints.${index}.method`)}
+                                                                    onValueChange={(value) => form.setValue(`apiConfig.endpoints.${index}.method`, value as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH')}
+                                                                >
+                                                                    <SelectTrigger className="h-8">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="GET">GET</SelectItem>
+                                                                        <SelectItem value="POST">POST</SelectItem>
+                                                                        <SelectItem value="PUT">PUT</SelectItem>
+                                                                        <SelectItem value="DELETE">DELETE</SelectItem>
+                                                                        <SelectItem value="PATCH">PATCH</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-xs font-medium">
+                                                                    API Path <span className="text-red-500">*</span>
+                                                                </Label>
+                                                                <Input
+                                                                    {...form.register(`apiConfig.endpoints.${index}.path`)}
+                                                                    placeholder="/users/{id}"
+                                                                    className="font-mono text-sm h-8"
+                                                                />
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    Use {'{}'} for parameters
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-xs font-medium">Tool Description</Label>
+                                                            <Textarea
+                                                                {...form.register(`apiConfig.endpoints.${index}.description`)}
+                                                                placeholder="Retrieve user profile information by ID"
+                                                                rows={2}
+                                                                className="resize-none text-sm"
+                                                            />
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                        </Tabs>
+
+                        {/* Progress Indicator */}
+                        <Card className="mt-4 bg-zinc-50">
+                            <CardContent className="p-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-sm font-medium text-zinc-700">Setup Progress</div>
+                                    <div className="text-xs text-zinc-500">
+                                        {[
+                                            form.getValues('name') && (form.getValues('slug') || form.getValues('name')),
+                                            form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl'),
+                                            endpointFields.length > 0
+                                        ].filter(Boolean).length} / 3 steps completed
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-3 mt-2">
+                                    <div className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${form.getValues('name') && (form.getValues('slug') || form.getValues('name'))
+                                        ? 'bg-zinc-900 text-white'
+                                        : 'bg-zinc-200 text-zinc-600'
+                                        }`}>
+                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold ${form.getValues('name') && (form.getValues('slug') || form.getValues('name'))
+                                            ? 'bg-white text-zinc-900'
+                                            : 'bg-zinc-300 text-zinc-600'
+                                            }`}>
+                                            {form.getValues('name') && (form.getValues('slug') || form.getValues('name')) ? '✓' : '1'}
+                                        </div>
+                                        <span className="text-xs font-medium">Bridge Info</span>
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl')
+                                        ? 'bg-zinc-900 text-white'
+                                        : 'bg-zinc-200 text-zinc-600'
+                                        }`}>
+                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold ${form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl')
+                                            ? 'bg-white text-zinc-900'
+                                            : 'bg-zinc-300 text-zinc-600'
+                                            }`}>
+                                            {form.getValues('apiConfig.name') && form.getValues('apiConfig.baseUrl') ? '✓' : '2'}
+                                        </div>
+                                        <span className="text-xs font-medium">API Config</span>
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${endpointFields.length > 0
+                                        ? 'bg-zinc-900 text-white'
+                                        : 'bg-zinc-200 text-zinc-600'
+                                        }`}>
+                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold ${endpointFields.length > 0
+                                            ? 'bg-white text-zinc-900'
+                                            : 'bg-zinc-300 text-zinc-600'
+                                            }`}>
+                                            {endpointFields.length > 0 ? '✓' : '3'}
+                                        </div>
+                                        <span className="text-xs font-medium">Endpoints ({endpointFields.length})</span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </form>
+                </div>
+
+                <Separator />
+
+                <DialogFooter className="p-4">
+                    <div className="flex items-center justify-between w-full">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleClose}
+                            size="sm"
+                        >
+                            Cancel
+                        </Button>
+
+                        <div className="flex items-center gap-2">
                             {bridge && (
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={form.handleSubmit(onSaveAsCopy)}
                                     disabled={!form.formState.isValid || form.formState.isSubmitting}
+                                    size="sm"
                                 >
-                                    <Plus className="h-4 w-4 mr-2" />
+                                    <Plus className="h-3 w-3 mr-1" />
                                     Save as Copy
                                 </Button>
                             )}
                             <Button
                                 type="submit"
-                                disabled={!form.formState.isValid || form.formState.isSubmitting}
-                                className={hasUnsavedChanges ? 'bg-orange-600 hover:bg-orange-700' : ''}
+                                onClick={form.handleSubmit(onSubmit)}
+                                disabled={!form.formState.isValid || form.formState.isSubmitting || endpointFields.length === 0}
+                                className={`min-w-[120px] ${hasUnsavedChanges ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
+                                size="sm"
                             >
-                                <Save className="h-4 w-4 mr-2" />
+                                <Save className="h-3 w-3 mr-1" />
                                 {form.formState.isSubmitting
                                     ? 'Saving...'
                                     : bridge
                                         ? hasUnsavedChanges
                                             ? 'Save Changes'
                                             : 'Update Bridge'
-                                        : 'Create Bridge'
+                                        : endpointFields.length === 0
+                                            ? 'Add Endpoints First'
+                                            : 'Create Bridge'
                                 }
                             </Button>
                         </div>
-                    </DialogFooter>
-                </form>
+                    </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

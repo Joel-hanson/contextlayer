@@ -37,11 +37,9 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
 
         // Validate the bridge configuration
-        const validatedConfig = BridgeConfigSchema.parse(body)
-
-        // Generate unique ID if not provided
+        const validatedConfig = BridgeConfigSchema.parse(body)        // Generate unique ID if not provided (should be UUID)
         if (!validatedConfig.id) {
-            validatedConfig.id = `bridge-${Date.now()}`
+            validatedConfig.id = crypto.randomUUID()
         }
 
         // Set timestamps
