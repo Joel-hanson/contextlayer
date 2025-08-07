@@ -106,8 +106,13 @@ async function handleMcpJsonRpc(
         }
 
         // Check bridge access control authentication
-        if (bridge.authRequired) {
-            if (!bridge.apiKey) {
+        const accessConfig = bridge.accessConfig as {
+            authRequired?: boolean;
+            apiKey?: string;
+        } | null;
+
+        if (accessConfig?.authRequired) {
+            if (!accessConfig.apiKey) {
                 return NextResponse.json(
                     {
                         jsonrpc: '2.0',
@@ -145,7 +150,7 @@ async function handleMcpJsonRpc(
             }
 
             // Validate the API key
-            if (!providedApiKey || providedApiKey !== bridge.apiKey) {
+            if (!providedApiKey || providedApiKey !== accessConfig.apiKey) {
                 return NextResponse.json(
                     {
                         jsonrpc: '2.0',
@@ -425,25 +430,38 @@ async function executeApiCall(bridge: any, endpoint: any, args: any) {
         });
     }
 
-    // Add authentication - Updated to work with database structure
-    if (bridge.authType && bridge.authType !== 'none') {
-        switch (bridge.authType) {
-            case 'bearer':
-                if (bridge.authToken) {
-                    headers['Authorization'] = `Bearer ${bridge.authToken}`;
-                }
-                break;
-            case 'apikey':
-                if (bridge.authApiKey && bridge.authHeaderName) {
-                    headers[bridge.authHeaderName] = bridge.authApiKey;
-                }
-                break;
-            case 'basic':
-                if (bridge.authUsername && bridge.authPassword) {
-                    const credentials = btoa(`${bridge.authUsername}:${bridge.authPassword}`);
-                    headers['Authorization'] = `Basic ${credentials}`;
-                }
-                break;
+    // Add authentication - Updated to work with new authConfig structure
+    if (bridge.authConfig) {
+        const authConfig = bridge.authConfig as {
+            type: 'none' | 'bearer' | 'apikey' | 'basic';
+            token?: string;
+            apiKey?: string;
+            username?: string;
+            password?: string;
+            headerName?: string;
+        };
+
+        if (authConfig.type && authConfig.type !== 'none') {
+            switch (authConfig.type) {
+                case 'bearer':
+                    if (authConfig.token) {
+                        headers['Authorization'] = `Bearer ${authConfig.token}`;
+                    }
+                    break;
+                case 'apikey':
+                    if (authConfig.apiKey && authConfig.headerName) {
+                        headers[authConfig.headerName] = authConfig.apiKey;
+                    } else if (authConfig.apiKey) {
+                        headers['X-API-Key'] = authConfig.apiKey;
+                    }
+                    break;
+                case 'basic':
+                    if (authConfig.username && authConfig.password) {
+                        const credentials = btoa(`${authConfig.username}:${authConfig.password}`);
+                        headers['Authorization'] = `Basic ${credentials}`;
+                    }
+                    break;
+            }
         }
     }
 

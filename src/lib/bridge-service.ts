@@ -1,122 +1,126 @@
-import { ApiEndpoint, AuthenticationType, Bridge, BridgeLog, BridgeStatus, HttpMethod } from '@prisma/client'
-import prisma from './prisma'
-import { BridgeConfig } from './types'
-
-// Type for endpoint parameter
-interface EndpointParameter {
-    name: string
-    type: string
-    required: boolean
-    description?: string
-    defaultValue?: unknown
-}
+import { ApiEndpoint, Bridge, BridgeLog, BridgeStatus, HttpMethod } from '@prisma/client';
+import prisma from './prisma';
+import { BridgeConfig } from './types';
 
 // Transform Prisma Bridge to BridgeConfig
 function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint[] }): BridgeConfig {
+    // Parse auth config from JSON
+    const authConfig = bridge.authConfig as {
+        type: 'none' | 'bearer' | 'apikey' | 'basic';
+        token?: string;
+        apiKey?: string;
+        username?: string;
+        password?: string;
+        headerName?: string;
+    } | null;
+
     return {
         id: bridge.id,
-        slug: bridge.slug || bridge.id, // Fallback to id if slug is somehow missing
         name: bridge.name,
+        slug: bridge.slug,
         description: bridge.description || '',
+        enabled: bridge.enabled,
+        createdAt: bridge.createdAt.toISOString(),
+        updatedAt: bridge.updatedAt.toISOString(),
         apiConfig: {
             id: bridge.id,
             name: bridge.name,
             baseUrl: bridge.baseUrl,
             description: bridge.description || '',
-            headers: bridge.headers as Record<string, string> || {},
-            authentication: {
-                type: bridge.authType as 'none' | 'bearer' | 'apikey' | 'basic',
-                token: bridge.authToken || undefined,
-                apiKey: bridge.authApiKey || undefined,
-                username: bridge.authUsername || undefined,
-                password: bridge.authPassword || undefined,
-                headerName: bridge.authHeaderName || undefined,
-            },
-            endpoints: bridge.endpoints.map((endpoint: ApiEndpoint) => ({
-                id: endpoint.id,
-                name: endpoint.name,
-                method: endpoint.method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
-                path: endpoint.path,
-                description: endpoint.description || undefined,
-                parameters: endpoint.parameters ? (endpoint.parameters as unknown as EndpointParameter[]).map(p => ({
-                    name: p.name,
-                    type: p.type as 'string' | 'number' | 'boolean' | 'object' | 'array',
-                    required: p.required,
-                    description: p.description,
-                    defaultValue: p.defaultValue,
-                })) : [],
-                requestBody: endpoint.requestBody as { contentType: string; schema: unknown } | undefined,
-                responseSchema: endpoint.responseSchema as unknown,
-            })),
+            headers: bridge.headers as Record<string, string> || undefined,
+            authentication: authConfig || { type: 'none' },
+            endpoints: bridge.endpoints.map(endpoint => {
+                const config = endpoint.config as {
+                    parameters?: unknown[];
+                    requestBody?: unknown;
+                    responseSchema?: unknown;
+                } | null;
+                return {
+                    id: endpoint.id,
+                    name: endpoint.name,
+                    method: endpoint.method,
+                    path: endpoint.path,
+                    description: endpoint.description || '',
+                    parameters: (config?.parameters || []) as Array<{
+                        name: string;
+                        type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+                        required: boolean;
+                        description?: string;
+                        defaultValue?: unknown;
+                    }>,
+                    requestBody: config?.requestBody as { contentType: string; schema?: unknown } | undefined,
+                    responseSchema: config?.responseSchema,
+                }
+            }),
         },
-        mcpTools: [], // Generated dynamically
-        enabled: bridge.enabled,
-
-        // Path-based routing configuration
+        mcpTools: [], // This will be generated from endpoints
         routing: {
-            type: bridge.routingType as 'path' | 'subdomain' | 'websocket',
-            customDomain: bridge.customDomain || undefined,
-            pathPrefix: bridge.pathPrefix || undefined,
+            type: 'path' as const,
+            customDomain: undefined,
+            pathPrefix: undefined,
         },
-
-        // Access control
         access: {
-            public: bridge.isPublic,
-            allowedOrigins: bridge.allowedOrigins as string[] || undefined,
-            authRequired: bridge.authRequired,
-            apiKey: bridge.apiKey || undefined,
+            public: true,
+            allowedOrigins: undefined,
+            authRequired: false,
+            apiKey: undefined,
         },
-
-        // Performance settings
-        performance: bridge.performanceConfig as {
-            rateLimiting: { requestsPerMinute: number; burstLimit: number };
-            caching: { enabled: boolean; ttl: number };
-            timeout: number;
-        } || {
-            rateLimiting: { requestsPerMinute: 60, burstLimit: 10 },
-            caching: { enabled: false, ttl: 300 },
+        performance: {
             timeout: 30000,
-        },
-
-        createdAt: bridge.createdAt.toISOString(),
-        updatedAt: bridge.updatedAt.toISOString(),
+            rateLimiting: { requestsPerMinute: 100, burstLimit: 10 },
+            caching: { enabled: false, ttl: 300 },
+        }
     }
 }
 
-// Transform BridgeConfig to Prisma data
+// Transform BridgeConfig to Prisma Bridge data
 function transformBridgeConfigToPrismaData(config: BridgeConfig) {
     return {
         id: config.id,
         name: config.name,
-        slug: config.slug, // Now always provided as UUID
+        slug: config.slug, // Now required UUID
         description: config.description,
         baseUrl: config.apiConfig.baseUrl,
-        headers: config.apiConfig.headers || {},
-        authType: config.apiConfig.authentication?.type as AuthenticationType || 'none',
-        authToken: config.apiConfig.authentication?.token,
-        authApiKey: config.apiConfig.authentication?.apiKey,
-        authUsername: config.apiConfig.authentication?.username,
-        authPassword: config.apiConfig.authentication?.password,
-        authHeaderName: config.apiConfig.authentication?.headerName,
-        enabled: config.enabled,
 
-        // Path-based routing configuration
-        routingType: config.routing?.type || 'path',
-        customDomain: config.routing?.customDomain,
-        pathPrefix: config.routing?.pathPrefix,
+        // Consolidate auth config - handle null properly for Prisma
+        authConfig: config.apiConfig.authentication && config.apiConfig.authentication.type !== 'none' ? {
+            type: config.apiConfig.authentication.type,
+            token: config.apiConfig.authentication.token,
+            apiKey: config.apiConfig.authentication.apiKey,
+            username: config.apiConfig.authentication.username,
+            password: config.apiConfig.authentication.password,
+            headerName: config.apiConfig.authentication.headerName,
+        } : undefined,
 
-        // Access control
-        isPublic: config.access?.public ?? true,
-        allowedOrigins: config.access?.allowedOrigins || [],
-        authRequired: config.access?.authRequired ?? false,
-        apiKey: config.access?.apiKey,
+        headers: config.apiConfig.headers || undefined,
 
-        // Performance settings as JSONB
-        performanceConfig: config.performance || {
-            rateLimiting: { requestsPerMinute: 60, burstLimit: 10 },
-            caching: { enabled: false, ttl: 300 },
-            timeout: 30000,
+        // Routing config
+        routingConfig: {
+            type: 'path',
+            pathPrefix: null,
+            customDomain: null
         },
+
+        // Access config
+        accessConfig: {
+            isPublic: true,
+            allowedOrigins: [],
+            authRequired: false,
+            apiKey: null
+        },
+
+        // Performance config with defaults
+        performanceConfig: {
+            timeout: 30000,
+            retryAttempts: 3,
+            rateLimiting: false,
+            caching: false
+        },
+
+        enabled: config.enabled || false,
+        status: 'inactive' as const,
+        createdAt: config.createdAt ? new Date(config.createdAt) : new Date(),
+        updatedAt: config.updatedAt ? new Date(config.updatedAt) : new Date(),
     }
 }
 
@@ -178,9 +182,11 @@ export class BridgeService {
                             method: endpoint.method as HttpMethod,
                             path: endpoint.path,
                             description: endpoint.description,
-                            parameters: endpoint.parameters || [],
-                            requestBody: endpoint.requestBody,
-                            responseSchema: endpoint.responseSchema,
+                            config: JSON.parse(JSON.stringify({
+                                parameters: endpoint.parameters || [],
+                                requestBody: endpoint.requestBody,
+                                responseSchema: endpoint.responseSchema,
+                            }))
                         })),
                     },
                 },
@@ -196,9 +202,22 @@ export class BridgeService {
         }
     }
 
-    // Update bridge (with user filtering)
+    // Update bridge (with user filtering) - or create if it doesn't exist
     static async updateBridge(id: string, config: BridgeConfig, userId?: string): Promise<BridgeConfig> {
         try {
+            // First check if the bridge exists
+            const existingBridge = await prisma.bridge.findUnique({
+                where: {
+                    id,
+                    ...(userId && { userId })
+                }
+            })
+
+            // If bridge doesn't exist, create it
+            if (!existingBridge) {
+                return this.createBridge(config, userId!)
+            }
+
             const bridgeData = transformBridgeConfigToPrismaData(config)
 
             // Delete existing endpoints and create new ones (for simplicity)
@@ -220,9 +239,11 @@ export class BridgeService {
                             method: endpoint.method as HttpMethod,
                             path: endpoint.path,
                             description: endpoint.description,
-                            parameters: endpoint.parameters || [],
-                            requestBody: endpoint.requestBody,
-                            responseSchema: endpoint.responseSchema,
+                            config: JSON.parse(JSON.stringify({
+                                parameters: endpoint.parameters || [],
+                                requestBody: endpoint.requestBody,
+                                responseSchema: endpoint.responseSchema,
+                            }))
                         })),
                     },
                 },
@@ -235,6 +256,17 @@ export class BridgeService {
         } catch (error) {
             console.error(`Error updating bridge ${id}:`, error)
             throw new Error('Failed to update bridge')
+        }
+    }
+
+    // Create a copy of an existing bridge with a new ID
+    static async copyBridge(sourceId: string, newConfig: BridgeConfig, userId?: string): Promise<BridgeConfig> {
+        try {
+            // Simply create a new bridge with the new config
+            return this.createBridge(newConfig, userId!)
+        } catch (error) {
+            console.error(`Error copying bridge ${sourceId}:`, error)
+            throw new Error('Failed to copy bridge')
         }
     }
 
@@ -322,13 +354,23 @@ export class BridgeService {
         try {
             await prisma.apiRequest.create({
                 data: {
-                    ...data,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    headers: data.headers as any,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    body: data.body as any,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    response: data.response as any,
+                    bridgeId: data.bridgeId,
+                    endpointId: data.endpointId,
+                    method: data.method,
+                    path: data.path,
+                    requestData: (data.headers || data.body) ? JSON.parse(JSON.stringify({
+                        headers: data.headers || {},
+                        body: data.body || {},
+                        query: {}
+                    })) : null,
+                    responseData: data.response ? JSON.parse(JSON.stringify({
+                        body: data.response,
+                        headers: {},
+                        statusCode: data.statusCode || 0
+                    })) : null,
+                    responseTime: data.responseTime,
+                    success: data.success,
+                    errorMessage: data.errorMessage,
                 },
             })
         } catch (error) {

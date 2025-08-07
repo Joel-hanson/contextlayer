@@ -16,6 +16,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Info, 
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Checkbox } from './ui/checkbox';
 
 const bridgeFormSchema = z.object({
     name: z.string().min(1, 'Bridge name is required'),
@@ -568,12 +569,10 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                                     <CardContent className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="flex items-center space-x-2">
-                                                <input
-                                                    type="checkbox"
+                                                <Checkbox
                                                     id="publicAccess"
                                                     checked={form.watch('access.public')}
-                                                    onChange={(e) => form.setValue('access.public', e.target.checked)}
-                                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    onCheckedChange={(checked) => form.setValue('access.public', !!checked)}
                                                 />
                                                 <Label htmlFor="publicAccess" className="text-sm font-medium cursor-pointer">
                                                     Public Access
@@ -581,12 +580,10 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                                             </div>
 
                                             <div className="flex items-center space-x-2">
-                                                <input
-                                                    type="checkbox"
+                                                <Checkbox
                                                     id="authRequired"
                                                     checked={form.watch('access.authRequired')}
-                                                    onChange={(e) => form.setValue('access.authRequired', e.target.checked)}
-                                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    onCheckedChange={(checked) => form.setValue('access.authRequired', !!checked)}
                                                 />
                                                 <Label htmlFor="authRequired" className="text-sm font-medium cursor-pointer">
                                                     Require Authentication

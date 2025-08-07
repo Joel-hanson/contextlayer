@@ -29,6 +29,9 @@ model User {
     bridges  Bridge[] // User-owned bridges
     settings UserSettings?
 
+    // Indexes
+    @@index([email])
+    @@index([role])
     @@map("users")
 }
 
@@ -118,27 +121,12 @@ enum UserRole {
     MODERATOR
 }
 
-enum AuthenticationType {
-    none
-    bearer
-    apikey
-    basic
-}
-
 enum HttpMethod {
     GET
     POST
     PUT
     DELETE
     PATCH
-}
-
-enum ParameterType {
-    string
-    number
-    boolean
-    object
-    array
 }
 
 enum BridgeStatus {
@@ -148,35 +136,32 @@ enum BridgeStatus {
 }
 
 model Bridge {
-    id             String             @id @default(uuid()) @db.Uuid
-    userId         String             @db.Uuid // Associate bridges with users
-    name           String
-    slug           String // UUID-based identifier for routing
-    description    String?
-    baseUrl        String
-    headers        Json? // Store as JSONB for custom headers
-    authType       AuthenticationType @default(none)
-    authToken      String?
-    authApiKey     String?
-    authUsername   String?
-    authPassword   String?
-    authHeaderName String?
-    enabled        Boolean            @default(false)
-    status         BridgeStatus       @default(inactive)
+    id          String  @id @default(uuid()) @db.Uuid
+    userId      String  @db.Uuid
+    name        String
+    slug        String  @unique // UUID-based identifier for routing
+    description String?
+    baseUrl     String
 
-    // Path-based routing configuration
-    routingType  String  @default("path") // 'path', 'subdomain', 'websocket'
-    customDomain String?
-    pathPrefix   String?
+    // Consolidated authentication config
+    authConfig Json? // { type: 'none|bearer|apikey|basic', token?, apiKey?, username?, password?, headerName? }
 
-    // Access control
-    isPublic       Boolean @default(true)
-    allowedOrigins Json? // Array of allowed origins as JSONB
-    authRequired   Boolean @default(false)
-    apiKey         String?
+    // Request headers
+    headers Json? // Custom headers as JSONB
 
-    // Performance settings stored as JSONB
-    performanceConfig Json? // Rate limiting, caching, timeout settings
+    // Status
+    enabled Boolean      @default(false)
+    status  BridgeStatus @default(inactive)
+
+    // Routing and access control
+    routingConfig Json? // { type: 'path', customDomain?, pathPrefix? }
+    accessConfig  Json? // { isPublic: true, allowedOrigins: [], authRequired: false, apiKey? }
+
+    // Performance settings
+    performanceConfig Json? // { timeout: 30000, retryAttempts: 3, rateLimiting?, caching? }
+
+    // Soft delete support
+    deletedAt DateTime?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -187,26 +172,35 @@ model Bridge {
     logs      BridgeLog[]
     requests  ApiRequest[]
 
+    // Indexes for performance
+    @@index([userId])
+    @@index([slug])
+    @@index([status, enabled])
+    @@index([userId, status])
     @@map("bridges")
 }
 
 model ApiEndpoint {
-    id             String     @id @default(uuid()) @db.Uuid
-    bridgeId       String     @db.Uuid
-    name           String
-    method         HttpMethod
-    path           String
-    description    String?
-    parameters     Json? // Store parameters schema as JSONB
-    requestBody    Json? // Store request body schema as JSONB
-    responseSchema Json? // Store response schema as JSONB
-    createdAt      DateTime   @default(now())
-    updatedAt      DateTime   @updatedAt
+    id          String     @id @default(uuid()) @db.Uuid
+    bridgeId    String     @db.Uuid
+    name        String
+    method      HttpMethod
+    path        String
+    description String?
+
+    // Store all endpoint config as JSON for flexibility
+    config Json? // { parameters: [], requestBody: {}, responseSchema: {}, timeout?: number }
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     // Relations
     bridge   Bridge       @relation(fields: [bridgeId], references: [id], onDelete: Cascade)
     requests ApiRequest[]
 
+    // Indexes
+    @@index([bridgeId])
+    @@index([bridgeId, method, path])
     @@map("api_endpoints")
 }
 
@@ -221,27 +215,38 @@ model BridgeLog {
     // Relations
     bridge Bridge @relation(fields: [bridgeId], references: [id], onDelete: Cascade)
 
+    // Indexes for log queries and cleanup
+    @@index([bridgeId, level, createdAt])
+    @@index([level, createdAt]) // For global log queries
+    @@index([createdAt]) // For cleanup operations
     @@map("bridge_logs")
 }
 
 model ApiRequest {
-    id           String   @id @default(uuid()) @db.Uuid
-    bridgeId     String   @db.Uuid
-    endpointId   String?  @db.Uuid
-    method       String
-    path         String
-    headers      Json?
-    body         Json?
-    response     Json?
-    statusCode   Int?
+    id         String  @id @default(uuid()) @db.Uuid
+    bridgeId   String  @db.Uuid
+    endpointId String? @db.Uuid
+    method     String
+    path       String
+
+    // Store request/response data as JSON
+    requestData  Json? // { headers: {}, body: {}, query: {} }
+    responseData Json? // { body: {}, headers: {}, statusCode: number }
+
+    // Performance metrics
     responseTime Int? // in milliseconds
-    success      Boolean  @default(false)
+    success      Boolean @default(false)
     errorMessage String?
-    createdAt    DateTime @default(now())
+
+    createdAt DateTime @default(now())
 
     // Relations
     bridge   Bridge       @relation(fields: [bridgeId], references: [id], onDelete: Cascade)
     endpoint ApiEndpoint? @relation(fields: [endpointId], references: [id], onDelete: SetNull)
 
+    // Indexes for analytics and performance
+    @@index([bridgeId, createdAt])
+    @@index([success, createdAt])
+    @@index([createdAt]) // For time-based queries and cleanup
     @@map("api_requests")
 }

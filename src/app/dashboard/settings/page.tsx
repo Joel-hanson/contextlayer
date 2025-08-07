@@ -84,10 +84,10 @@ const defaultSettings: AppSettings = {
         allowPublicAccess: false,
     },
     preferences: {
-        theme: 'system',
+        theme: 'light' as const, // Default to light theme
         autoSaveBridges: true,
         showAdvancedOptions: false,
-        defaultAuthType: 'none',
+        defaultAuthType: 'none' as const,
     },
 };
 
@@ -147,6 +147,8 @@ export default function SettingsPage() {
         setHasChanges(true);
 
         // Special handling for theme changes to apply immediately
+        // DISABLED: Theme changing functionality temporarily disabled
+        /*
         if (section === 'preferences' && key === 'theme') {
             console.log('Theme changing from', settings.preferences.theme, 'to:', value);
             setTheme(value as 'light' | 'dark' | 'system');
@@ -154,6 +156,7 @@ export default function SettingsPage() {
             localStorage.setItem('mcp-bridge-theme', value as string);
             console.log('Theme set and persisted to localStorage:', value);
         }
+        */
     };
 
     const saveSettings = async () => {
@@ -162,8 +165,11 @@ export default function SettingsPage() {
             localStorage.setItem('mcp-bridge-settings', JSON.stringify(settings));
 
             // Ensure theme is synced with theme provider
+            // DISABLED: Theme changing functionality temporarily disabled
+            /*
             setTheme(settings.preferences.theme);
             localStorage.setItem('mcp-bridge-theme', settings.preferences.theme);
+            */
 
             setHasChanges(false);
 
@@ -555,6 +561,8 @@ export default function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-4">
+                                {/* DISABLED: Theme selection temporarily disabled */}
+                                {/*
                                 <div className="space-y-2">
                                     <Label>Theme</Label>
                                     <Select
@@ -571,6 +579,7 @@ export default function SettingsPage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                */}
                                 <div className="space-y-2">
                                     <Label>Default Auth Type</Label>
                                     <Select

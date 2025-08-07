@@ -91,8 +91,13 @@ async function handleMcpRequest(
         }
 
         // Check bridge access control authentication
-        if (bridge.authRequired) {
-            if (!bridge.apiKey) {
+        const accessConfig = bridge.accessConfig as {
+            authRequired?: boolean;
+            apiKey?: string;
+        } | null;
+
+        if (accessConfig?.authRequired) {
+            if (!accessConfig.apiKey) {
                 return NextResponse.json(
                     { error: 'Bridge access control is enabled but no API key is configured' },
                     { status: 500 }
@@ -117,7 +122,7 @@ async function handleMcpRequest(
             }
 
             // Validate the API key
-            if (!providedApiKey || providedApiKey !== bridge.apiKey) {
+            if (!providedApiKey || providedApiKey !== accessConfig.apiKey) {
                 return NextResponse.json(
                     {
                         error: 'Unauthorized: Invalid or missing API key',
@@ -175,13 +180,36 @@ async function handleMcpRequest(
         };
 
         // Add authentication headers if configured
-        if (bridge.authType === 'bearer' && bridge.authToken) {
-            headers['Authorization'] = `Bearer ${bridge.authToken}`;
-        } else if (bridge.authType === 'apikey' && bridge.authToken) {
-            headers['X-API-Key'] = bridge.authToken;
-        } else if (bridge.authType === 'basic' && bridge.authUsername && bridge.authPassword) {
-            const credentials = Buffer.from(`${bridge.authUsername}:${bridge.authPassword}`).toString('base64');
-            headers['Authorization'] = `Basic ${credentials}`;
+        const authConfig = bridge.authConfig as {
+            type: 'none' | 'bearer' | 'apikey' | 'basic';
+            token?: string;
+            apiKey?: string;
+            username?: string;
+            password?: string;
+            headerName?: string;
+        } | null;
+
+        if (authConfig && authConfig.type !== 'none') {
+            switch (authConfig.type) {
+                case 'bearer':
+                    if (authConfig.token) {
+                        headers['Authorization'] = `Bearer ${authConfig.token}`;
+                    }
+                    break;
+                case 'apikey':
+                    if (authConfig.apiKey && authConfig.headerName) {
+                        headers[authConfig.headerName] = authConfig.apiKey;
+                    } else if (authConfig.apiKey) {
+                        headers['X-API-Key'] = authConfig.apiKey;
+                    }
+                    break;
+                case 'basic':
+                    if (authConfig.username && authConfig.password) {
+                        const credentials = Buffer.from(`${authConfig.username}:${authConfig.password}`).toString('base64');
+                        headers['Authorization'] = `Basic ${credentials}`;
+                    }
+                    break;
+            }
         }
 
         // Add custom headers from bridge configuration
@@ -224,12 +252,18 @@ async function handleMcpRequest(
                 endpointId: endpoint.id,
                 method,
                 path: apiPath,
-                statusCode: apiResponse.status,
+                requestData: JSON.parse(JSON.stringify({
+                    headers: Object.fromEntries(request.headers.entries()),
+                    body: body ? (isValidJson(body) ? JSON.parse(body) : body) : null,
+                    query: Object.fromEntries(url.searchParams.entries())
+                })),
+                responseData: JSON.parse(JSON.stringify({
+                    body: responseJson,
+                    headers: Object.fromEntries(apiResponse.headers.entries()),
+                    statusCode: apiResponse.status
+                })),
                 responseTime: responseTime,
                 success: apiResponse.ok,
-                headers: JSON.stringify(Object.fromEntries(request.headers.entries())),
-                body: body ? (isValidJson(body) ? JSON.parse(body) : body) : null,
-                response: responseJson,
                 errorMessage: !apiResponse.ok ? `API returned ${apiResponse.status}` : null,
             },
         }).catch((error) => {

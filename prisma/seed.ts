@@ -41,10 +41,11 @@ async function main() {
     const bridge1 = await prisma.bridge.create({
         data: {
             id: bridge1Id,
+            slug: bridge1Id, // Use UUID as slug
             name: 'JSONPlaceholder API',
             description: 'A fake REST API for testing and prototyping',
             baseUrl: 'https://jsonplaceholder.typicode.com',
-            authType: 'none',
+            authConfig: { type: 'none' }, // Use new authConfig structure
             enabled: false,
             status: 'inactive',
             userId: testUser.id,
@@ -56,7 +57,7 @@ async function main() {
                         method: 'GET',
                         path: '/posts',
                         description: 'Retrieve all posts',
-                        parameters: [],
+                        config: { parameters: [] },
                     },
                     {
                         id: randomUUID(),
@@ -64,14 +65,16 @@ async function main() {
                         method: 'GET',
                         path: '/posts/{id}',
                         description: 'Retrieve a single post by ID',
-                        parameters: [
-                            {
-                                name: 'id',
-                                type: 'number',
-                                required: true,
-                                description: 'Post ID',
-                            },
-                        ],
+                        config: {
+                            parameters: [
+                                {
+                                    name: 'id',
+                                    type: 'number',
+                                    required: true,
+                                    description: 'Post ID',
+                                },
+                            ]
+                        },
                     },
                     {
                         id: randomUUID(),
@@ -79,17 +82,20 @@ async function main() {
                         method: 'POST',
                         path: '/posts',
                         description: 'Create a new post',
-                        requestBody: {
-                            contentType: 'application/json',
-                            schema: {
-                                type: 'object',
-                                properties: {
-                                    title: { type: 'string' },
-                                    body: { type: 'string' },
-                                    userId: { type: 'number' },
+                        config: {
+                            parameters: [],
+                            requestBody: {
+                                contentType: 'application/json',
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        title: { type: 'string' },
+                                        body: { type: 'string' },
+                                        userId: { type: 'number' },
+                                    },
+                                    required: ['title', 'body', 'userId'],
                                 },
-                                required: ['title', 'body', 'userId'],
-                            },
+                            }
                         },
                     },
                 ],
@@ -100,10 +106,11 @@ async function main() {
     const bridge2 = await prisma.bridge.create({
         data: {
             id: bridge2Id,
+            slug: bridge2Id, // Use UUID as slug
             name: 'HTTPBin Testing API',
             description: 'HTTP Request & Response Service for testing APIs',
             baseUrl: 'https://httpbin.org',
-            authType: 'none',
+            authConfig: { type: 'none' }, // Use new authConfig structure
             enabled: false,
             status: 'inactive',
             userId: testUser.id,
@@ -115,7 +122,7 @@ async function main() {
                         method: 'GET',
                         path: '/get',
                         description: 'Returns GET request data',
-                        parameters: [],
+                        config: { parameters: [] },
                     },
                     {
                         id: randomUUID(),
@@ -123,14 +130,17 @@ async function main() {
                         method: 'POST',
                         path: '/post',
                         description: 'Returns POST request data',
-                        requestBody: {
-                            contentType: 'application/json',
-                            schema: {
-                                type: 'object',
-                                properties: {
-                                    message: { type: 'string' },
+                        config: {
+                            parameters: [],
+                            requestBody: {
+                                contentType: 'application/json',
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        message: { type: 'string' },
+                                    },
                                 },
-                            },
+                            }
                         },
                     },
                 ],
