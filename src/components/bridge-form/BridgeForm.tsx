@@ -11,6 +11,7 @@ import { AlertTriangle, BadgeAlert, CheckCircle, Lightbulb, Link, LockIcon, Save
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { ConfirmationDialog } from '../ConfirmationDialog';
 
 // Import modular components
 import { AuthenticationTab } from './AuthenticationTab';
@@ -75,6 +76,13 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
     const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showGuide, setShowGuide] = useState(false);
+
+    // Confirmation dialog states
+    const [showLoadDraftDialog, setShowLoadDraftDialog] = useState(false);
+    const [showCloseDialog, setShowCloseDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [draftData, setDraftData] = useState<BridgeFormData & { timestamp: number; editingId: string } | null>(null);
+
     const { toast } = useToast();
 
     const form = useForm<BridgeFormData>({
@@ -173,18 +181,14 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
     useEffect(() => {
         if (open && !bridge) {
             // Only load draft for new bridges
-            const draftData = localStorage.getItem('bridge-form-draft');
-            if (draftData) {
+            const draftDataStr = localStorage.getItem('bridge-form-draft');
+            if (draftDataStr) {
                 try {
-                    const draft = JSON.parse(draftData);
+                    const draft = JSON.parse(draftDataStr);
                     // Only load if draft is recent (less than 1 hour old)
                     if (Date.now() - draft.timestamp < 3600000 && draft.editingId === 'new') {
-                        const shouldLoadDraft = window.confirm(
-                            'Found unsaved draft data. Would you like to restore it?'
-                        );
-                        if (shouldLoadDraft) {
-                            form.reset(draft);
-                        }
+                        setDraftData(draft);
+                        setShowLoadDraftDialog(true);
                     }
                 } catch (error) {
                     console.error('Error loading draft data:', error);
@@ -200,26 +204,15 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
     const handleClose = () => {
         if (hasUnsavedChanges) {
-            const confirmClose = window.confirm(
-                'You have unsaved changes. Are you sure you want to close without saving?'
-            );
-            if (!confirmClose) return;
+            setShowCloseDialog(true);
+            return;
         }
         onOpenChange(false);
     };
 
     const handleDelete = () => {
         if (!bridge || !onDelete) return;
-
-        const confirmDelete = window.confirm(
-            `Are you sure you want to delete the bridge "${bridge.name}"? This action cannot be undone.`
-        );
-
-        if (confirmDelete) {
-            onDelete(bridge.id);
-            clearDraft();
-            onOpenChange(false);
-        }
+        setShowDeleteDialog(true);
     };
 
     const onSubmit: SubmitHandler<BridgeFormData> = (data) => {
@@ -408,131 +401,186 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         }
     };
 
+    // Confirmation handlers
+    const handleLoadDraftConfirm = () => {
+        if (draftData) {
+            form.reset(draftData);
+        }
+        setShowLoadDraftDialog(false);
+    };
+
+    const handleCloseConfirm = () => {
+        setShowCloseDialog(false);
+        onOpenChange(false);
+    };
+
+    const handleDeleteConfirm = () => {
+        if (bridge && onDelete) {
+            onDelete(bridge.id);
+            clearDraft();
+            onOpenChange(false);
+        }
+        setShowDeleteDialog(false);
+    };
+
     return (
-        <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <DialogTitle className="text-xl font-semibold">
-                                {bridge ? 'Edit Bridge' : 'Create New Bridge'}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {bridge
-                                    ? 'Modify your existing API bridge configuration'
-                                    : 'Configure a new API bridge to make it available through MCP'}
-                            </DialogDescription>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowGuide(!showGuide)}
-                            className="text-blue-600 hover:text-blue-700"
-                        >
-                            <Lightbulb className="h-4 w-4 mr-1" />
-                            {showGuide ? 'Hide' : 'Show'} Guide
-                        </Button>
-                    </div>
-                </DialogHeader>
-
-                {showGuide && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <h4 className="font-medium text-blue-900 mb-2">Quick Setup Guide</h4>
-                        <ol className="text-sm text-blue-800 space-y-1">
-                            <li>1. <strong>Basic Info:</strong> Enter bridge name and API details</li>
-                            <li>2. <strong>Authentication:</strong> Configure how to authenticate with the API</li>
-                            <li>3. <strong>Endpoints:</strong> Add the API endpoints you want to expose</li>
-                            <li>4. <strong>Routing:</strong> Configure access and routing settings</li>
-                        </ol>
-                    </div>
-                )}
-
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-4">
-                            <TabsTrigger value="basic" className="text-xs">
-                                {getTabIcon('basic')} Basic Info
-                            </TabsTrigger>
-                            <TabsTrigger value="auth" className="text-xs">
-                                {getTabIcon('auth')} Auth
-                            </TabsTrigger>
-                            <TabsTrigger value="endpoints" className="text-xs">
-                                {getTabIcon('endpoints')} Endpoints
-                            </TabsTrigger>
-                            <TabsTrigger value="routing" className="text-xs">
-                                {getTabIcon('routing')} Routing
-                            </TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="basic" className="space-y-4">
-                            <BasicInfoTab form={form} />
-                        </TabsContent>
-
-                        <TabsContent value="auth" className="space-y-4">
-                            <AuthenticationTab form={form} />
-                        </TabsContent>
-
-                        <TabsContent value="endpoints" className="space-y-4">
-                            <EndpointsTab
-                                form={form}
-                                endpointFields={endpointFields}
-                                testingEndpoint={testingEndpoint}
-                                onTestEndpoint={testEndpoint}
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="routing" className="space-y-4">
-                            <RoutingAndAccessTab form={form} bridge={bridge} />
-                        </TabsContent>
-                    </Tabs>
-
-                    <Separator />
-
-                    <DialogFooter className="flex justify-between items-center">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                            {hasUnsavedChanges && (
-                                <span className="flex items-center gap-1">
-                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                    Unsaved changes
-                                </span>
-                            )}
-                            {!hasUnsavedChanges && form.getValues().apiConfig?.endpoints?.length === 0 && (
-                                <span className="flex items-center gap-1 text-orange-600">
-                                    <AlertTriangle className="h-3 w-3" />
-                                    No endpoints configured - no MCP tools will be available
-                                </span>
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            {bridge && onDelete && (
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    onClick={handleDelete}
-                                    className="text-sm"
-                                >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete Bridge
-                                </Button>
-                            )}
-
-                            <div className="flex gap-2">
-                                <Button type="button" variant="outline" onClick={handleClose}>
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={!form.formState.isValid || form.formState.isSubmitting}
-                                >
-                                    <Save className="h-4 w-4 mr-2" />
-                                    {bridge ? 'Update Bridge' : 'Create Bridge'}
-                                </Button>
+        <>
+            <Dialog open={open} onOpenChange={handleClose}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <DialogTitle className="text-xl font-semibold">
+                                    {bridge ? 'Edit Bridge' : 'Create New Bridge'}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    {bridge
+                                        ? 'Modify your existing API bridge configuration'
+                                        : 'Configure a new API bridge to make it available through MCP'}
+                                </DialogDescription>
                             </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowGuide(!showGuide)}
+                                className="text-blue-600 hover:text-blue-700"
+                            >
+                                <Lightbulb className="h-4 w-4 mr-1" />
+                                {showGuide ? 'Hide' : 'Show'} Guide
+                            </Button>
                         </div>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                    </DialogHeader>
+
+                    {showGuide && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <h4 className="font-medium text-blue-900 mb-2">Quick Setup Guide</h4>
+                            <ol className="text-sm text-blue-800 space-y-1">
+                                <li>1. <strong>Basic Info:</strong> Enter bridge name and API details</li>
+                                <li>2. <strong>Authentication:</strong> Configure how to authenticate with the API</li>
+                                <li>3. <strong>Endpoints:</strong> Add the API endpoints you want to expose</li>
+                                <li>4. <strong>Routing:</strong> Configure access and routing settings</li>
+                            </ol>
+                        </div>
+                    )}
+
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                            <TabsList className="grid w-full grid-cols-4">
+                                <TabsTrigger value="basic" className="text-xs">
+                                    {getTabIcon('basic')} Basic Info
+                                </TabsTrigger>
+                                <TabsTrigger value="auth" className="text-xs">
+                                    {getTabIcon('auth')} Auth
+                                </TabsTrigger>
+                                <TabsTrigger value="endpoints" className="text-xs">
+                                    {getTabIcon('endpoints')} Endpoints
+                                </TabsTrigger>
+                                <TabsTrigger value="routing" className="text-xs">
+                                    {getTabIcon('routing')} Routing
+                                </TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="basic" className="space-y-4">
+                                <BasicInfoTab form={form} />
+                            </TabsContent>
+
+                            <TabsContent value="auth" className="space-y-4">
+                                <AuthenticationTab form={form} />
+                            </TabsContent>
+
+                            <TabsContent value="endpoints" className="space-y-4">
+                                <EndpointsTab
+                                    form={form}
+                                    endpointFields={endpointFields}
+                                    testingEndpoint={testingEndpoint}
+                                    onTestEndpoint={testEndpoint}
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="routing" className="space-y-4">
+                                <RoutingAndAccessTab form={form} bridge={bridge} />
+                            </TabsContent>
+                        </Tabs>
+
+                        <Separator />
+
+                        <DialogFooter className="flex justify-between items-center">
+                            <div className="flex items-center text-sm text-muted-foreground">
+                                {hasUnsavedChanges && (
+                                    <span className="flex items-center gap-1">
+                                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                        Unsaved changes
+                                    </span>
+                                )}
+                                {!hasUnsavedChanges && form.getValues().apiConfig?.endpoints?.length === 0 && (
+                                    <span className="flex items-center gap-1 text-orange-600">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        No endpoints configured - no MCP tools will be available
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                {bridge && onDelete && (
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        onClick={handleDelete}
+                                        className="text-sm"
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete Bridge
+                                    </Button>
+                                )}
+
+                                <div className="flex gap-2">
+                                    <Button type="button" variant="outline" onClick={handleClose}>
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={!form.formState.isValid || form.formState.isSubmitting}
+                                    >
+                                        <Save className="h-4 w-4 mr-2" />
+                                        {bridge ? 'Update Bridge' : 'Create Bridge'}
+                                    </Button>
+                                </div>
+                            </div>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirmation Dialogs */}
+            <ConfirmationDialog
+                open={showLoadDraftDialog}
+                onOpenChange={setShowLoadDraftDialog}
+                onConfirm={handleLoadDraftConfirm}
+                title="Load Draft Data"
+                description="Found unsaved draft data. Would you like to restore it?"
+                confirmText="Load Draft"
+                cancelText="Discard"
+            />
+
+            <ConfirmationDialog
+                open={showCloseDialog}
+                onOpenChange={setShowCloseDialog}
+                onConfirm={handleCloseConfirm}
+                title="Unsaved Changes"
+                description="You have unsaved changes. Are you sure you want to close without saving?"
+                confirmText="Close Anyway"
+                cancelText="Keep Editing"
+            />
+
+            <ConfirmationDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Bridge"
+                description={`Are you sure you want to delete the bridge "${bridge?.name}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+            />
+        </>
     );
 }

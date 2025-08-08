@@ -1,5 +1,6 @@
 'use client';
 
+import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -102,6 +103,7 @@ export default function SettingsPage() {
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState('profile');
+    const [showResetDialog, setShowResetDialog] = useState(false);
     const { data: session } = useSession();
     const { toast } = useToast();
 
@@ -265,10 +267,13 @@ export default function SettingsPage() {
             setSaving(false);
         }
     }; const resetSettings = () => {
-        if (confirm('Reset all settings to defaults?')) {
-            setSettings(defaultSettings);
-            setHasChanges(true);
-        }
+        setShowResetDialog(true);
+    };
+
+    const handleResetConfirm = () => {
+        setSettings(defaultSettings);
+        setHasChanges(true);
+        setShowResetDialog(false);
     };
 
     const exportSettings = () => {
@@ -785,6 +790,16 @@ export default function SettingsPage() {
                     </div>
                 </div>
             )}
+
+            <ConfirmationDialog
+                open={showResetDialog}
+                onOpenChange={setShowResetDialog}
+                onConfirm={handleResetConfirm}
+                title="Reset Settings"
+                description="Are you sure you want to reset all settings to defaults? This action cannot be undone."
+                confirmText="Reset to Defaults"
+                cancelText="Cancel"
+            />
         </div>
     );
 }

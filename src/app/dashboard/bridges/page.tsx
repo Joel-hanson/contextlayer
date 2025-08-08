@@ -1,6 +1,7 @@
 'use client';
 
 import { BridgeForm } from '@/components/bridge-form';
+import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,6 +44,8 @@ export default function BridgesPage() {
     const [showBridgeForm, setShowBridgeForm] = useState(false);
     const [editingBridge, setEditingBridge] = useState<BridgeConfig | undefined>();
     const [operatingBridges, setOperatingBridges] = useState<Set<string>>(new Set());
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [deletingBridgeId, setDeletingBridgeId] = useState<string | null>(null);
 
     const handleSaveBridge = async (bridge: BridgeConfig) => {
         try {
@@ -86,14 +89,20 @@ export default function BridgesPage() {
     };
 
     const handleDeleteBridge = async (bridgeId: string) => {
-        if (!confirm('Are you sure you want to delete this bridge? This action cannot be undone.')) {
-            return;
-        }
+        setDeletingBridgeId(bridgeId);
+        setShowDeleteDialog(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deletingBridgeId) return;
 
         try {
-            await deleteBridge(bridgeId);
+            await deleteBridge(deletingBridgeId);
         } catch (error) {
             console.error('Failed to delete bridge:', error);
+        } finally {
+            setShowDeleteDialog(false);
+            setDeletingBridgeId(null);
         }
     };
 
@@ -459,6 +468,16 @@ export default function BridgesPage() {
                         onOpenChange={setShowBridgeForm}
                         onSave={handleSaveBridge}
                         onDelete={editingBridge ? handleDeleteBridge : undefined}
+                    />
+
+                    <ConfirmationDialog
+                        open={showDeleteDialog}
+                        onOpenChange={setShowDeleteDialog}
+                        onConfirm={handleDeleteConfirm}
+                        title="Delete Bridge"
+                        description={`Are you sure you want to delete the bridge "${bridges.find(b => b.id === deletingBridgeId)?.name}"? This action cannot be undone.`}
+                        confirmText="Delete"
+                        cancelText="Cancel"
                     />
                 </>
             )}
