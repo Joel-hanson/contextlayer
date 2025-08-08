@@ -277,15 +277,55 @@ async function handleInitialize(jsonRpcRequest: any, bridge: any) {
 
 async function handleToolsList(jsonRpcRequest: any, bridge: any) {
     console.log('Listing tools for bridge:', bridge.name);
-    const tools = bridge.endpoints.map((endpoint: any) => ({
-        name: endpoint.name || `${endpoint.method.toLowerCase()}_${endpoint.path.replace(/[^a-zA-Z0-9]/g, '_')}`,
-        description: endpoint.description || `Call ${endpoint.method} ${endpoint.path} on ${bridge.baseUrl}`,
-        inputSchema: {
-            type: 'object',
-            properties: buildInputSchema(endpoint),
-            required: endpoint.parameters?.filter((p: any) => p.required).map((p: any) => p.name) || []
-        }
-    }));
+    const tools = bridge.endpoints.map((endpoint: any) => {
+        // Parse endpoint config from the database JSON structure
+        const endpointConfig = endpoint.config as {
+            parameters?: Array<{
+                name: string;
+                type: string;
+                required: boolean;
+                description?: string;
+                defaultValue?: unknown;
+            }>;
+            requestBody?: {
+                contentType?: string;
+                schema?: unknown;
+                required?: boolean;
+                properties?: Record<string, {
+                    type: string;
+                    description?: string;
+                    required?: boolean;
+                    enum?: string[];
+                    format?: string;
+                    minimum?: number;
+                    maximum?: number;
+                    pattern?: string;
+                    items?: unknown;
+                    properties?: Record<string, unknown>;
+                }>;
+            };
+            responseSchema?: unknown;
+        } | null;
+
+        // Create endpoint object with parsed config
+        const endpointWithConfig = {
+            ...endpoint,
+            parameters: endpointConfig?.parameters || [],
+            requestBody: endpointConfig?.requestBody,
+            responseSchema: endpointConfig?.responseSchema,
+        };
+
+        const inputSchema = buildInputSchema(endpointWithConfig);
+        return {
+            name: endpoint.name || `${endpoint.method.toLowerCase()}_${endpoint.path.replace(/[^a-zA-Z0-9]/g, '_')}`,
+            description: buildToolDescription(endpointWithConfig),
+            inputSchema: {
+                type: 'object',
+                properties: inputSchema.properties,
+                required: inputSchema.required
+            }
+        };
+    });
 
     return NextResponse.json(
         {
@@ -332,9 +372,46 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
         );
     }
 
+    // Parse endpoint config from the database JSON structure
+    const endpointConfig = endpoint.config as {
+        parameters?: Array<{
+            name: string;
+            type: string;
+            required: boolean;
+            description?: string;
+            defaultValue?: unknown;
+        }>;
+        requestBody?: {
+            contentType?: string;
+            schema?: unknown;
+            required?: boolean;
+            properties?: Record<string, {
+                type: string;
+                description?: string;
+                required?: boolean;
+                enum?: string[];
+                format?: string;
+                minimum?: number;
+                maximum?: number;
+                pattern?: string;
+                items?: unknown;
+                properties?: Record<string, unknown>;
+            }>;
+        };
+        responseSchema?: unknown;
+    } | null;
+
+    // Create endpoint object with parsed config
+    const endpointWithConfig = {
+        ...endpoint,
+        parameters: endpointConfig?.parameters || [],
+        requestBody: endpointConfig?.requestBody,
+        responseSchema: endpointConfig?.responseSchema,
+    };
+
     try {
         // Execute the API call
-        const result = await executeApiCall(bridge, endpoint, toolArgs || {});
+        const result = await executeApiCall(bridge, endpointWithConfig, toolArgs || {});
 
         return NextResponse.json(
             {
@@ -377,41 +454,154 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
     }
 }
 
+function buildToolDescription(endpoint: any): string {
+    let description = endpoint.description || `${endpoint.method} ${endpoint.path}`;
+
+    // Add parameter information for better context
+    if (endpoint.parameters && endpoint.parameters.length > 0) {
+        const requiredParams = endpoint.parameters.filter((p: any) => p.required);
+        const optionalParams = endpoint.parameters.filter((p: any) => !p.required);
+
+        if (requiredParams.length > 0) {
+            description += `\n\nRequired parameters: ${requiredParams.map((p: any) => `${p.name} (${p.type})`).join(', ')}`;
+        }
+
+        if (optionalParams.length > 0) {
+            description += `\n\nOptional parameters: ${optionalParams.map((p: any) => `${p.name} (${p.type})`).join(', ')}`;
+        }
+    }
+
+    // Add request body information for POST/PUT/PATCH
+    if (endpoint.requestBody && ['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
+        if (endpoint.requestBody.properties) {
+            const requiredFields = Object.entries(endpoint.requestBody.properties)
+                .filter(([, prop]: [string, any]) => prop.required)
+                .map(([name, prop]: [string, any]) => `${name} (${prop.type})`);
+
+            const optionalFields = Object.entries(endpoint.requestBody.properties)
+                .filter(([, prop]: [string, any]) => !prop.required)
+                .map(([name, prop]: [string, any]) => `${name} (${prop.type})`);
+
+            if (requiredFields.length > 0) {
+                description += `\n\nRequired body fields: ${requiredFields.join(', ')}`;
+            }
+
+            if (optionalFields.length > 0) {
+                description += `\n\nOptional body fields: ${optionalFields.join(', ')}`;
+            }
+        } else {
+            description += `\n\nAccepts JSON request body`;
+        }
+    }
+
+    return description;
+}
+
 function buildInputSchema(endpoint: any) {
     const properties: Record<string, any> = {};
+    const required: string[] = [];
 
-    // Add path parameters
+    // Add path and query parameters
     if (endpoint.parameters) {
         endpoint.parameters.forEach((param: any) => {
             properties[param.name] = {
-                type: param.type,
-                description: param.description,
+                type: mapTypeToJsonSchema(param.type),
+                description: param.description || `${param.name} parameter`,
             };
+
+            if (param.required) {
+                required.push(param.name);
+            }
+
+            if (param.defaultValue !== undefined) {
+                properties[param.name].default = param.defaultValue;
+            }
         });
     }
 
-    // Add request body if applicable
+    // Add request body schema for POST/PUT/PATCH operations
     if (endpoint.requestBody && ['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
-        properties.requestBody = {
-            type: 'object',
-            description: 'Request body data'
-        };
+        if (endpoint.requestBody.properties) {
+            // Add each property from request body as individual parameters
+            Object.entries(endpoint.requestBody.properties).forEach(([propName, propSchema]: [string, any]) => {
+                const baseProps: Record<string, any> = {
+                    type: propSchema.type,
+                    description: propSchema.description || `${propName} field`,
+                };
+
+                if (propSchema.enum) baseProps.enum = propSchema.enum;
+                if (propSchema.format) baseProps.format = propSchema.format;
+                if (propSchema.minimum !== undefined) baseProps.minimum = propSchema.minimum;
+                if (propSchema.maximum !== undefined) baseProps.maximum = propSchema.maximum;
+                if (propSchema.pattern) baseProps.pattern = propSchema.pattern;
+                if (propSchema.items && typeof propSchema.items === 'object') baseProps.items = propSchema.items;
+
+                properties[propName] = baseProps;
+
+                if (propSchema.required) {
+                    required.push(propName);
+                }
+            });
+        } else {
+            // Fallback: single request body parameter
+            properties.requestBody = {
+                type: 'object',
+                description: 'Request body data',
+            };
+            if (endpoint.requestBody.required) {
+                required.push('requestBody');
+            }
+        }
     }
 
-    return properties;
+    return { properties, required };
+}
+
+function mapTypeToJsonSchema(type: string): string {
+    switch (type) {
+        case 'integer':
+            return 'number';
+        case 'int32':
+        case 'int64':
+            return 'number';
+        case 'float':
+        case 'double':
+            return 'number';
+        case 'byte':
+        case 'binary':
+            return 'string';
+        case 'date':
+        case 'date-time':
+            return 'string';
+        default:
+            return type;
+    }
 }
 
 async function executeApiCall(bridge: any, endpoint: any, args: any) {
-    // Build the full URL
     let url = endpoint.path;
+    const queryParams = new URLSearchParams();
 
-    // Handle path parameters
+    // Handle path and query parameters
     if (endpoint.parameters) {
         endpoint.parameters.forEach((param: any) => {
-            if (args[param.name] !== undefined) {
-                url = url.replace(`{${param.name}}`, encodeURIComponent(args[param.name]));
+            const value = args[param.name];
+            if (value !== undefined) {
+                // Path parameters
+                if (url.includes(`{${param.name}}`)) {
+                    url = url.replace(`{${param.name}}`, encodeURIComponent(String(value)));
+                } else {
+                    // Query parameters
+                    queryParams.append(param.name, String(value));
+                }
             }
         });
+    }
+
+    // Add query parameters to URL
+    const queryString = queryParams.toString();
+    if (queryString) {
+        url += (url.includes('?') ? '&' : '?') + queryString;
     }
 
     const fullUrl = new URL(url, bridge.baseUrl).toString();
@@ -471,9 +661,12 @@ async function executeApiCall(bridge: any, endpoint: any, args: any) {
         headers,
     };
 
-    // Add body for POST/PUT/PATCH requests
-    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method) && args.requestBody) {
-        requestOptions.body = JSON.stringify(args.requestBody);
+    // Build request body for POST/PUT/PATCH
+    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
+        const requestBody = buildRequestBody(endpoint, args);
+        if (requestBody) {
+            requestOptions.body = JSON.stringify(requestBody);
+        }
     }
 
     // Make the API call
@@ -489,4 +682,26 @@ async function executeApiCall(bridge: any, endpoint: any, args: any) {
     } else {
         return await response.text();
     }
+}
+
+function buildRequestBody(endpoint: any, args: any): any {
+    if (!endpoint.requestBody) {
+        return null;
+    }
+
+    // If request body has defined properties, build from individual arguments
+    if (endpoint.requestBody.properties) {
+        const body: Record<string, any> = {};
+
+        Object.keys(endpoint.requestBody.properties).forEach(propName => {
+            if (args[propName] !== undefined) {
+                body[propName] = args[propName];
+            }
+        });
+
+        return Object.keys(body).length > 0 ? body : null;
+    }
+
+    // Fallback: look for a requestBody argument
+    return args.requestBody || null;
 }

@@ -1,5 +1,19 @@
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { ApiConfig } from './types';
+
+// Fallback for environments where crypto is not available
+function generateId(): string {
+    if (typeof randomUUID === 'function') {
+        return randomUUID();
+    }
+    // Fallback UUID generation
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
 
 // OpenAPI 3.0 Schema definitions
 export const OpenAPISpecSchema = z.object({
@@ -177,7 +191,7 @@ export class OpenAPIParser {
                 }
 
                 const endpoint = {
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     name: operation.operationId || `${httpMethod} ${path}`,
                     method: httpMethod as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
                     path: path,
@@ -229,10 +243,88 @@ export class OpenAPIParser {
             return undefined;
         }
 
-        return {
+        const schema = requestBody.content[contentType]?.schema;
+        const result: ApiConfig['endpoints'][0]['requestBody'] = {
             contentType,
-            schema: requestBody.content[contentType]?.schema,
+            schema,
+            required: requestBody.required,
         };
+
+        // If schema is an object with properties, extract them for individual parameter handling
+        if (schema && typeof schema === 'object' && 'properties' in schema) {
+            const schemaObj = schema as {
+                properties?: Record<string, unknown>;
+                required?: string[];
+                type?: string;
+            };
+
+            if (schemaObj.properties) {
+                const properties: Record<string, {
+                    type: string;
+                    description?: string;
+                    required?: boolean;
+                    enum?: string[];
+                    format?: string;
+                    minimum?: number;
+                    maximum?: number;
+                    pattern?: string;
+                    items?: unknown;
+                    properties?: Record<string, unknown>;
+                }> = {};
+
+                const requiredFields = schemaObj.required || [];
+
+                Object.entries(schemaObj.properties).forEach(([propName, propSchema]) => {
+                    if (typeof propSchema === 'object' && propSchema !== null) {
+                        const prop = propSchema as Record<string, unknown>;
+                        const propertyDef: {
+                            type: string;
+                            description?: string;
+                            required?: boolean;
+                            enum?: string[];
+                            format?: string;
+                            minimum?: number;
+                            maximum?: number;
+                            pattern?: string;
+                            items?: unknown;
+                            properties?: Record<string, unknown>;
+                        } = {
+                            type: this.mapOpenAPITypeToSimpleType(String(prop.type || 'string')),
+                            description: String(prop.description || ''),
+                            required: requiredFields.includes(propName),
+                        };
+
+                        if (prop.enum && Array.isArray(prop.enum)) {
+                            propertyDef.enum = prop.enum.map(String);
+                        }
+                        if (prop.format) {
+                            propertyDef.format = String(prop.format);
+                        }
+                        if (typeof prop.minimum === 'number') {
+                            propertyDef.minimum = prop.minimum;
+                        }
+                        if (typeof prop.maximum === 'number') {
+                            propertyDef.maximum = prop.maximum;
+                        }
+                        if (prop.pattern) {
+                            propertyDef.pattern = String(prop.pattern);
+                        }
+                        if (prop.items) {
+                            propertyDef.items = prop.items;
+                        }
+                        if (prop.properties) {
+                            propertyDef.properties = prop.properties as Record<string, unknown>;
+                        }
+
+                        properties[propName] = propertyDef;
+                    }
+                });
+
+                result.properties = properties;
+            }
+        }
+
+        return result;
     }
 
     private static parseResponses(responses: Record<string, {

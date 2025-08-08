@@ -192,18 +192,56 @@ export function OpenAPIImportDialog({ open, onOpenChange, onImport }: OpenAPIImp
                 name: result.data.name,
                 description: result.data.description,
                 baseUrl: result.data.baseUrl,
-                endpoints: result.data.endpoints.map(endpoint => ({
-                    name: endpoint.name,
-                    method: endpoint.method,
-                    path: endpoint.path,
-                    description: endpoint.description,
-                    parameters: endpoint.parameters?.map(param => ({
+                endpoints: result.data.endpoints.map(endpoint => {
+                    // Start with path/query parameters
+                    const parameters = endpoint.parameters?.map(param => ({
                         name: param.name,
                         type: param.type,
                         required: param.required,
                         description: param.description,
-                    })) || [],
-                })),
+                    })) || [];
+
+                    // Add request body properties as additional parameters
+                    if (endpoint.requestBody?.properties) {
+                        const requestBodyParams = Object.entries(endpoint.requestBody.properties).map(([name, schema]) => {
+                            // Map schema types to allowed types
+                            let paramType: 'string' | 'number' | 'boolean' | 'object' | 'array';
+                            switch (schema.type) {
+                                case 'integer':
+                                case 'number':
+                                    paramType = 'number';
+                                    break;
+                                case 'boolean':
+                                    paramType = 'boolean';
+                                    break;
+                                case 'array':
+                                    paramType = 'array';
+                                    break;
+                                case 'object':
+                                    paramType = 'object';
+                                    break;
+                                default:
+                                    paramType = 'string';
+                            }
+
+                            return {
+                                name,
+                                type: paramType,
+                                required: schema.required || false, // Use individual property's required flag
+                                description: schema.description || `Request body field: ${name}`,
+                            };
+                        });
+                        parameters.push(...requestBodyParams);
+                    }
+
+                    return {
+                        name: endpoint.name,
+                        method: endpoint.method,
+                        path: endpoint.path,
+                        description: endpoint.description,
+                        parameters,
+                    };
+                }),
                 authentication: result.data.authentication,
                 headers: result.data.headers,
             };

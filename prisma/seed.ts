@@ -45,8 +45,8 @@ async function main() {
             name: 'JSONPlaceholder API',
             description: 'A fake REST API for testing and prototyping',
             baseUrl: 'https://jsonplaceholder.typicode.com',
-            authConfig: { type: 'none' }, // Use new authConfig structure
-            enabled: false,
+            authConfig: { type: 'none' }, // Use correct authConfig structure
+            enabled: true,
             status: 'inactive',
             userId: testUser.id,
             endpoints: {
@@ -86,6 +86,7 @@ async function main() {
                             parameters: [],
                             requestBody: {
                                 contentType: 'application/json',
+                                required: true,
                                 schema: {
                                     type: 'object',
                                     properties: {
@@ -95,6 +96,23 @@ async function main() {
                                     },
                                     required: ['title', 'body', 'userId'],
                                 },
+                                properties: {
+                                    title: {
+                                        type: 'string',
+                                        description: 'Post title',
+                                        required: true
+                                    },
+                                    body: {
+                                        type: 'string',
+                                        description: 'Post content',
+                                        required: true
+                                    },
+                                    userId: {
+                                        type: 'number',
+                                        description: 'Author user ID',
+                                        required: true
+                                    }
+                                }
                             }
                         },
                     },
@@ -111,7 +129,7 @@ async function main() {
             description: 'HTTP Request & Response Service for testing APIs',
             baseUrl: 'https://httpbin.org',
             authConfig: { type: 'none' }, // Use new authConfig structure
-            enabled: false,
+            enabled: true,
             status: 'inactive',
             userId: testUser.id,
             endpoints: {
@@ -134,12 +152,20 @@ async function main() {
                             parameters: [],
                             requestBody: {
                                 contentType: 'application/json',
+                                required: false,
                                 schema: {
                                     type: 'object',
                                     properties: {
                                         message: { type: 'string' },
                                     },
                                 },
+                                properties: {
+                                    message: {
+                                        type: 'string',
+                                        description: 'Test message to send',
+                                        required: false
+                                    }
+                                }
                             }
                         },
                     },
