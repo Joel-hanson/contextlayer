@@ -13,7 +13,8 @@
     },
     "build": {
         "env": {
-            "PRISMA_GENERATE_DATAPROXY": "true"
+            "PRISMA_GENERATE_DATAPROXY": "true",
+            "SKIP_ENV_VALIDATION": "true"
         }
     },
     "rewrites": [
