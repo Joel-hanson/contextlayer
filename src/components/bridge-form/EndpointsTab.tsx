@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
-import { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
+import { UseFieldArrayReturn, UseFormReturn, useFieldArray } from 'react-hook-form';
 
 interface BridgeFormData {
     name: string;
@@ -56,6 +57,121 @@ interface EndpointsTabProps {
     endpointFields: UseFieldArrayReturn<BridgeFormData, "apiConfig.endpoints", "id">;
     testingEndpoint?: string | null;
     onTestEndpoint?: (endpoint: BridgeFormData['apiConfig']['endpoints'][0]) => Promise<void>;
+}
+
+// Component for managing parameters within each endpoint
+interface ParametersSectionProps {
+    form: UseFormReturn<BridgeFormData>;
+    endpointIndex: number;
+}
+
+function ParametersSection({ form, endpointIndex }: ParametersSectionProps) {
+    const parameterFields = useFieldArray({
+        control: form.control,
+        name: `apiConfig.endpoints.${endpointIndex}.parameters`,
+    });
+
+    const { fields: parameters, append, remove } = parameterFields;
+
+    const addParameter = () => {
+        append({
+            name: '',
+            type: 'string',
+            required: false,
+            description: '',
+        });
+    };
+
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Parameters</Label>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addParameter}
+                    className="h-7 text-xs"
+                >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Parameter
+                </Button>
+            </div>
+
+            {parameters.length === 0 ? (
+                <div className="text-xs text-muted-foreground p-3 bg-gray-50 rounded-md border-dashed border">
+                    No parameters defined. Add parameters that MCP clients should provide when calling this endpoint.
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    {parameters.map((param, paramIndex) => (
+                        <Card key={param.id} className="border border-gray-200">
+                            <CardContent className="p-3 space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Parameter Name</Label>
+                                        <Input
+                                            {...form.register(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.name`)}
+                                            placeholder="id, title, etc."
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Type</Label>
+                                        <Select
+                                            value={form.watch(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.type`)}
+                                            onValueChange={(value) =>
+                                                form.setValue(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.type`, value as 'string' | 'number' | 'boolean' | 'object' | 'array')
+                                            }
+                                        >
+                                            <SelectTrigger className="h-8">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="string">String</SelectItem>
+                                                <SelectItem value="number">Number</SelectItem>
+                                                <SelectItem value="boolean">Boolean</SelectItem>
+                                                <SelectItem value="object">Object</SelectItem>
+                                                <SelectItem value="array">Array</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Description</Label>
+                                    <Input
+                                        {...form.register(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.description`)}
+                                        placeholder="Describe this parameter..."
+                                        className="h-8 text-sm"
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                        <Switch
+                                            checked={form.watch(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.required`)}
+                                            onCheckedChange={(checked) =>
+                                                form.setValue(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.required`, checked)
+                                            }
+                                        />
+                                        <Label className="text-xs font-medium">Required</Label>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => remove(paramIndex)}
+                                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndpoint }: EndpointsTabProps) {
@@ -202,6 +318,11 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
                                         placeholder="Retrieve repository information"
                                         className="h-9"
                                     />
+                                </div>
+
+                                {/* Parameters Section */}
+                                <div className="pt-2 border-t">
+                                    <ParametersSection form={form} endpointIndex={index} />
                                 </div>
 
                                 {onTestEndpoint && (
