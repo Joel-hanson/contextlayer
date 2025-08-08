@@ -1,0 +1,181 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Public Quote API",
+        "description": "A public API for inspirational quotes (no authentication required)",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.quotable.io",
+            "description": "Quotable API server"
+        }
+    ],
+    "paths": {
+        "/random": {
+            "get": {
+                "operationId": "getRandomQuote",
+                "summary": "Get a random quote",
+                "description": "Get a random inspirational quote",
+                "parameters": [
+                    {
+                        "name": "minLength",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "description": "Minimum quote length"
+                    },
+                    {
+                        "name": "maxLength",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "description": "Maximum quote length"
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Quote tags (comma-separated)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A random quote",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "_id": {
+                                            "type": "string"
+                                        },
+                                        "content": {
+                                            "type": "string"
+                                        },
+                                        "author": {
+                                            "type": "string"
+                                        },
+                                        "tags": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "length": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/quotes": {
+            "get": {
+                "operationId": "getQuotes",
+                "summary": "Get quotes",
+                "description": "Get a paginated list of quotes",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        },
+                        "description": "Page number"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 150,
+                            "default": 20
+                        },
+                        "description": "Number of quotes per page"
+                    },
+                    {
+                        "name": "author",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Filter by author name or slug"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of quotes"
+                    }
+                }
+            }
+        },
+        "/authors": {
+            "get": {
+                "operationId": "getAuthors",
+                "summary": "Get authors",
+                "description": "Get a list of quote authors",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Author slug"
+                    },
+                    {
+                        "name": "sortBy",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "name",
+                                "quoteCount"
+                            ],
+                            "default": "name"
+                        },
+                        "description": "Sort authors by"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of authors"
+                    }
+                }
+            }
+        },
+        "/tags": {
+            "get": {
+                "operationId": "getTags",
+                "summary": "Get tags",
+                "description": "Get a list of available quote tags",
+                "responses": {
+                    "200": {
+                        "description": "List of tags"
+                    }
+                }
+            }
+        }
+    }
+}

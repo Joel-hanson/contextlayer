@@ -1,0 +1,154 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Weather API",
+        "description": "A sample weather API with Basic Authentication",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.weather-example.com/v1",
+            "description": "Weather API server"
+        }
+    ],
+    "security": [
+        {
+            "BasicAuth": []
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "BasicAuth": {
+                "type": "http",
+                "scheme": "basic"
+            }
+        }
+    },
+    "paths": {
+        "/weather/current": {
+            "get": {
+                "operationId": "getCurrentWeather",
+                "summary": "Get current weather",
+                "description": "Get current weather for a specific location",
+                "parameters": [
+                    {
+                        "name": "lat",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        },
+                        "description": "Latitude"
+                    },
+                    {
+                        "name": "lon",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        },
+                        "description": "Longitude"
+                    },
+                    {
+                        "name": "units",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "metric",
+                                "imperial",
+                                "kelvin"
+                            ],
+                            "default": "metric"
+                        },
+                        "description": "Temperature units"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Current weather data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "temperature": {
+                                            "type": "number"
+                                        },
+                                        "humidity": {
+                                            "type": "number"
+                                        },
+                                        "description": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/weather/forecast": {
+            "get": {
+                "operationId": "getWeatherForecast",
+                "summary": "Get weather forecast",
+                "description": "Get weather forecast for a specific location",
+                "parameters": [
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "City name"
+                    },
+                    {
+                        "name": "days",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 10,
+                            "default": 5
+                        },
+                        "description": "Number of forecast days"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Weather forecast data"
+                    }
+                }
+            }
+        },
+        "/weather/alerts": {
+            "get": {
+                "operationId": "getWeatherAlerts",
+                "summary": "Get weather alerts",
+                "description": "Get weather alerts for a specific region",
+                "parameters": [
+                    {
+                        "name": "region",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Region code"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Weather alerts"
+                    }
+                }
+            }
+        }
+    }
+}

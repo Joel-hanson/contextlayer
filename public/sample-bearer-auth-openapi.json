@@ -1,0 +1,175 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "GitHub API (Subset)",
+        "description": "A subset of GitHub's REST API with Bearer token authentication",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.github.com",
+            "description": "GitHub API server"
+        }
+    ],
+    "security": [
+        {
+            "BearerAuth": []
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "token"
+            }
+        }
+    },
+    "paths": {
+        "/user": {
+            "get": {
+                "operationId": "getCurrentUser",
+                "summary": "Get the authenticated user",
+                "description": "Get information about the currently authenticated user",
+                "responses": {
+                    "200": {
+                        "description": "User information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "login": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "email": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/repos": {
+            "get": {
+                "operationId": "getUserRepos",
+                "summary": "List user repositories",
+                "description": "List repositories for the authenticated user",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Repository type filter",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "all",
+                                "owner",
+                                "member"
+                            ],
+                            "default": "all"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort repositories",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created",
+                                "updated",
+                                "pushed",
+                                "full_name"
+                            ],
+                            "default": "created"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of repositories"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "createRepo",
+                "summary": "Create a repository",
+                "description": "Create a new repository for the authenticated user",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "description": "The name of the repository"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "description": "A short description of the repository"
+                                    },
+                                    "private": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the repository is private"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Repository created successfully"
+                    }
+                }
+            }
+        },
+        "/repos/{owner}/{repo}": {
+            "get": {
+                "operationId": "getRepository",
+                "summary": "Get a repository",
+                "description": "Get repository information",
+                "parameters": [
+                    {
+                        "name": "owner",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Repository owner"
+                    },
+                    {
+                        "name": "repo",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Repository name"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Repository information"
+                    }
+                }
+            }
+        }
+    }
+}

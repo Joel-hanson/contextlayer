@@ -13,11 +13,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { BridgeConfig } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Info, Lightbulb, LinkIcon, Plus, Save, TestTube, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, FileText, Info, Lightbulb, LinkIcon, Plus, Save, TestTube, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Checkbox } from './ui/checkbox';
+import { OpenAPIImportDialog } from './bridge-form/OpenAPIImportDialog';
 
 const bridgeFormSchema = z.object({
     name: z.string().min(1, 'Bridge name is required'),
@@ -75,6 +76,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
     const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showGuide, setShowGuide] = useState(false);
+    const [showImportDialog, setShowImportDialog] = useState(false);
     const { toast } = useToast();
 
     const form = useForm<BridgeFormData>({
@@ -421,6 +423,62 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
         }
     };
 
+    const handleOpenAPIImport = (importData: {
+        name: string;
+        description: string;
+        baseUrl: string;
+        endpoints: Array<{
+            name: string;
+            method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+            path: string;
+            description?: string;
+            parameters?: Array<{
+                name: string;
+                type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+                required: boolean;
+                description?: string;
+            }>;
+        }>;
+        authentication?: {
+            type: 'none' | 'bearer' | 'apikey' | 'basic';
+            token?: string;
+            apiKey?: string;
+            username?: string;
+            password?: string;
+            headerName?: string;
+        };
+        headers?: Record<string, string>;
+    }) => {
+        // Populate form with imported data
+        form.setValue('apiConfig.name', importData.name);
+        form.setValue('apiConfig.baseUrl', importData.baseUrl);
+        form.setValue('apiConfig.description', importData.description);
+        
+        // Handle authentication
+        if (importData.authentication) {
+            form.setValue('apiConfig.authentication', importData.authentication);
+        }
+        
+        if (importData.headers) {
+            form.setValue('apiConfig.headers', importData.headers);
+        }
+        
+        // Set endpoints
+        form.setValue('apiConfig.endpoints', importData.endpoints);
+
+        // Auto-generate bridge name if empty
+        const currentBridgeName = form.getValues('name');
+        if (!currentBridgeName) {
+            form.setValue('name', `${importData.name} Bridge`);
+        }
+
+        toast({
+            title: "Import Successful",
+            description: `Imported ${importData.endpoints.length} endpoints from ${importData.name}`,
+            variant: "default",
+        });
+    };
+
     return (
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -529,12 +587,24 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                                 {/* Basic Bridge Information */}
                                 <Card>
                                     <CardHeader className="pb-3">
-                                        <CardTitle className="flex items-center gap-2 text-base">
-                                            <div className="p-1.5 bg-zinc-100 rounded">
-                                                <Info className="h-3 w-3 text-zinc-600" />
-                                            </div>
-                                            Bridge Information
-                                        </CardTitle>
+                                        <div className="flex items-center justify-between">
+                                            <CardTitle className="flex items-center gap-2 text-base">
+                                                <div className="p-1.5 bg-zinc-100 rounded">
+                                                    <Info className="h-3 w-3 text-zinc-600" />
+                                                </div>
+                                                Bridge Information
+                                            </CardTitle>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setShowImportDialog(true)}
+                                                className="text-sm"
+                                            >
+                                                <FileText className="h-4 w-4 mr-2" />
+                                                Import OpenAPI
+                                            </Button>
+                                        </div>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="space-y-4">
