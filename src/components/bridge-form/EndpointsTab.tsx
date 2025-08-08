@@ -217,7 +217,7 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
                 <Card className="border-dashed border-orange-200 bg-orange-50">
                     <CardContent className="flex flex-col items-center justify-center py-12">
                         <AlertTriangle className="h-8 w-8 text-orange-600 mb-3" />
-                        <div className="text-center space-y-2">
+                        <div className="text-center space-y-3">
                             <p className="font-medium text-orange-900">
                                 No endpoints configured
                             </p>
@@ -225,11 +225,22 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
                                 Without endpoints, this bridge won&apos;t provide any tools to MCP clients.
                                 Add at least one endpoint to make your API accessible through the Model Context Protocol.
                             </p>
+                            <div className="text-xs text-orange-600 space-y-1 max-w-lg">
+                                <p className="font-medium">💡 Quick Examples:</p>
+                                <p><strong>GET /users</strong> - Retrieve user list</p>
+                                <p><strong>POST /users</strong> - Create new user (with parameters: name, email)</p>
+                                <p><strong>GET /users/{'{'}id{'}'}</strong> - Get specific user (with parameter: id)</p>
+                            </div>
                         </div>
-                        <Button onClick={addEndpoint} className="mt-4" variant="outline">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Your First Endpoint
-                        </Button>
+                        <div className="mt-4 space-y-2">
+                            <Button onClick={addEndpoint} variant="outline">
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Your First Endpoint
+                            </Button>
+                            <p className="text-xs text-orange-600">
+                                Or use <strong>&quot;Import OpenAPI&quot;</strong> in API Config tab to auto-configure
+                            </p>
+                        </div>
                     </CardContent>
                 </Card>
             ) : (

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import {
+    BookOpen,
     Database,
     FileText,
     Home,
@@ -39,6 +40,7 @@ export function DashboardLayout({ children }: SidebarProps) {
     const navigation = [
         { name: 'Overview', href: '/dashboard', icon: Home, current: pathname === '/dashboard' },
         { name: 'Bridges', href: '/dashboard/bridges', icon: Database, current: pathname === '/dashboard/bridges' },
+        { name: 'Quick Guide', href: '/guide', icon: BookOpen, current: pathname === '/guide' },
         { name: 'Documentation', href: '/dashboard/docs', icon: FileText, current: pathname === '/dashboard/docs' },
         { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: pathname === '/dashboard/settings' },
     ];

@@ -18,7 +18,6 @@ import { useEffect, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Checkbox } from './ui/checkbox';
-import { OpenAPIImportDialog } from './bridge-form/OpenAPIImportDialog';
 
 const bridgeFormSchema = z.object({
     name: z.string().min(1, 'Bridge name is required'),
@@ -453,16 +452,16 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
         form.setValue('apiConfig.name', importData.name);
         form.setValue('apiConfig.baseUrl', importData.baseUrl);
         form.setValue('apiConfig.description', importData.description);
-        
+
         // Handle authentication
         if (importData.authentication) {
             form.setValue('apiConfig.authentication', importData.authentication);
         }
-        
+
         if (importData.headers) {
             form.setValue('apiConfig.headers', importData.headers);
         }
-        
+
         // Set endpoints
         form.setValue('apiConfig.endpoints', importData.endpoints);
 
@@ -520,18 +519,41 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
 
                         {showGuide && (
                             <div className="px-3 pb-3">
-                                <div className="space-y-1 text-xs text-zinc-700">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1 h-1 rounded-full bg-zinc-400" />
-                                        Fill in basic info in <strong>Bridge Configuration</strong>
+                                <div className="space-y-3 text-xs">
+                                    <div className="space-y-1 text-zinc-700">
+                                        <div className="font-medium text-zinc-900 mb-2">🚀 Quick Setup Steps:</div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-medium">1</div>
+                                            <strong>Bridge Configuration:</strong> Name your bridge and set basic info
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-medium">2</div>
+                                            <strong>API Configuration:</strong> Add API details, authentication, and endpoints
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-medium">3</div>
+                                            <strong>Save & Start:</strong> Create your MCP server for AI assistants
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1 h-1 rounded-full bg-zinc-400" />
-                                        Add your API details and endpoints in <strong>API Configuration</strong>
+
+                                    <div className="border-t pt-2 space-y-1">
+                                        <div className="font-medium text-green-700">💡 Pro Tips:</div>
+                                        <div className="text-zinc-600">
+                                            • Have an OpenAPI spec? Use <strong>&quot;Import OpenAPI&quot;</strong> in API Config
+                                        </div>
+                                        <div className="text-zinc-600">
+                                            • Test endpoints as you add them with the <strong>&quot;Test Endpoint&quot;</strong> button
+                                        </div>
+                                        <div className="text-zinc-600">
+                                            • Add parameter descriptions to help AI understand your API
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1 h-1 rounded-full bg-zinc-400" />
-                                        Save to create your MCP server
+
+                                    <div className="border-t pt-2 space-y-1">
+                                        <div className="font-medium text-blue-700">🔗 Your MCP Endpoint:</div>
+                                        <div className="bg-blue-50 p-2 rounded text-xs font-mono text-blue-800 break-all">
+                                            http://localhost:3000/mcp/&#123;bridge-id&#125;
+                                        </div>
                                     </div>
                                 </div>
                             </div>

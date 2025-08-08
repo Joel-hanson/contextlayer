@@ -11,6 +11,7 @@ import { BridgeConfig } from '@/lib/types';
 import { getBaseUrl } from '@/lib/url';
 import {
     AlertCircle,
+    BookOpen,
     Copy,
     Database,
     Edit,
@@ -21,6 +22,7 @@ import {
     Square,
     Trash2
 } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 
 export default function BridgesPage() {
@@ -160,6 +162,15 @@ export default function BridgesPage() {
                             >
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Refresh
+                            </Button>
+                            <Button
+                                variant="outline"
+                                asChild
+                            >
+                                <Link href="/guide">
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Quick Guide
+                                </Link>
                             </Button>
                             <Button onClick={createNewBridge}>
                                 <Plus className="mr-2 h-4 w-4" />
