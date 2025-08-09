@@ -6,7 +6,7 @@
 
 ## System Overview
 
-MCP Bridge is a Next.js application that creates bridges between Model Context Protocol (MCP) clients and REST API servers. The application transforms any REST API into an MCP server that AI assistants can use.
+Contextlayer is a Next.js application that creates bridges between Model Context Protocol (MCP) clients and REST API servers. The application transforms any REST API into an MCP server that AI assistants can use.
 
 ## Current Architecture
 
@@ -37,7 +37,7 @@ Development:
 ### Project Structure
 
 ```
-mcp-bridge/
+contextlayer/
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   ├── api/               # API routes
@@ -55,7 +55,7 @@ mcp-bridge/
 │   │   └── DashboardLayout.tsx # Dashboard sidebar layout
 │   └── lib/                   # Utilities and types
 │       ├── types.ts          # TypeScript type definitions
-│       └── mcp-bridge.ts     # MCP bridge implementation
+│       └── contextlayer.ts     # Contextlayer implementation
 ├── docs/                      # Documentation
 ├── public/                    # Static assets
 └── configuration files        # Next.js, Tailwind, etc.
@@ -192,11 +192,11 @@ GET    /api/health                     # Overall system health
 GET    /api/health/[bridgeId]          # Bridge-specific health
 ```
 
-#### MCP Bridge Implementation
+#### Contextlayer Implementation
 
 ```typescript
-// Updated MCP bridge architecture
-class McpBridgeManager {
+// Updated Contextlayer architecture
+class ContextLayerManager {
   private bridges: Map<string, BridgeConfig> = new Map();
   private server: Express;
 
@@ -268,7 +268,7 @@ class SingleBridgeMcpHandler {
 
 ```typescript
 // Current persistence
-localStorage.setItem("mcp-bridges", JSON.stringify(bridges));
+localStorage.setItem("contextlayers", JSON.stringify(bridges));
 ```
 
 #### Planned: Database with ORM
@@ -472,7 +472,7 @@ interface BridgeConfig {
 
 ```typescript
 // Single server handles all bridges
-class McpBridgeServer {
+class ContextLayerServer {
   private bridges: Map<string, BridgeConfig> = new Map();
   private server: Express | Fastify;
 
@@ -933,4 +933,4 @@ interface BridgeEvent {
 }
 ```
 
-This technical architecture document provides a comprehensive view of the current implementation and future plans for the MCP Bridge project. It serves as a guide for development decisions and system evolution.
+This technical architecture document provides a comprehensive view of the current implementation and future plans for the Contextlayer project. It serves as a guide for development decisions and system evolution.

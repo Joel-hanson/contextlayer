@@ -1,4 +1,4 @@
-# MCP Bridge - Clean Vercel Deployment Guide
+# ContextLayer - Clean Vercel Deployment Guide
 
 ## 🎯 **The Simple Way (Vercel Best Practices)**
 
@@ -9,7 +9,7 @@ This guide follows Vercel's recommended patterns for Next.js + Prisma deployment
 ```bash
 # Clone and setup
 git clone <your-repo>
-cd mcp-bridge
+cd contextlayer
 npm install
 
 # Setup environment (already done - you have .env.local!)
@@ -113,7 +113,7 @@ npm run db:seed-prod
 
 ### Demo Data
 
-- [ ] Login with: `demo@mcpbridge.com` / `demo123!`
+- [ ] Login with: `demo@contextlayer.com` / `demo123!`
 - [ ] Test sample bridges
 - [ ] Create your own bridges
 

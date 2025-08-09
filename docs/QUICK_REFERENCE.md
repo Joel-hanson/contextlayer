@@ -1,4 +1,4 @@
-# MCP Bridge Quick Reference
+# Contextlayer Quick Reference
 
 ## 🚀 3-Step Setup
 

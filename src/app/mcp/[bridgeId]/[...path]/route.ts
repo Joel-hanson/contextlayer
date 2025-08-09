@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-// Handle all HTTP methods for MCP bridge endpoints with dynamic paths
+// Handle all HTTP methods for ContextLayer endpoints with dynamic paths
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ bridgeId: string; path: string[] }> }
@@ -131,7 +131,7 @@ async function handleMcpRequest(
                     {
                         status: 401,
                         headers: {
-                            'WWW-Authenticate': 'Bearer realm="MCP Bridge"'
+                            'WWW-Authenticate': 'Bearer realm="ContextLayer"'
                         }
                     }
                 );
@@ -282,14 +282,14 @@ async function handleMcpRequest(
         });
 
     } catch (error) {
-        console.error('MCP Bridge Error:', error);
+        console.error('ContextLayer Error:', error);
 
         // Log the error
         await prisma.bridgeLog.create({
             data: {
                 bridgeId: bridgeId,
                 level: 'error',
-                message: `MCP Bridge request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                message: `ContextLayer request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
                 metadata: {
                     error: error instanceof Error ? error.stack : String(error),
                     method,

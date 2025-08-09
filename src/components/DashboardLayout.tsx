@@ -11,13 +11,13 @@ import {
 import { cn } from '@/lib/utils';
 import {
     BookOpen,
+    BrainCogIcon,
     Database,
     FileText,
     Home,
     LogOut,
     LucideIcon,
     Menu,
-    Network,
     Settings,
     User,
     X
@@ -39,7 +39,7 @@ export function DashboardLayout({ children }: SidebarProps) {
 
     const navigation = [
         { name: 'Overview', href: '/dashboard', icon: Home, current: pathname === '/dashboard' },
-        { name: 'Bridges', href: '/dashboard/bridges', icon: Database, current: pathname === '/dashboard/bridges' },
+        { name: 'MCP Servers', href: '/dashboard/bridges', icon: Database, current: pathname === '/dashboard/bridges' },
         { name: 'Quick Guide', href: '/guide', icon: BookOpen, current: pathname === '/guide' },
         { name: 'Documentation', href: '/dashboard/docs', icon: FileText, current: pathname === '/dashboard/docs' },
         { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: pathname === '/dashboard/settings' },
@@ -89,9 +89,9 @@ export function DashboardLayout({ children }: SidebarProps) {
                     </Button>
                     <div className="flex items-center gap-x-2">
                         <div className="h-6 w-6 bg-primary rounded-sm flex items-center justify-center">
-                            <Network className="h-4 w-4 text-primary-foreground" />
+                            <BrainCogIcon className="h-4 w-4 text-primary-foreground" />
                         </div>
-                        <span className="font-bold">MCP Bridge</span>
+                        <span className="font-bold">ContextLayer</span>
                     </div>
                 </div>
 
@@ -131,9 +131,9 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
             <div className="flex h-16 shrink-0 items-center justify-between">
                 <Link href="/" className="flex items-center gap-x-2">
                     <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                        <Network className="h-5 w-5 text-primary-foreground" />
+                        <BrainCogIcon className="h-5 w-5 text-primary-foreground" />
                     </div>
-                    <span className="text-xl font-semibold">MCP Bridge</span>
+                    <span className="text-xl font-semibold">ContextLayer</span>
                 </Link>
                 {onClose && (
                     <Button variant="ghost" size="sm" onClick={onClose} className="lg:hidden">

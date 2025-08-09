@@ -5,12 +5,12 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
-    container_name: mcp-bridge-app
+    container_name: contextlayer-app
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:password@db:5432/mcp_bridge
+      - DATABASE_URL=postgresql://postgres:password@db:5432/contextlayer
       - NEXTAUTH_SECRET=your-secret-key-change-this
       - NEXTAUTH_URL=http://localhost:3000
     volumes:
@@ -30,7 +30,7 @@ services:
       db:
         condition: service_healthy
     networks:
-      - mcp-bridge-network
+      - contextlayer-network
     restart: unless-stopped
     command: >
       sh -c "
@@ -43,9 +43,9 @@ services:
   # PostgreSQL database
   db:
     image: postgres:15-alpine
-    container_name: mcp-bridge-db
+    container_name: contextlayer-db
     environment:
-      - POSTGRES_DB=mcp_bridge
+      - POSTGRES_DB=contextlayer
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
@@ -55,10 +55,10 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - mcp-bridge-network
+      - contextlayer-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mcp_bridge"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d contextlayer"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -66,13 +66,13 @@ services:
   # Redis for caching and session management
   redis:
     image: redis:7-alpine
-    container_name: mcp-bridge-redis
+    container_name: contextlayer-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - mcp-bridge-network
+      - contextlayer-network
     restart: unless-stopped
     command: redis-server --appendonly yes
     healthcheck:
@@ -84,9 +84,9 @@ services:
   # pgAdmin for database management (optional, for development)
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: mcp-bridge-pgadmin
+    container_name: contextlayer-pgadmin
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@mcp-bridge.local
+      - PGADMIN_DEFAULT_EMAIL=admin@contextlayer.local
       - PGADMIN_DEFAULT_PASSWORD=admin
       - PGADMIN_CONFIG_SERVER_MODE=False
     ports:
@@ -97,7 +97,7 @@ services:
     depends_on:
       - db
     networks:
-      - mcp-bridge-network
+      - contextlayer-network
     restart: unless-stopped
     profiles:
       - tools
@@ -111,5 +111,5 @@ volumes:
     driver: local
 
 networks:
-  mcp-bridge-network:
+  contextlayer-network:
     driver: bridge

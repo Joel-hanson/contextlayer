@@ -25,7 +25,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
     children,
     defaultTheme = 'light', // Default to light theme
-    storageKey = 'mcp-bridge-theme',
+    storageKey = 'contextlayer-theme',
     ...props
 }: ThemeProviderProps) {
     const [theme, setTheme] = useState<Theme>(defaultTheme);

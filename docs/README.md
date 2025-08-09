@@ -1,6 +1,6 @@
-# MCP Bridge Documentation
+# Contextlayer Documentation
 
-Welcome to the MCP Bridge documentation. This folder contains comprehensive documentation about the project, including user journey analysis, feature planning, and technical specifications.
+Welcome to the Contextlayer documentation. This folder contains comprehensive documentation about the project, including user journey analysis, feature planning, and technical specifications.
 
 ## Documentation Structure
 
@@ -26,7 +26,7 @@ Welcome to the MCP Bridge documentation. This folder contains comprehensive docu
 
 - [Project Overview](../README.md)
 - [Live Documentation](../src/app/dashboard/docs/page.tsx)
-- [GitHub Issues](https://github.com/your-repo/mcp-bridge/issues)
+- [GitHub Issues](https://github.com/your-repo/contextlayer/issues)
 
 ## Getting Help
 

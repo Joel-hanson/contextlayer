@@ -202,14 +202,14 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold">API Endpoints</h3>
+                    <h3 className="text-lg font-semibold">AI Tools</h3>
                     <p className="text-sm text-muted-foreground">
-                        Define the endpoints that will be available through MCP tools
+                        Define API endpoints that will be exposed as AI tools for assistants to call
                     </p>
                 </div>
                 <Button onClick={addEndpoint} size="sm" className="h-8">
                     <Plus className="h-4 w-4 mr-1" />
-                    Add Endpoint
+                    Add Tool
                 </Button>
             </div>
 
@@ -219,11 +219,11 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
                         <AlertTriangle className="h-8 w-8 text-orange-600 mb-3" />
                         <div className="text-center space-y-3">
                             <p className="font-medium text-orange-900">
-                                No endpoints configured
+                                No AI tools configured
                             </p>
                             <p className="text-sm text-orange-700 max-w-md">
-                                Without endpoints, this bridge won&apos;t provide any tools to MCP clients.
-                                Add at least one endpoint to make your API accessible through the Model Context Protocol.
+                                Without tools, this MCP server won&apos;t provide any functionality to AI assistants.
+                                Add at least one endpoint to expose API functionality as AI tools.
                             </p>
                             <div className="text-xs text-orange-600 space-y-1 max-w-lg">
                                 <p className="font-medium">💡 Quick Examples:</p>
@@ -273,7 +273,7 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <Label className="text-sm font-medium">Endpoint Name *</Label>
+                                        <Label className="text-sm font-medium">Tool Name *</Label>
                                         <Input
                                             {...form.register(`apiConfig.endpoints.${index}.name`)}
                                             placeholder="Get Repository"

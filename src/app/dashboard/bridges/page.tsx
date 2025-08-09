@@ -123,7 +123,7 @@ export default function BridgesPage() {
                 <div className="flex items-center justify-center py-12">
                     <div className="text-center">
                         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p className="text-muted-foreground">Loading bridges...</p>
+                        <p className="text-muted-foreground">Loading MCP servers...</p>
                     </div>
                 </div>
             )}
@@ -135,7 +135,7 @@ export default function BridgesPage() {
                         <div className="flex items-center gap-3">
                             <AlertCircle className="h-5 w-5 text-destructive" />
                             <div>
-                                <h3 className="font-semibold text-destructive">Error Loading Bridges</h3>
+                                <h3 className="font-semibold text-destructive">Error Loading MCP Servers</h3>
                                 <p className="text-destructive/80">{error}</p>
                             </div>
                             <Button
@@ -158,9 +158,9 @@ export default function BridgesPage() {
                     {/* Header */}
                     <div className="flex items-center justify-between space-y-2">
                         <div>
-                            <h2 className="text-3xl font-bold tracking-tight">Bridges</h2>
+                            <h2 className="text-3xl font-bold tracking-tight">MCP Servers</h2>
                             <p className="text-muted-foreground">
-                                Manage your API bridges and their configurations
+                                Manage your MCP servers and their tool configurations
                             </p>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -183,7 +183,7 @@ export default function BridgesPage() {
                             </Button>
                             <Button onClick={createNewBridge}>
                                 <Plus className="mr-2 h-4 w-4" />
-                                Create Bridge
+                                Create MCP Server
                             </Button>
                         </div>
                     </div>
@@ -194,10 +194,10 @@ export default function BridgesPage() {
                             <div className="flex items-start gap-3">
                                 <Database className="h-5 w-5 text-muted-foreground mt-0.5" />
                                 <div className="space-y-2">
-                                    <h3 className="font-semibold">Using MCP Endpoints</h3>
+                                    <h3 className="font-semibold">Using MCP Tools</h3>
                                     <p className="text-muted-foreground text-sm">
-                                        Copy the MCP endpoint URL and configure it in your MCP client (Claude Desktop, VS Code Copilot, etc.).
-                                        The endpoint supports JSON-RPC 2.0 protocol for tools/list and tools/call methods.
+                                        Copy the MCP server URL and configure it in your MCP client (Claude Desktop, VS Code Copilot, etc.).
+                                        The server provides AI tools that your assistant can call to interact with your APIs.
                                     </p>
                                 </div>
                             </div>
@@ -210,13 +210,13 @@ export default function BridgesPage() {
                             <Card className="border-dashed">
                                 <CardContent className="flex flex-col items-center justify-center py-12">
                                     <Database className="h-12 w-12 text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">No bridges yet</h3>
+                                    <h3 className="text-lg font-semibold mb-2">No MCP servers yet</h3>
                                     <p className="text-muted-foreground text-center mb-4">
-                                        Get started by creating your first API bridge to convert REST endpoints into MCP tools.
+                                        Get started by creating your first MCP server to convert API endpoints into AI tools.
                                     </p>
                                     <Button onClick={createNewBridge}>
                                         <Plus className="h-4 w-4 mr-2" />
-                                        Create Your First Bridge
+                                        Create Your First MCP Server
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -249,7 +249,7 @@ export default function BridgesPage() {
                                                         <span className="text-sm font-medium">{bridge.apiConfig.name}</span>
                                                     </div>
                                                     <span className="text-xs text-muted-foreground">
-                                                        {bridge.apiConfig.endpoints?.length || 0} endpoint{(bridge.apiConfig.endpoints?.length || 0) !== 1 ? 's' : ''}
+                                                        {bridge.apiConfig.endpoints?.length || 0} tool{(bridge.apiConfig.endpoints?.length || 0) !== 1 ? 's' : ''}
                                                     </span>
                                                 </div>
 
@@ -449,7 +449,7 @@ export default function BridgesPage() {
                                                         size="sm"
                                                         onClick={() => handleDeleteBridge(bridge.id)}
                                                         className="hover:bg-muted"
-                                                        title="Delete Bridge"
+                                                        title="Delete MCP Server"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
@@ -474,8 +474,8 @@ export default function BridgesPage() {
                         open={showDeleteDialog}
                         onOpenChange={setShowDeleteDialog}
                         onConfirm={handleDeleteConfirm}
-                        title="Delete Bridge"
-                        description={`Are you sure you want to delete the bridge "${bridges.find(b => b.id === deletingBridgeId)?.name}"? This action cannot be undone.`}
+                        title="Delete MCP Server"
+                        description={`Are you sure you want to delete the MCP server "${bridges.find(b => b.id === deletingBridgeId)?.name}"? This action cannot be undone.`}
                         confirmText="Delete"
                         cancelText="Cancel"
                     />

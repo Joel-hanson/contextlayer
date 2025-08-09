@@ -5,7 +5,7 @@
 
 ## Prerequisites
 
-Before setting up the MCP Bridge development environment, ensure you have the following installed:
+Before setting up the Contextlayer development environment, ensure you have the following installed:
 
 ### Required Software
 
@@ -29,8 +29,8 @@ Before setting up the MCP Bridge development environment, ensure you have the fo
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/mcp-bridge.git
-cd mcp-bridge
+git clone https://github.com/your-org/contextlayer.git
+cd contextlayer
 ```
 
 ### 2. Install Dependencies
@@ -55,7 +55,7 @@ NODE_ENV=development
 PORT=3000
 
 # Database (when implemented)
-DATABASE_URL=postgresql://username:password@localhost:5432/mcp_bridge
+DATABASE_URL=postgresql://username:password@localhost:5432/contextlayer
 
 # Redis (when implemented)
 REDIS_URL=redis://localhost:6379
@@ -83,7 +83,7 @@ The application will be available at `http://localhost:3000`.
 ## Project Structure Deep Dive
 
 ```
-mcp-bridge/
+contextlayer/
 ├── docs/                      # Documentation
 │   ├── README.md
 │   ├── user-journey-analysis.md
@@ -114,7 +114,7 @@ mcp-bridge/
 │   │   └── DashboardLayout.tsx # Dashboard sidebar
 │   └── lib/                 # Utilities and business logic
 │       ├── types.ts         # TypeScript type definitions
-│       ├── mcp-bridge.ts    # MCP bridge implementation
+│       ├── contextlayer.ts    # Contextlayer implementation
 │       └── utils.ts         # Utility functions
 ├── .env.example             # Environment variables template
 ├── .gitignore
@@ -227,7 +227,7 @@ sudo apt-get install postgresql postgresql-contrib
 sudo systemctl start postgresql
 
 # Create database
-createdb mcp_bridge_dev
+createdb contextlayer_dev
 ```
 
 #### Database Migrations (Planned)
@@ -264,7 +264,7 @@ sudo systemctl start redis-server
 
 ```env
 NODE_ENV=development
-DEBUG=mcp-bridge:*
+DEBUG=contextlayer:*
 LOG_LEVEL=debug
 ENABLE_MOCK_DATA=true
 ```
@@ -451,4 +451,4 @@ npm run build
 - **Keyboard Navigation**: Ensure all functionality is keyboard accessible
 - **Color Contrast**: Maintain sufficient color contrast ratios
 
-This development setup guide provides everything needed to get started with MCP Bridge development. Keep this document updated as the project evolves and new tools are added.
+This development setup guide provides everything needed to get started with Contextlayer development. Keep this document updated as the project evolves and new tools are added.

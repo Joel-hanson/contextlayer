@@ -6,12 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import {
   ArrowRight,
   Bot,
+  BrainCogIcon,
   CheckCircle,
   Code2,
   Cpu,
   GitBranch,
   Globe,
-  Network,
   Shield,
   Star,
   Zap
@@ -27,9 +27,9 @@ export default function LandingPage() {
           <div className="mr-4 flex">
             <Link className="mr-6 flex items-center space-x-2" href="/">
               <div className="h-6 w-6 bg-primary rounded-sm flex items-center justify-center">
-                <Network className="h-4 w-4 text-primary-foreground" />
+                <BrainCogIcon className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-bold">MCP Bridge</span>
+              <span className="font-bold">ContextLayer</span>
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
@@ -223,7 +223,7 @@ export default function LandingPage() {
             <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-4 text-xl font-bold">
               2
             </div>
-            <h3 className="text-xl font-semibold mb-2">Generate MCP Bridge</h3>
+            <h3 className="text-xl font-semibold mb-2">Generate MCP Server</h3>
             <p className="text-muted-foreground">
               Our system automatically converts your API endpoints into MCP-compatible tools that AI assistants can understand and use.
             </p>
@@ -305,7 +305,7 @@ export default function LandingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded bg-green-500 flex items-center justify-center">
-                  <Network className="h-4 w-4 text-white" />
+                  <BrainCogIcon className="h-4 w-4 text-white" />
                 </div>
                 Custom API
               </CardTitle>
@@ -359,9 +359,9 @@ export default function LandingPage() {
           <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
             <Link href="/" className="flex items-center space-x-2">
               <div className="h-6 w-6 bg-primary rounded-sm flex items-center justify-center">
-                <Network className="h-4 w-4 text-primary-foreground" />
+                <BrainCogIcon className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-bold">MCP Bridge</span>
+              <span className="font-bold">ContextLayer</span>
             </Link>
             <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
               Built with Next.js and shadcn/ui. Open source and free to use.

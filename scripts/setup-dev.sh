@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MCP Bridge Development Environ# Build and start the development environment
+# Contextlayer Development Environ# Build and start the development environment
 echo "🐳 Building and starting Docker containers..."
 docker-compose down -v 2>/dev/null || true  # Clean up any existing containers
 
@@ -13,7 +13,7 @@ docker-compose up -dSetup Script
 
 set -e  # Exit on any error
 
-echo "Setting up MCP Bridge Development Environment"
+echo "Setting up ContextLayer Development Environment"
 echo "================================================"
 
 # Check if Docker and Docker Compose are installed
@@ -65,7 +65,7 @@ sleep 10
 echo "Checking service status..."
 
 # Check PostgreSQL
-if docker-compose exec -T db pg_isready -U mcp_user -d mcp_bridge_db &> /dev/null; then
+if docker-compose exec -T db pg_isready -U mcp_user -d contextlayer_db &> /dev/null; then
     echo "PostgreSQL is ready"
 else
     echo "PostgreSQL is not ready. Check the logs with: docker-compose logs db"
@@ -90,11 +90,11 @@ echo ""
 echo "Setup Complete!"
 echo "=================="
 echo ""
-echo "Your MCP Bridge development environment is ready!"
+echo "Your ContextLayer development environment is ready!"
 echo ""
 echo "🌐 Application:     http://localhost:3000"
 echo "   pgAdmin:        http://localhost:5050"
-echo "   - Email:         admin@mcpbridge.com"
+echo "   - Email:         admin@contextlayer.com"
 echo "   - Password:      admin123"
 echo ""
 echo "  Useful Commands:"
@@ -102,7 +102,7 @@ echo "   Start:           docker-compose up -d"
 echo "   Stop:            docker-compose down"
 echo "   Logs:            docker-compose logs -f [service]"
 echo "   Shell (app):     docker-compose exec app sh"
-echo "   Shell (db):      docker-compose exec db psql -U mcp_user -d mcp_bridge_db"
+echo "   Shell (db):      docker-compose exec db psql -U mcp_user -d contextlayer_db"
 echo ""
 echo " For more information, see DOCKER.md"
 echo ""

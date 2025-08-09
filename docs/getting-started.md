@@ -1,12 +1,12 @@
-# Getting Started with MCP Bridge
+# Getting Started with Contextlayer
 
 > **Quick Start Guide**  
 > **Estimated Time**: 15 minutes  
 > **Difficulty**: Beginner
 
-## What is MCP Bridge?
+## What is Contextlayer?
 
-MCP Bridge transforms any REST API into a Model Context Protocol (MCP) server that AI assistants like Claude and VS Code Copilot can use. Instead of manually implementing MCP servers for each API, you can create bridges through our visual interface.
+Contextlayer transforms any REST API into a Model Context Protocol (MCP) server that AI assistants like Claude and VS Code Copilot can use. Instead of manually implementing MCP servers for each API, you can create bridges through our visual interface.
 
 ### Key Benefits
 
@@ -265,4 +265,4 @@ Bridge: Analytics API → MCP → AI Assistant
 
 ---
 
-**Congratulations!** 🎉 You've successfully created your first MCP bridge. Your REST API is now accessible to AI assistants through the Model Context Protocol.
+**Congratulations!** 🎉 You've successfully created your first Contextlayer. Your REST API is now accessible to AI assistants through the Model Context Protocol.

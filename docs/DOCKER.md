@@ -1,4 +1,4 @@
-# Docker Compose Development Environment for MCP Bridge
+# Docker Compose Development Environment for Contextlayer
 
 ## Quick Start
 
@@ -7,7 +7,7 @@
    ```bash
    # Clone and setup
    git clone <repository-url>
-   cd mcp-bridge
+   cd contextlayer
 
    # Install dependencies locally for IDE support
    npm install
@@ -28,7 +28,7 @@
 
 3. **Access the Application**:
    - **Main App**: http://localhost:3000
-   - **pgAdmin**: http://localhost:5050 (admin@mcp-bridge.local / admin)
+   - **pgAdmin**: http://localhost:5050 (admin@contextlayer.local / admin)
    - **PostgreSQL**: localhost:5432 (postgres / password)
    - **Redis**: localhost:6379
 
@@ -36,32 +36,32 @@
 
 ### Main Application (`app`)
 
-- **Container**: `mcp-bridge-app`
+- **Container**: `contextlayer-app`
 - **Port**: 3000
 - **Hot Reload**: ✅ (source code mounted as volumes)
 - **Environment**: Development with all debugging enabled
 
 ### PostgreSQL Database (`db`)
 
-- **Container**: `mcp-bridge-db`
+- **Container**: `contextlayer-db`
 - **Port**: 5432
-- **Database**: `mcp_bridge`
+- **Database**: `contextlayer`
 - **Credentials**: postgres / password
 - **Persistence**: Docker volume `postgres_data`
 - **Init Script**: Automatically creates schema and sample data
 
 ### Redis Cache (`redis`)
 
-- **Container**: `mcp-bridge-redis`
+- **Container**: `contextlayer-redis`
 - **Port**: 6379
 - **Persistence**: Docker volume `redis_data`
 - **Usage**: Session management and caching
 
 ### pgAdmin (`pgadmin`) - Optional
 
-- **Container**: `mcp-bridge-pgadmin`
+- **Container**: `contextlayer-pgadmin`
 - **Port**: 5050
-- **Credentials**: admin@mcp-bridge.local / admin
+- **Credentials**: admin@contextlayer.local / admin
 - **Pre-configured**: Database connection ready to use
 
 ## Development Workflow
@@ -86,7 +86,7 @@ docker-compose down
 
 ```bash
 # Access PostgreSQL directly
-docker-compose exec db psql -U postgres -d mcp_bridge
+docker-compose exec db psql -U postgres -d contextlayer
 
 # View database logs
 docker-compose logs db
@@ -144,7 +144,7 @@ docker-compose --profile tools up
 docker-compose exec app sh
 
 # Shell into database
-docker-compose exec db psql -U postgres -d mcp_bridge
+docker-compose exec db psql -U postgres -d contextlayer
 
 # View real-time logs
 docker-compose logs -f
@@ -157,10 +157,10 @@ docker-compose ps
 
 ```bash
 # Backup database
-docker-compose exec db pg_dump -U postgres mcp_bridge > backup.sql
+docker-compose exec db pg_dump -U postgres contextlayer > backup.sql
 
 # Restore database
-docker-compose exec -T db psql -U postgres -d mcp_bridge < backup.sql
+docker-compose exec -T db psql -U postgres -d contextlayer < backup.sql
 
 # Reset all data
 docker-compose down -v

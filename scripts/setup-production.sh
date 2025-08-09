@@ -1,7 +1,7 @@
 #!/bin/bash
-# MCP Bridge - One-time Production Setup Script
+# ContextLayer - One-time Production Setup Script
 
-echo "🚀 Setting up MCP Bridge production database..."
+echo "🚀 Setting up ContextLayer production database..."
 
 # Check if we can pull environment variables from Vercel
 if ! command -v vercel &> /dev/null; then
@@ -10,7 +10,7 @@ if ! command -v vercel &> /dev/null; then
     exit 1
 fi
 
-echo "1️⃣ Pulling production environment variables..."
+echo "Pulling production environment variables..."
 vercel env pull .env.vercel --environment=production
 
 # Check if DATABASE_URL exists in the pulled file
@@ -21,20 +21,20 @@ if ! grep -q "DATABASE_URL" .env.vercel; then
     exit 1
 fi
 
-echo "2️⃣ Generating Prisma client..."
+echo "Generating Prisma client..."
 dotenv -e .env.vercel -- npx prisma generate --no-engine
 
-echo "3️⃣ Running database migrations..."
+echo "Running database migrations..."
 dotenv -e .env.vercel -- npx prisma migrate deploy
 
-echo "4️⃣ Seeding with demo data..."
+echo "Seeding with demo data..."
 dotenv -e .env.vercel -- npm run db:seed
 
-echo "✅ Setup complete! Your MCP Bridge is ready."
+echo "Setup complete! Your ContextLayer is ready."
 echo ""
 echo "🧪 Demo Login:"
-echo "   Email: demo@mcpbridge.com"
-echo "   Password: demo123!"
+echo "   Email: test@example.com"
+echo "   Password: password123"
 
 # Cleanup temporary file
 rm -f .env.vercel

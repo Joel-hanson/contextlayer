@@ -38,7 +38,7 @@ export interface AppSettings {
 
 const defaultSettings: AppSettings = {
     profile: {
-        displayName: 'MCP Bridge User',
+        displayName: 'ContextLayer User',
         email: '',
         organization: '',
         timezone: 'UTC',

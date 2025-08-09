@@ -1,11 +1,11 @@
--- MCP Bridge Database Initialization Script
--- This script sets up the initial database schema for the MCP Bridge application
+-- Contextlayer Database Initialization Script
+-- This script sets up the initial database schema for the Contextlayer application
 
 -- Create database (if not exists, handled by POSTGRES_DB env var)
--- CREATE DATABASE IF NOT EXISTS mcp_bridge;
+-- CREATE DATABASE IF NOT EXISTS contextlayer;
 
 -- Use the database
--- \c mcp_bridge;
+-- \c contextlayer;
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -229,7 +229,7 @@ INSERT INTO bridges (name, description, slug, api_config, enabled) VALUES
         },
         "headers": {
             "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "MCP-Bridge/1.0"
+            "User-Agent": "contextlayer/1.0"
         }
     }',
     true

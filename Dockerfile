@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for MCP Bridge application
+# Multi-stage Dockerfile for Contextlayer application
 
 # Base image with Node.js
 FROM node:20-alpine AS base

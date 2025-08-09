@@ -1,6 +1,6 @@
-# MCP Bridge - Deployment Guide
+# Contextlayer - Deployment Guide
 
-This guide will help you deploy your MCP Bridge application to Vercel with database setup and CI/CD pipeline.
+This guide will help you deploy your Contextlayer application to Vercel with database setup and CI/CD pipeline.
 
 ## Quick Start (5 minutes)
 
@@ -28,7 +28,7 @@ This guide will help you deploy your MCP Bridge application to Vercel with datab
 ### 1. Vercel Project Setup
 
 ```bash
-cd /Users/joelhanson/Desktop/Personal/mcp-bridge
+cd /Users/joelhanson/Desktop/Personal/contextlayer
 
 # Login to Vercel
 vercel login
@@ -100,7 +100,7 @@ openssl rand -base64 32
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) > APIs & Services > Credentials
 2. Create OAuth 2.0 Client ID for Web application:
-   - Application name: `MCP Bridge`
+   - Application name: `Contextlayer`
    - Authorized JavaScript origins: `https://your-app.vercel.app`
    - Authorized redirect URIs: `https://your-app.vercel.app/api/auth/callback/google`
 3. Add Client ID and Secret to Vercel environment variables
@@ -109,7 +109,7 @@ openssl rand -base64 32
 
 1. Go to GitHub Settings > Developer settings > OAuth Apps
 2. Create new OAuth App:
-   - Application name: `MCP Bridge`
+   - Application name: `Contextlayer`
    - Homepage URL: `https://your-app.vercel.app`
    - Authorization callback URL: `https://your-app.vercel.app/api/auth/callback/github`
 3. Add Client ID and Secret to Vercel environment variables
@@ -289,4 +289,4 @@ Once deployed:
 4. **Plan scaling strategy** based on growth
 5. **Consider CDN** for static assets (included with Vercel)
 
-Your MCP Bridge is now production-ready! 🚀
+Your Contextlayer is now production-ready! 🚀
