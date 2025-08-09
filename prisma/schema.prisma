@@ -143,7 +143,7 @@ model Bridge {
     description String?
     baseUrl     String
 
-    // Consolidated authentication config
+    // Consolidated authentication config for external API calls
     authConfig Json? // { type: 'none|bearer|apikey|basic', token?, apiKey?, username?, password?, headerName? }
 
     // Request headers
@@ -154,8 +154,8 @@ model Bridge {
     status  BridgeStatus @default(inactive)
 
     // Routing and access control
-    routingConfig Json? // { type: 'path', customDomain?, pathPrefix? }
-    accessConfig  Json? // { isPublic: true, allowedOrigins: [], authRequired: false, apiKey? }
+    routingConfig Json? // { type: 'http', customDomain?: string, pathPrefix?: string }
+    accessConfig  Json? // { public: boolean, allowedOrigins?: string[], authRequired: boolean } - NOTE: tokens managed separately in AccessToken table
 
     // Performance settings
     performanceConfig Json? // { timeout: 30000, retryAttempts: 3, rateLimiting?, caching? }
@@ -171,6 +171,7 @@ model Bridge {
     endpoints ApiEndpoint[]
     logs      BridgeLog[]
     requests  ApiRequest[]
+    tokens    AccessToken[] // Add relation to tokens
 
     // Indexes for performance
     @@index([userId])
@@ -249,4 +250,36 @@ model ApiRequest {
     @@index([success, createdAt])
     @@index([createdAt]) // For time-based queries and cleanup
     @@map("api_requests")
+}
+
+// Access Token Model for MCP Authentication
+model AccessToken {
+    id          String  @id @default(uuid()) @db.Uuid
+    bridgeId    String  @db.Uuid
+    token       String  @unique // The actual token string
+    name        String // Human-readable token name
+    description String? // Optional description
+
+    // Permissions - stored as JSON for flexibility
+    permissions Json // Array of permission objects: [{ type: 'tools|resources|prompts|admin', actions: [], constraints?: {} }]
+
+    // Token lifecycle
+    isActive   Boolean   @default(true)
+    expiresAt  DateTime? // Optional expiration
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    lastUsedAt DateTime? // Track usage
+
+    // Metadata for additional info
+    metadata Json? // Additional structured data
+
+    // Relations
+    bridge Bridge @relation(fields: [bridgeId], references: [id], onDelete: Cascade)
+
+    // Indexes for performance
+    @@index([bridgeId])
+    @@index([token]) // For auth lookups
+    @@index([bridgeId, isActive])
+    @@index([expiresAt]) // For cleanup jobs
+    @@map("access_tokens")
 }

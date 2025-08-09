@@ -10,58 +10,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, BadgeAlert, CheckCircle, Lightbulb, Link, LockIcon, Save, Settings, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { ConfirmationDialog } from '../ConfirmationDialog';
 
 // Import modular components
 import { AuthenticationTab } from './AuthenticationTab';
 import { BasicInfoTab } from './BasicInfoTab';
 import { EndpointsTab } from './EndpointsTab';
+import { PromptsTab } from './PromptsTab';
+import { ResourcesTab } from './ResourcesTab';
 import { RoutingAndAccessTab } from './RoutingAndAccessTab';
-
-const bridgeFormSchema = z.object({
-    name: z.string().min(1, 'Bridge name is required'),
-    description: z.string().optional(),
-    apiConfig: z.object({
-        name: z.string().min(1, 'API name is required'),
-        baseUrl: z.string().url('Must be a valid URL'),
-        description: z.string().optional(),
-        headers: z.record(z.string()).optional(),
-        authentication: z.object({
-            type: z.enum(['none', 'bearer', 'apikey', 'basic']),
-            token: z.string().optional(),
-            apiKey: z.string().optional(),
-            username: z.string().optional(),
-            password: z.string().optional(),
-            headerName: z.string().optional(),
-        }).optional(),
-        endpoints: z.array(z.object({
-            name: z.string().min(1, 'Endpoint name is required'),
-            method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']),
-            path: z.string().min(1, 'Path is required'),
-            description: z.string().optional(),
-            parameters: z.array(z.object({
-                name: z.string(),
-                type: z.enum(['string', 'number', 'boolean', 'object', 'array']),
-                required: z.boolean(),
-                description: z.string().optional(),
-            })).optional(),
-        })),
-    }),
-    routing: z.object({
-        type: z.enum(['path', 'subdomain', 'websocket']),
-        customDomain: z.string().optional(),
-        pathPrefix: z.string().optional(),
-    }).optional(),
-    access: z.object({
-        public: z.boolean(),
-        allowedOrigins: z.array(z.string()).optional(),
-        authRequired: z.boolean(),
-        apiKey: z.string().optional(),
-    }).optional(),
-});
-
-type BridgeFormData = z.infer<typeof bridgeFormSchema>;
+import { bridgeFormSchema, type BridgeFormData } from './types';
 
 interface BridgeFormProps {
     bridge?: BridgeConfig;
@@ -99,8 +57,10 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 authentication: { type: 'none' },
                 endpoints: [],
             },
+            mcpResources: [],
+            mcpPrompts: [],
             routing: {
-                type: 'path',
+                type: 'http',
                 customDomain: '',
                 pathPrefix: '',
             },
@@ -118,6 +78,16 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         name: 'apiConfig.endpoints',
     });
 
+    const resourceFields = useFieldArray({
+        control: form.control,
+        name: 'mcpResources',
+    });
+
+    const promptFields = useFieldArray({
+        control: form.control,
+        name: 'mcpPrompts',
+    });
+
     // Initialize form with bridge data when editing
     useEffect(() => {
         if (open) {
@@ -132,9 +102,14 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         description: bridge.apiConfig.description || '',
                         headers: bridge.apiConfig.headers || {},
                         authentication: bridge.apiConfig.authentication || { type: 'none' },
-                        endpoints: bridge.apiConfig.endpoints || [],
+                        endpoints: (bridge.apiConfig.endpoints || []).map(endpoint => ({
+                            ...endpoint,
+                            parameters: endpoint.parameters || []
+                        })),
                     },
-                    routing: bridge.routing || { type: 'path' },
+                    mcpResources: bridge.mcpResources || [],
+                    mcpPrompts: bridge.mcpPrompts || [],
+                    routing: bridge.routing || { type: 'http' },
                     access: bridge.access || { public: true, authRequired: false },
                 });
             } else {
@@ -154,7 +129,9 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 authentication: template.apiConfig?.authentication || { type: 'none' },
                                 endpoints: template.apiConfig?.endpoints || [],
                             },
-                            routing: { type: 'path' },
+                            mcpResources: template.mcpResources || [],
+                            mcpPrompts: template.mcpPrompts || [],
+                            routing: { type: 'http' },
                             access: { public: true, authRequired: false },
                         });
                         // Clear template data after use
@@ -177,7 +154,9 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 authentication: { type: 'none' },
                                 endpoints: [],
                             },
-                            routing: { type: 'path' },
+                            mcpResources: [],
+                            mcpPrompts: [],
+                            routing: { type: 'http' },
                             access: { public: true, authRequired: false },
                         });
                     }
@@ -194,7 +173,9 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             authentication: { type: 'none' },
                             endpoints: [],
                         },
-                        routing: { type: 'path' },
+                        mcpResources: [],
+                        mcpPrompts: [],
+                        routing: { type: 'http' },
                         access: { public: true, authRequired: false },
                     });
                 }
@@ -290,13 +271,38 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     }),
                 },
                 mcpTools: bridge?.mcpTools || [],
+                mcpResources: data.mcpResources || [],
+                mcpPrompts: data.mcpPrompts || [],
                 enabled: bridge?.enabled ?? true, // Default to enabled for new bridges
 
-                // Path-based routing configuration
-                routing: data.routing || { type: 'path' as const },
+                // HTTP transport configuration
+                routing: data.routing || { type: 'http' as const },
 
                 // Access control
-                access: data.access || { public: true, authRequired: false },
+                access: {
+                    public: data.access?.public ?? true,
+                    authRequired: data.access?.authRequired ?? false,
+                    apiKey: data.access?.apiKey,
+                    allowedOrigins: data.access?.allowedOrigins,
+                    tokens: [], // Tokens are now managed separately via API
+                    security: {
+                        tokenAuth: {
+                            enabled: true,
+                            requireToken: false,
+                            allowMultipleTokens: true,
+                        },
+                        permissions: {
+                            defaultPermissions: [],
+                            requireExplicitGrants: false,
+                            allowSelfManagement: true,
+                        },
+                        audit: {
+                            enabled: true,
+                            logRequests: true,
+                            retentionDays: 30,
+                        },
+                    }
+                },
 
                 // Performance settings (using the default structure from BridgeConfig)
                 performance: {
@@ -510,7 +516,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-4">
+                            <TabsList className="grid w-full grid-cols-6">
                                 <TabsTrigger value="basic" className="text-xs">
                                     {getTabIcon('basic')} Basic Info
                                 </TabsTrigger>
@@ -519,6 +525,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 </TabsTrigger>
                                 <TabsTrigger value="endpoints" className="text-xs">
                                     {getTabIcon('endpoints')} Tools
+                                </TabsTrigger>
+                                <TabsTrigger value="resources" className="text-xs">
+                                    {getTabIcon('resources')} Resources
+                                </TabsTrigger>
+                                <TabsTrigger value="prompts" className="text-xs">
+                                    {getTabIcon('prompts')} Prompts
                                 </TabsTrigger>
                                 <TabsTrigger value="routing" className="text-xs">
                                     {getTabIcon('routing')} Routing
@@ -539,6 +551,20 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                     endpointFields={endpointFields}
                                     testingEndpoint={testingEndpoint}
                                     onTestEndpoint={testEndpoint}
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="resources" className="space-y-4">
+                                <ResourcesTab
+                                    form={form}
+                                    resourceFields={resourceFields}
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="prompts" className="space-y-4">
+                                <PromptsTab
+                                    form={form}
+                                    promptFields={promptFields}
                                 />
                             </TabsContent>
 

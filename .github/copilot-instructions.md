@@ -154,13 +154,12 @@ Current API routes return mock data - when implementing real functionality:
 Focus on the path-based architecture migration for scalability improvements.
 
 - Is the whole application secure?
-- routing tab is it really worth it, does it have ws connection. Can we just have the route that are only support for mcp
 - Oauth implementation
-- The resources and prompts
-- The template is not working
 - Write automated tests for the apis.
 - For testing purposes can you setup some dummy apis that has different authentication types
 - I wan't a precheck logic for the contextlayer, that is when a request comes though to the endpoint the user has the capabilites to allow certain tool actions, that generally work for post, delete, patch actions
+
+Done
 
 - Is the database design an efficient one : Done
 - quick guide, can you provide one that helps users - Done
@@ -169,3 +168,7 @@ Focus on the path-based architecture migration for scalability improvements.
 - How to deploy this to the server
 - Make by default bridge running
 - Rename values to that its easier to related to mcp server
+- The template is not working
+- The resources and prompts
+- routing tab is it really worth it, does it have ws connection. Can we just have the route that are only support for mcp
+- require authentication thing should create new token which customers can copy.
