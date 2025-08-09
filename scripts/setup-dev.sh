@@ -43,12 +43,12 @@ fi
 echo "Directories created"
 
 # Copy environment file if it doesn't exist
-if [ ! -f .env ]; then
-    echo "Creating .env file from template..."
-    cp .env.example .env
-    echo ".env file created. Please review and update the environment variables if needed."
+if [ ! -f .env.local ]; then
+    echo "Creating .env.local file from template..."
+    cp .env.example .env.local
+    echo ".env.local file created. Please review and update the environment variables if needed."
 else
-    echo ".env file already exists"
+    echo ".env.local file already exists"
 fi
 
 # Build and start the development environment

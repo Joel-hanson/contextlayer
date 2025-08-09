@@ -13,7 +13,7 @@
    npm install
 
    # Copy environment file
-   cp .env.example .env
+   cp .env.example .env.local
    ```
 
 2. **Start Development Environment**:
@@ -171,7 +171,7 @@ docker-compose up
 
 ### Environment Variables
 
-Edit `.env` file to customize:
+Edit `.env.local` file to customize:
 
 - Database credentials
 - Application secrets
