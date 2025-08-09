@@ -1,4 +1,4 @@
-# 🚀 MCP Bridge Quick Start Guide
+# 🚀 Contextlayer Quick Start Guide
 
 Transform any REST API into an AI-accessible tool using the Model Context Protocol (MCP) in just a few steps!
 

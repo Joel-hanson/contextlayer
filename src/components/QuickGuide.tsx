@@ -22,16 +22,16 @@ export function QuickGuide() {
     const [copiedEndpoint, setCopiedEndpoint] = useState(false);
 
     const copyEndpoint = () => {
-        navigator.clipboard.writeText('http://localhost:3000/mcp/{bridge-id}');
+        navigator.clipboard.writeText('http://localhost:3000/mcp/{server-id}');
         setCopiedEndpoint(true);
         setTimeout(() => setCopiedEndpoint(false), 2000);
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
-            <div className="text-center space-y-2">
-                <h1 className="text-3xl font-bold">🚀 MCP Bridge Quick Guide</h1>
-                <p className="text-lg text-muted-foreground">
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tight">ContextLayer Quick Guide</h2>
+                <p className="text-muted-foreground">
                     Transform any REST API into an AI-accessible tool in minutes
                 </p>
             </div>
@@ -61,20 +61,20 @@ export function QuickGuide() {
                         <Card>
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-lg">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <span className="text-blue-700 font-bold text-sm">1</span>
+                                    <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">
+                                        <span className="text-zinc-700 font-bold text-sm">1</span>
                                     </div>
-                                    Create Bridge
+                                    Create MCP Server
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <p className="text-sm text-muted-foreground">
-                                    Start by creating a new bridge with basic information
+                                    Start by creating a new MCP server with basic information
                                 </p>
                                 <div className="space-y-2 text-xs">
                                     <div className="flex items-center gap-2">
                                         <CheckCircle className="h-3 w-3 text-green-600" />
-                                        <span>Bridge Name: <code className="bg-gray-100 px-1 rounded">GitHub API</code></span>
+                                        <span>MCP Server Name: <code className="bg-zinc-100 px-1 rounded">GitHub API</code></span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <CheckCircle className="h-3 w-3 text-green-600" />
@@ -87,10 +87,10 @@ export function QuickGuide() {
                         <Card>
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-lg">
-                                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                                        <span className="text-green-700 font-bold text-sm">2</span>
+                                    <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">
+                                        <span className="text-zinc-700 font-bold text-sm">2</span>
                                     </div>
-                                    Configure API
+                                    Configure Source API
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
@@ -99,11 +99,11 @@ export function QuickGuide() {
                                 </p>
                                 <div className="space-y-2 text-xs">
                                     <div className="flex items-center gap-2">
-                                        <Settings className="h-3 w-3 text-blue-600" />
-                                        <span>Base URL: <code className="bg-gray-100 px-1 rounded">https://api.github.com</code></span>
+                                        <Settings className="h-3 w-3 text-zinc-600" />
+                                        <span>Base URL: <code className="bg-zinc-100 px-1 rounded">https://api.github.com</code></span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Shield className="h-3 w-3 text-blue-600" />
+                                        <Shield className="h-3 w-3 text-zinc-600" />
                                         <span>Authentication: Bearer Token</span>
                                     </div>
                                 </div>
@@ -113,23 +113,23 @@ export function QuickGuide() {
                         <Card>
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-lg">
-                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                                        <span className="text-orange-700 font-bold text-sm">3</span>
+                                    <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">
+                                        <span className="text-zinc-700 font-bold text-sm">3</span>
                                     </div>
-                                    Add Endpoints
+                                    Add AI Tools
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <p className="text-sm text-muted-foreground">
-                                    Define endpoints that AI assistants can use
+                                    Define API endpoints that will be exposed as AI tools
                                 </p>
                                 <div className="space-y-2 text-xs">
                                     <div className="flex items-center gap-2">
-                                        <Globe className="h-3 w-3 text-orange-600" />
-                                        <span>Path: <code className="bg-gray-100 px-1 rounded">/repos/{'{'}owner{'}'}/{'{'}repo{'}'}</code></span>
+                                        <Globe className="h-3 w-3 text-zinc-600" />
+                                        <span>Path: <code className="bg-zinc-100 px-1 rounded">/repos/{'{'}owner{'}'}/{'{'}repo{'}'}</code></span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Code className="h-3 w-3 text-orange-600" />
+                                        <Code className="h-3 w-3 text-zinc-600" />
                                         <span>Parameters: owner, repo</span>
                                     </div>
                                 </div>
@@ -146,11 +146,11 @@ export function QuickGuide() {
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <p className="text-sm text-muted-foreground">
-                                Once your bridge is created, AI assistants can connect using this endpoint:
+                                Once your MCP server is created, AI assistants can connect using this endpoint:
                             </p>
-                            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                                <code className="flex-1 text-blue-800 font-mono text-sm">
-                                    http://localhost:3000/mcp/{'{'}bridge-id{'}'}
+                            <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-lg">
+                                <code className="flex-1 text-zinc-800 font-mono text-sm">
+                                    http://localhost:3000/mcp/{'{'}server-id{'}'}
                                 </code>
                                 <Button
                                     variant="ghost"
@@ -199,7 +199,7 @@ export function QuickGuide() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Badge variant="outline" className="bg-green-50">POST</Badge>
+                                    <Badge variant="outline" className="bg-zinc-50">POST</Badge>
                                     <code className="ml-2 text-sm">/orders</code>
                                 </div>
                                 <div className="text-sm space-y-1">
@@ -226,9 +226,9 @@ export function QuickGuide() {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <p className="text-sm text-muted-foreground">Most common for modern APIs</p>
-                                <div className="space-y-2 text-xs font-mono bg-gray-50 p-3 rounded">
-                                    <div>Type: <span className="text-blue-600">Bearer</span></div>
-                                    <div>Token: <span className="text-green-600">ghp_xxxxxxxxxxxx</span></div>
+                                <div className="space-y-2 text-xs font-mono bg-zinc-50 p-3 rounded">
+                                    <div>Type: <span className="text-zinc-600">Bearer</span></div>
+                                    <div>Token: <span className="text-zinc-800">ghp_xxxxxxxxxxxx</span></div>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                     Used by: GitHub, GitLab, many REST APIs
@@ -242,10 +242,10 @@ export function QuickGuide() {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <p className="text-sm text-muted-foreground">Common for service APIs</p>
-                                <div className="space-y-2 text-xs font-mono bg-gray-50 p-3 rounded">
-                                    <div>Type: <span className="text-blue-600">API Key</span></div>
-                                    <div>Header: <span className="text-orange-600">X-API-Key</span></div>
-                                    <div>Key: <span className="text-green-600">secret123</span></div>
+                                <div className="space-y-2 text-xs font-mono bg-zinc-50 p-3 rounded">
+                                    <div>Type: <span className="text-zinc-600">API Key</span></div>
+                                    <div>Header: <span className="text-zinc-700">X-API-Key</span></div>
+                                    <div>Key: <span className="text-zinc-800">secret123</span></div>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                     Used by: OpenWeather, many SaaS APIs
@@ -259,10 +259,10 @@ export function QuickGuide() {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <p className="text-sm text-muted-foreground">Username and password</p>
-                                <div className="space-y-2 text-xs font-mono bg-gray-50 p-3 rounded">
-                                    <div>Type: <span className="text-blue-600">Basic</span></div>
-                                    <div>Username: <span className="text-orange-600">admin</span></div>
-                                    <div>Password: <span className="text-green-600">password123</span></div>
+                                <div className="space-y-2 text-xs font-mono bg-zinc-50 p-3 rounded">
+                                    <div>Type: <span className="text-zinc-600">Basic</span></div>
+                                    <div>Username: <span className="text-zinc-700">admin</span></div>
+                                    <div>Password: <span className="text-zinc-800">password123</span></div>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                     Used by: Legacy APIs, internal services
@@ -276,8 +276,8 @@ export function QuickGuide() {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <p className="text-sm text-muted-foreground">Public APIs</p>
-                                <div className="space-y-2 text-xs font-mono bg-gray-50 p-3 rounded">
-                                    <div>Type: <span className="text-blue-600">None</span></div>
+                                <div className="space-y-2 text-xs font-mono bg-zinc-50 p-3 rounded">
+                                    <div>Type: <span className="text-zinc-600">None</span></div>
                                     <div className="text-muted-foreground">No credentials needed</div>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
@@ -294,7 +294,7 @@ export function QuickGuide() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-red-600">
                                     <AlertCircle className="h-5 w-5" />
-                                    Bridge Won&apos;t Start
+                                    MCP Server Won&apos;t Start
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
@@ -317,7 +317,7 @@ export function QuickGuide() {
                                         <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                                         <div>
                                             <p className="text-sm font-medium">At Least One Endpoint</p>
-                                            <p className="text-xs text-muted-foreground">Configure at least one endpoint to start the bridge</p>
+                                            <p className="text-xs text-muted-foreground">Configure at least one tool to start the MCP server</p>
                                         </div>
                                     </div>
                                 </div>
@@ -326,7 +326,7 @@ export function QuickGuide() {
 
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-orange-600">
+                                <CardTitle className="flex items-center gap-2 text-amber-600">
                                     <AlertCircle className="h-5 w-5" />
                                     AI Can&apos;t Use Tools
                                 </CardTitle>
@@ -336,8 +336,8 @@ export function QuickGuide() {
                                     <div className="flex items-start gap-2">
                                         <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                                         <div>
-                                            <p className="text-sm font-medium">Bridge Status Active</p>
-                                            <p className="text-xs text-muted-foreground">Green toggle means bridge is running</p>
+                                            <p className="text-sm font-medium">MCP Server Status Active</p>
+                                            <p className="text-xs text-muted-foreground">Green toggle means MCP server is running</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-2">
@@ -360,26 +360,26 @@ export function QuickGuide() {
 
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-blue-600">
+                                <CardTitle className="flex items-center gap-2 text-zinc-700">
                                     <TestTube className="h-5 w-5" />
-                                    Testing Your Bridge
+                                    Testing Your MCP Server
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <div className="space-y-2">
                                     <div className="flex items-start gap-2">
-                                        <Code className="h-4 w-4 text-blue-600 mt-0.5" />
+                                        <Code className="h-4 w-4 text-zinc-600 mt-0.5" />
                                         <div>
-                                            <p className="text-sm font-medium">Test Individual Endpoints</p>
-                                            <p className="text-xs text-muted-foreground">Use the &quot;Test Endpoint&quot; button in the endpoint configuration</p>
+                                            <p className="text-sm font-medium">Test Individual Tools</p>
+                                            <p className="text-xs text-muted-foreground">Use the &quot;Test Tool&quot; button in the tool configuration</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-2">
-                                        <Globe className="h-4 w-4 text-blue-600 mt-0.5" />
+                                        <Globe className="h-4 w-4 text-zinc-600 mt-0.5" />
                                         <div>
                                             <p className="text-sm font-medium">Check MCP Tools</p>
                                             <p className="text-xs text-muted-foreground">
-                                                <code className="bg-gray-100 px-1 rounded text-xs">
+                                                <code className="bg-zinc-100 px-1 rounded text-xs">
                                                     {`curl -X POST http://localhost:3000/mcp/{id} -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'`}
                                                 </code>
                                             </p>

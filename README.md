@@ -1,4 +1,4 @@
-# MCP Bridge
+# ContextLayer
 
 Transform any REST API into a Model Context Protocol (MCP) server, making your APIs accessible to AI tools like Claude, VS Code Copilot, and more.
 
@@ -24,7 +24,7 @@ Transform any REST API into a Model Context Protocol (MCP) server, making your A
 
 ```bash
 git clone <repository-url>
-cd mcp-bridge
+cd contextlayer
 ```
 
 2. Install dependencies:

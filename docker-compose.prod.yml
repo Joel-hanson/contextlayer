@@ -5,12 +5,12 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runner
-    container_name: mcp-bridge-app-prod
+    container_name: contextlayer-app-prod
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/mcp_bridge
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/contextlayer
       - REDIS_URL=redis://redis:6379
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
@@ -18,7 +18,7 @@ services:
       - db
       - redis
     networks:
-      - mcp-bridge-network
+      - contextlayer-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
@@ -30,9 +30,9 @@ services:
   # PostgreSQL database (production)
   db:
     image: postgres:15-alpine
-    container_name: mcp-bridge-db-prod
+    container_name: contextlayer-db-prod
     environment:
-      - POSTGRES_DB=mcp_bridge
+      - POSTGRES_DB=contextlayer
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
@@ -40,10 +40,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - mcp-bridge-network
+      - contextlayer-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mcp_bridge"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d contextlayer"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -52,11 +52,11 @@ services:
   # Redis for caching and session management (production)
   redis:
     image: redis:7-alpine
-    container_name: mcp-bridge-redis-prod
+    container_name: contextlayer-redis-prod
     volumes:
       - redis_data:/data
     networks:
-      - mcp-bridge-network
+      - contextlayer-network
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     healthcheck:
@@ -69,7 +69,7 @@ services:
   # Nginx reverse proxy (production)
   nginx:
     image: nginx:alpine
-    container_name: mcp-bridge-nginx
+    container_name: contextlayer-nginx
     ports:
       - "80:80"
       - "443:443"
@@ -79,7 +79,7 @@ services:
     depends_on:
       - app
     networks:
-      - mcp-bridge-network
+      - contextlayer-network
     restart: unless-stopped
 
 volumes:
@@ -89,5 +89,5 @@ volumes:
     driver: local
 
 networks:
-  mcp-bridge-network:
+  contextlayer-network:
     driver: bridge

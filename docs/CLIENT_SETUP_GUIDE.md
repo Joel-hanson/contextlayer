@@ -1,8 +1,8 @@
-# MCP Bridge Client Configuration Guide
+# Contextlayer Client Configuration Guide
 
 ## Quick Setup Overview
 
-Your MCP Bridge server converts REST APIs into Model Context Protocol (MCP) endpoints that AI assistants can use. Here's how to configure popular clients:
+Your Contextlayer server converts REST APIs into Model Context Protocol (MCP) endpoints that AI assistants can use. Here's how to configure popular clients:
 
 ### 🔗 **Your MCP Endpoint Format**
 
@@ -171,7 +171,7 @@ curl -X POST http://localhost:3000/mcp/YOUR_BRIDGE_ID \
 
 **"Connection refused"**
 
-- ✅ Ensure MCP Bridge server is running (`npm run dev`)
+- ✅ Ensure Contextlayer server is running (`npm run dev`)
 - ✅ Check server is on port 3000 (`http://localhost:3000`)
 
 **"No tools available"**

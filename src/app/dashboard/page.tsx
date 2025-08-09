@@ -105,7 +105,7 @@ export default function Dashboard() {
             <div>
               <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
               <p className="text-muted-foreground">
-                Here&apos;s what&apos;s happening with your MCP bridges today.
+                Here&apos;s what&apos;s happening with your MCP servers today.
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -119,7 +119,7 @@ export default function Dashboard() {
               </Button>
               <Button onClick={createNewBridge}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Bridge
+                Create MCP Server
               </Button>
             </div>
           </div>
@@ -132,14 +132,14 @@ export default function Dashboard() {
                   <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full flex items-center justify-center mb-6">
                     <Database className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-2xl font-semibold mb-2">Welcome to MCP Bridge!</h3>
+                  <h3 className="text-2xl font-semibold mb-2">Welcome to ContextLayer!</h3>
                   <p className="text-muted-foreground text-center mb-6 max-w-md">
-                    Transform any REST API into a Model Context Protocol server that AI assistants can use. Get started by creating your first bridge.
+                    Transform any REST API into a Model Context Protocol server that AI assistants can use. Get started by creating your first MCP server.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Button onClick={createNewBridge} size="lg">
                       <Plus className="h-5 w-5 mr-2" />
-                      Create Your First Bridge
+                      Create Your First MCP Server
                     </Button>
                     <Link href="/dashboard/docs">
                       <Button variant="outline" size="lg">
@@ -192,28 +192,28 @@ export default function Dashboard() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Total Bridges
+                      MCP Servers
                     </CardTitle>
                     <Database className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{bridges.length}</div>
                     <p className="text-xs text-muted-foreground">
-                      {bridges.length === 1 ? '+1 from last month' : 'bridges configured'}
+                      {bridges.length === 1 ? '+1 from last month' : 'servers configured'}
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Active Bridges
+                      Active Servers
                     </CardTitle>
                     <Activity className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{runningBridges}</div>
                     <p className="text-xs text-muted-foreground">
-                      {runningBridges === 1 ? 'bridge running' : 'bridges running'}
+                      {runningBridges === 1 ? 'server running' : 'servers running'}
                     </p>
                   </CardContent>
                 </Card>
@@ -229,14 +229,14 @@ export default function Dashboard() {
                       {bridges.reduce((acc, bridge) => acc + (bridge.apiConfig.endpoints?.length || 0), 0)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      API endpoints configured
+                      AI tools available
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Inactive Bridges
+                      Inactive Servers
                     </CardTitle>
                     <AlertCircle className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
@@ -250,14 +250,14 @@ export default function Dashboard() {
               </div>
 
               <div className="grid lg:grid-cols-2 gap-6">
-                {/* Active Bridges */}
+                {/* Active Servers */}
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
                           <Activity className="h-5 w-5" />
-                          Active Bridges
+                          Active Servers
                         </CardTitle>
                         <CardDescription>Currently running MCP servers</CardDescription>
                       </div>
@@ -300,7 +300,7 @@ export default function Dashboard() {
                           <div className="text-center pt-2">
                             <Link href="/dashboard/bridges">
                               <Button variant="ghost" size="sm">
-                                +{activeBridges.length - 4} more active bridges
+                                +{activeBridges.length - 4} more active servers
                               </Button>
                             </Link>
                           </div>
@@ -311,8 +311,8 @@ export default function Dashboard() {
                         <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                           <Activity className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">No active bridges</p>
-                        <p className="text-xs text-muted-foreground">Start a bridge to see it here</p>
+                        <p className="text-sm text-muted-foreground mb-2">No active servers</p>
+                        <p className="text-xs text-muted-foreground">Start an MCP server to see it here</p>
                       </div>
                     )}
                   </CardContent>
@@ -347,8 +347,8 @@ export default function Dashboard() {
                             <Database className="h-4 w-4" />
                           </div>
                           <div className="text-left">
-                            <div className="font-medium">Manage Bridges</div>
-                            <div className="text-sm text-muted-foreground">View, edit, and control your bridges</div>
+                            <div className="font-medium">Manage MCP Servers</div>
+                            <div className="text-sm text-muted-foreground">View, edit, and control your servers</div>
                           </div>
                         </div>
                       </Button>
@@ -374,7 +374,7 @@ export default function Dashboard() {
                         <span className="font-medium">Pro Tip</span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Copy the MCP endpoint URL from active bridges and add it to your AI assistant&apos;s configuration to start using your APIs with AI.
+                        Copy the MCP server URL from active servers and add it to your AI assistant&apos;s configuration to start using your APIs with AI.
                       </p>
                     </div>
                   </CardContent>

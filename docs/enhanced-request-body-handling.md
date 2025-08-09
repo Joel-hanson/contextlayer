@@ -1,8 +1,8 @@
-# Enhanced Request Body Handling for MCP Bridge
+# Enhanced Request Body Handling for Contextlayer
 
 ## Problem Statement
 
-The original MCP bridge implementation had limited support for POST, PUT, and PATCH operations. When users tried to use these MCP actions, the AI assistants couldn't understand:
+The original Contextlayer implementation had limited support for POST, PUT, and PATCH operations. When users tried to use these MCP actions, the AI assistants couldn't understand:
 
 1. **What parameters to send** - No schema information for request bodies
 2. **How to structure the data** - No type information or validation
@@ -13,7 +13,7 @@ The original MCP bridge implementation had limited support for POST, PUT, and PA
 
 ### 1. Comprehensive Request Body Schema Support
 
-The enhanced MCP bridge now provides detailed schema information for all request bodies:
+The enhanced Contextlayer now provides detailed schema information for all request bodies:
 
 ```typescript
 interface RequestBodySchema {
@@ -172,4 +172,4 @@ MCP: ✅ Request body built correctly and sent to API
 4. **Error Prevention**: Schema validation catches issues early
 5. **Documentation**: Self-documenting tools with rich descriptions
 
-This enhancement transforms the MCP bridge from a basic API proxy into a sophisticated, schema-aware integration that enables AI assistants to interact with any REST API effectively and safely.
+This enhancement transforms the Contextlayer from a basic API proxy into a sophisticated, schema-aware integration that enables AI assistants to interact with any REST API effectively and safely.

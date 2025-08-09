@@ -6,7 +6,7 @@
 
 ## Overview
 
-The MCP Bridge API provides endpoints for managing API bridges, their lifecycle, and monitoring their performance. All endpoints follow RESTful conventions and return JSON responses.
+The Contextlayer API provides endpoints for managing API bridges, their lifecycle, and monitoring their performance. All endpoints follow RESTful conventions and return JSON responses.
 
 ## Authentication
 
@@ -592,9 +592,9 @@ Client libraries will be available for common programming languages:
 
 ```typescript
 // JavaScript/TypeScript SDK
-import { McpBridgeClient } from '@mcp-bridge/client';
+import { ContextLayerClient } from '@contextlayer/client';
 
-const client = new McpBridgeClient({
+const client = new ContextLayerClient({
   baseUrl: 'http://localhost:3000/api',
   apiKey: 'your-api-key'
 });

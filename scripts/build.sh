@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Vercel build script for MCP Bridge
+# Vercel build script for Contextlayer
 echo "Starting build process..."
 
 # Generate Prisma client

@@ -60,7 +60,7 @@ interface AppSettings {
 
 const defaultSettings: AppSettings = {
     profile: {
-        displayName: 'MCP Bridge User',
+        displayName: 'ContextLayer User',
         email: '',
         organization: '',
         timezone: 'UTC',
@@ -122,7 +122,7 @@ export default function SettingsPage() {
                     // API returns the settings directly, not nested under userData
                     const loadedSettings: AppSettings = {
                         profile: {
-                            displayName: settingsData.profile?.displayName || 'MCP Bridge User',
+                            displayName: settingsData.profile?.displayName || 'ContextLayer User',
                             email: settingsData.profile?.email || '',
                             organization: settingsData.profile?.organization || '',
                             timezone: settingsData.profile?.timezone || 'UTC',
@@ -141,7 +141,7 @@ export default function SettingsPage() {
                 } else {
                     console.error('Failed to load settings from database');
                     // Fallback to localStorage
-                    const savedSettings = localStorage.getItem('mcp-bridge-settings');
+                    const savedSettings = localStorage.getItem('contextlayer-settings');
                     if (savedSettings) {
                         try {
                             const parsed = JSON.parse(savedSettings);
@@ -176,7 +176,7 @@ export default function SettingsPage() {
             console.log('Theme changing from', settings.preferences.theme, 'to:', value);
             setTheme(value as 'light' | 'dark' | 'system');
             // Also persist directly to theme provider's storage
-            localStorage.setItem('mcp-bridge-theme', value as string);
+            localStorage.setItem('contextlayer-theme', value as string);
             console.log('Theme set and persisted to localStorage:', value);
         }
         */
@@ -218,7 +218,7 @@ export default function SettingsPage() {
                 }
             } else {
                 // Fallback to localStorage if not authenticated
-                localStorage.setItem('mcp-bridge-settings', JSON.stringify(settings));
+                localStorage.setItem('contextlayer-settings', JSON.stringify(settings));
                 toast({
                     title: "Success",
                     description: "Settings saved locally!",
@@ -229,7 +229,7 @@ export default function SettingsPage() {
             // DISABLED: Theme changing functionality temporarily disabled
             /*
             setTheme(settings.preferences.theme);
-            localStorage.setItem('mcp-bridge-theme', settings.preferences.theme);
+            localStorage.setItem('contextlayer-theme', settings.preferences.theme);
             */
 
             setHasChanges(false);
@@ -282,7 +282,7 @@ export default function SettingsPage() {
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'mcp-bridge-settings.json';
+        link.download = 'contextlayer-settings.json';
         link.click();
         URL.revokeObjectURL(url);
     };
@@ -681,7 +681,7 @@ export default function SettingsPage() {
                                 Application Preferences
                             </CardTitle>
                             <CardDescription>
-                                Customize your MCP Bridge experience
+                                Customize your ContextLayer experience
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">

@@ -127,7 +127,7 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
                             <div className="p-1.5 bg-zinc-100 rounded">
                                 <Info className="h-3 w-3 text-zinc-600" />
                             </div>
-                            Bridge Information
+                            MCP Server Information
                         </CardTitle>
                         <Button
                             type="button"
@@ -145,12 +145,12 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="name" className="text-sm font-medium">
-                                Bridge Name *
+                                MCP Server Name *
                             </Label>
                             <Input
                                 id="name"
                                 {...form.register('name')}
-                                placeholder="GitHub API Bridge"
+                                placeholder="GitHub Tools Server"
                                 className="h-9"
                             />
                             {form.formState.errors.name && (
@@ -162,7 +162,7 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
 
                         <div className="space-y-1.5">
                             <Label htmlFor="apiName" className="text-sm font-medium">
-                                API Name *
+                                Source API Name *
                             </Label>
                             <Input
                                 id="apiName"

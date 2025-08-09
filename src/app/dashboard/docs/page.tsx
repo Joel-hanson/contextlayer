@@ -15,7 +15,7 @@ export default function DocsPage() {
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Documentation</h2>
                     <p className="text-muted-foreground">
-                        Learn how to set up and use MCP bridges with various clients
+                        Learn how to set up and use MCP servers with various clients
                     </p>
                 </div>
             </div>
@@ -36,7 +36,7 @@ export default function DocsPage() {
                                 <BookOpen className="h-5 w-5" />
                                 Quick Start
                             </CardTitle>
-                            <CardDescription>Create your first MCP bridge in 3 steps</CardDescription>
+                            <CardDescription>Create your first MCP server in 3 steps</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-3">
@@ -167,7 +167,7 @@ export default function DocsPage() {
                                 <Terminal className="h-5 w-5" />
                                 Testing Commands
                             </CardTitle>
-                            <CardDescription>Test your MCP bridge with these curl commands</CardDescription>
+                            <CardDescription>Test your MCP server with these curl commands</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-4">

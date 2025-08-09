@@ -9,7 +9,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <SessionProvider>
             <ThemeProvider
                 defaultTheme="light"
-                storageKey="mcp-bridge-theme"
+                storageKey="contextlayer-theme"
             >
                 {children}
                 <Toaster />

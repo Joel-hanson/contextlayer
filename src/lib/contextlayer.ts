@@ -42,7 +42,7 @@ interface EndpointDefinition {
     responseSchema?: unknown;
 }
 
-export class McpBridge {
+export class ContextLayer {
     private server: Server;
     private apiConfig: ApiConfig;
 

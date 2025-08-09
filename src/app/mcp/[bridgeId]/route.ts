@@ -168,7 +168,7 @@ async function handleMcpJsonRpc(
                         headers: {
                             'Content-Type': 'application/json',
                             'Access-Control-Allow-Origin': '*',
-                            'WWW-Authenticate': 'Bearer realm="MCP Bridge"'
+                            'WWW-Authenticate': 'Bearer realm="ContextLayer"'
                         }
                     }
                 );

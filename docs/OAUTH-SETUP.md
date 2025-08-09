@@ -1,4 +1,4 @@
-# OAuth Setup Guide for MCP Bridge
+# OAuth Setup Guide for Contextlayer
 
 ## Google OAuth (Primary Authentication)
 
@@ -14,7 +14,7 @@
 2. Click **"+ CREATE CREDENTIALS"** > **"OAuth 2.0 Client IDs"**
 3. Choose **"Web application"** as application type
 4. Configure the OAuth client:
-   - **Name**: `MCP Bridge`
+   - **Name**: `Contextlayer`
    - **Authorized JavaScript origins**:
      - Development: `http://localhost:3000`
      - Production: `https://your-domain.vercel.app`
@@ -44,7 +44,7 @@ vercel env add GOOGLE_CLIENT_SECRET development
 1. Go to [GitHub Settings](https://github.com/settings/profile) > **Developer settings** > **OAuth Apps**
 2. Click **"New OAuth App"**
 3. Fill in the application details:
-   - **Application name**: `MCP Bridge`
+   - **Application name**: `Contextlayer`
    - **Homepage URL**: `https://your-domain.vercel.app`
    - **Application description**: `Transform REST APIs into MCP servers`
    - **Authorization callback URL**: `https://your-domain.vercel.app/api/auth/callback/github`
@@ -136,4 +136,4 @@ curl https://your-domain.vercel.app/health
 curl https://your-domain.vercel.app/api/auth/providers
 ```
 
-Your MCP Bridge now supports both Google (primary) and GitHub (alternative) authentication! 🎉
+Your Contextlayer now supports both Google (primary) and GitHub (alternative) authentication! 🎉
