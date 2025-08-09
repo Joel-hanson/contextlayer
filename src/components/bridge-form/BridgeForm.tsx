@@ -138,24 +138,69 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     access: bridge.access || { public: true, authRequired: false },
                 });
             } else {
-                // Creating new bridge - reset to defaults
-                form.reset({
-                    name: '',
-                    description: '',
-                    apiConfig: {
+                // Creating new bridge - check for template or reset to defaults
+                const templateData = localStorage.getItem('contextlayer-template');
+                if (templateData) {
+                    try {
+                        const template = JSON.parse(templateData);
+                        form.reset({
+                            name: template.name || '',
+                            description: template.description || '',
+                            apiConfig: {
+                                name: template.apiConfig?.name || '',
+                                baseUrl: template.apiConfig?.baseUrl || '',
+                                description: template.apiConfig?.description || '',
+                                headers: template.apiConfig?.headers || {},
+                                authentication: template.apiConfig?.authentication || { type: 'none' },
+                                endpoints: template.apiConfig?.endpoints || [],
+                            },
+                            routing: { type: 'path' },
+                            access: { public: true, authRequired: false },
+                        });
+                        // Clear template data after use
+                        localStorage.removeItem('contextlayer-template');
+                        toast({
+                            title: "Template Applied",
+                            description: `Template "${template.name}" has been applied to the form.`,
+                        });
+                    } catch (error) {
+                        console.error('Error loading template:', error);
+                        // Fall back to defaults
+                        form.reset({
+                            name: '',
+                            description: '',
+                            apiConfig: {
+                                name: '',
+                                baseUrl: '',
+                                description: '',
+                                headers: {},
+                                authentication: { type: 'none' },
+                                endpoints: [],
+                            },
+                            routing: { type: 'path' },
+                            access: { public: true, authRequired: false },
+                        });
+                    }
+                } else {
+                    // Reset to defaults
+                    form.reset({
                         name: '',
-                        baseUrl: '',
                         description: '',
-                        headers: {},
-                        authentication: { type: 'none' },
-                        endpoints: [],
-                    },
-                    routing: { type: 'path' },
-                    access: { public: true, authRequired: false },
-                });
+                        apiConfig: {
+                            name: '',
+                            baseUrl: '',
+                            description: '',
+                            headers: {},
+                            authentication: { type: 'none' },
+                            endpoints: [],
+                        },
+                        routing: { type: 'path' },
+                        access: { public: true, authRequired: false },
+                    });
+                }
             }
         }
-    }, [bridge, open, form]);
+    }, [bridge, open, form, toast]);
 
     // Watch for form changes to detect unsaved changes
     useEffect(() => {

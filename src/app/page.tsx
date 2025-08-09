@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ArrowRight,
   Bot,
@@ -245,87 +245,90 @@ export default function LandingPage() {
       <section id="examples" className="container py-24 bg-muted/20">
         <div className="mx-auto max-w-[980px] text-center mb-16">
           <h2 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl">
-            Popular API Bridges
+            See It In Action
           </h2>
           <p className="mx-auto mt-4 max-w-[750px] text-lg text-muted-foreground">
-            Get started quickly with pre-configured templates for popular APIs.
+            Here&apos;s how ContextLayer transforms REST APIs into MCP tools that AI assistants can use.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-blue-500 flex items-center justify-center">
-                  <Globe className="h-4 w-4 text-white" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Example 1: Weather API */}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded bg-blue-500 flex items-center justify-center">
+                  <Globe className="h-5 w-5 text-white" />
                 </div>
-                Weather API
-              </CardTitle>
-              <CardDescription>
-                Connect to OpenWeatherMap for real-time weather data and forecasts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary">Weather</Badge>
-                <Badge variant="secondary">Forecasts</Badge>
-                <Badge variant="secondary">API Key</Badge>
+                <div>
+                  <h3 className="text-xl font-semibold">Weather API Bridge</h3>
+                  <p className="text-muted-foreground">OpenWeatherMap to MCP conversion</p>
+                </div>
               </div>
-              <Button variant="outline" className="w-full">
-                Use Template
-              </Button>
-            </CardContent>
+
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="text-sm font-mono">
+                  <div className="text-blue-600 mb-2">{`// REST API Endpoint`}</div>
+                  <div>GET /weather?q=London&appid=API_KEY</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center py-2">
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="text-sm font-mono">
+                  <div className="text-green-600 mb-2">{`// MCP Tool`}</div>
+                  <div>get_current_weather(city: &quot;London&quot;)</div>
+                  <div className="text-muted-foreground mt-1">→ Returns weather data for AI assistant</div>
+                </div>
+              </div>
+            </div>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-gray-800 flex items-center justify-center">
-                  <Code2 className="h-4 w-4 text-white" />
+          {/* Example 2: GitHub API */}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center">
+                  <Code2 className="h-5 w-5 text-white" />
                 </div>
-                GitHub API
-              </CardTitle>
-              <CardDescription>
-                Access repositories, issues, and pull requests from GitHub.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary">Repos</Badge>
-                <Badge variant="secondary">Issues</Badge>
-                <Badge variant="secondary">OAuth</Badge>
+                <div>
+                  <h3 className="text-xl font-semibold">GitHub API Bridge</h3>
+                  <p className="text-muted-foreground">Repository management for AI</p>
+                </div>
               </div>
-              <Button variant="outline" className="w-full">
-                Use Template
-              </Button>
-            </CardContent>
-          </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-green-500 flex items-center justify-center">
-                  <BrainCogIcon className="h-4 w-4 text-white" />
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="text-sm font-mono">
+                  <div className="text-blue-600 mb-2">{`// REST API Endpoint`}</div>
+                  <div>GET /repos/user/project/issues</div>
                 </div>
-                Custom API
-              </CardTitle>
-              <CardDescription>
-                Create a bridge for your own REST API with custom endpoints.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary">Custom</Badge>
-                <Badge variant="secondary">Flexible</Badge>
-                <Badge variant="secondary">Secure</Badge>
               </div>
-              <Link href="/dashboard">
-                <Button className="w-full">
-                  Create Bridge
-                </Button>
-              </Link>
-            </CardContent>
+
+              <div className="flex items-center justify-center py-2">
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="text-sm font-mono">
+                  <div className="text-green-600 mb-2">{`// MCP Tool`}</div>
+                  <div>get_repository_issues(repo: &quot;user/project&quot;)</div>
+                  <div className="text-muted-foreground mt-1">→ AI can analyze and help with issues</div>
+                </div>
+              </div>
+            </div>
           </Card>
+        </div>
+
+        <div className="text-center mt-8">
+          <Link href="/dashboard">
+            <Button size="lg">
+              Start Creating Your Bridges
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
       </section>
 
