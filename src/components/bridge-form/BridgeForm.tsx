@@ -245,7 +245,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     }),
                 },
                 mcpTools: bridge?.mcpTools || [],
-                enabled: bridge?.enabled || false,
+                enabled: bridge?.enabled ?? true, // Default to enabled for new bridges
 
                 // Path-based routing configuration
                 routing: data.routing || { type: 'path' as const },

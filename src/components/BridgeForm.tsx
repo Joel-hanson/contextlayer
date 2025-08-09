@@ -241,7 +241,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                     }),
                 },
                 mcpTools: bridge?.mcpTools || [],
-                enabled: bridge?.enabled || false,
+                enabled: bridge?.enabled ?? true, // Default to enabled for new bridges
 
                 // Path-based routing configuration
                 routing: data.routing || { type: 'path' as const },
@@ -300,7 +300,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave }: BridgeFormPro
                     })),
                 },
                 mcpTools: [],
-                enabled: false,
+                enabled: true, // Default to enabled for new bridges
 
                 // Path-based routing configuration  
                 routing: data.routing || { type: 'path' as const },

@@ -11,10 +11,10 @@ if ! command -v vercel &> /dev/null; then
 fi
 
 echo "1️⃣ Pulling production environment variables..."
-vercel env pull .env.production --environment=production
+vercel env pull .env.vercel --environment=production
 
 # Check if DATABASE_URL exists in the pulled file
-if ! grep -q "DATABASE_URL" .env.production; then
+if ! grep -q "DATABASE_URL" .env.vercel; then
     echo "❌ DATABASE_URL not found in production environment."
     echo "   Please set your environment variables in Vercel dashboard:"
     echo "   https://vercel.com/dashboard → Project → Settings → Environment Variables"
@@ -22,13 +22,13 @@ if ! grep -q "DATABASE_URL" .env.production; then
 fi
 
 echo "2️⃣ Generating Prisma client..."
-dotenv -e .env.production -- npx prisma generate
+dotenv -e .env.vercel -- npx prisma generate --no-engine
 
 echo "3️⃣ Running database migrations..."
-dotenv -e .env.production -- npx prisma migrate deploy
+dotenv -e .env.vercel -- npx prisma migrate deploy
 
 echo "4️⃣ Seeding with demo data..."
-dotenv -e .env.production -- npm run db:seed-prod
+dotenv -e .env.vercel -- npm run db:seed
 
 echo "✅ Setup complete! Your MCP Bridge is ready."
 echo ""
@@ -37,4 +37,4 @@ echo "   Email: demo@mcpbridge.com"
 echo "   Password: demo123!"
 
 # Cleanup temporary file
-rm -f .env.production
+rm -f .env.vercel

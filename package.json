@@ -15,9 +15,9 @@
     "db:reset": "dotenv -e .env.local -- prisma migrate reset",
     "db:studio": "dotenv -e .env.local -- prisma studio",
     "db:seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
-    "prod:setup": "./setup-production.sh",
     "prod:migrate": "vercel env pull .env.production --environment=production && dotenv -e .env.production -- db:migrate:deploy && dotenv -e .env.production -- next build",
     "prod:seed": "vercel env pull .env.production --environment=production && dotenv -e .env.production -- tsx prisma/seed.ts",
+    "vercel:setup": "./scripts/setup-production.sh",
     "test": "echo 'No tests specified yet' && exit 0"
   },
   "dependencies": {
