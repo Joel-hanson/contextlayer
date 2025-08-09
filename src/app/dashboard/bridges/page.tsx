@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBridges } from '@/hooks/useBridges';
 import { BridgeConfig } from '@/lib/types';
@@ -13,15 +14,18 @@ import { getBaseUrl } from '@/lib/url';
 import {
     AlertCircle,
     BookOpen,
+    ChevronDown,
     Copy,
     Database,
     Edit,
+    Globe,
     Play,
     Plus,
     RefreshCw,
     Settings,
     Square,
-    Trash2
+    Trash2,
+    Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -46,6 +50,217 @@ export default function BridgesPage() {
     const [operatingBridges, setOperatingBridges] = useState<Set<string>>(new Set());
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [deletingBridgeId, setDeletingBridgeId] = useState<string | null>(null);
+
+    // Template definitions - easily expandable
+    const templates = [
+        {
+            id: 'weather',
+            name: 'Weather API',
+            description: 'OpenWeatherMap real-time weather data',
+            icon: Globe,
+            color: 'bg-blue-500',
+            tags: ['Weather', 'API Key'],
+            config: {
+                name: 'Weather API',
+                description: 'Connect to OpenWeatherMap for real-time weather data and forecasts.',
+                apiConfig: {
+                    name: 'OpenWeatherMap API',
+                    baseUrl: 'https://api.openweathermap.org/data/2.5',
+                    description: 'Real-time weather data and forecasts',
+                    authentication: { type: 'apikey', apiKey: '', headerName: 'appid' },
+                    endpoints: [
+                        {
+                            name: 'Get Current Weather',
+                            method: 'GET',
+                            path: '/weather',
+                            description: 'Get current weather for a city',
+                            parameters: [
+                                { name: 'q', type: 'string', required: true, description: 'City name' },
+                                { name: 'units', type: 'string', required: false, description: 'Units (standard, metric, imperial)' }
+                            ],
+                        },
+                        {
+                            name: 'Get Weather Forecast',
+                            method: 'GET',
+                            path: '/forecast',
+                            description: 'Get 5 day weather forecast',
+                            parameters: [
+                                { name: 'q', type: 'string', required: true, description: 'City name' },
+                                { name: 'units', type: 'string', required: false, description: 'Units (standard, metric, imperial)' }
+                            ],
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            id: 'github',
+            name: 'GitHub API',
+            description: 'Repository management and issues',
+            icon: Zap,
+            color: 'bg-gray-800',
+            tags: ['Repos', 'Bearer'],
+            config: {
+                name: 'GitHub API',
+                description: 'Access repositories, issues, and pull requests from GitHub.',
+                apiConfig: {
+                    name: 'GitHub REST API',
+                    baseUrl: 'https://api.github.com',
+                    description: 'GitHub REST API for repository management',
+                    authentication: { type: 'bearer', token: '' },
+                    endpoints: [
+                        {
+                            name: 'List User Repositories',
+                            method: 'GET',
+                            path: '/user/repos',
+                            description: 'List repositories for the authenticated user',
+                            parameters: [
+                                { name: 'sort', type: 'string', required: false, description: 'Sort by created, updated, pushed, full_name' },
+                                { name: 'per_page', type: 'number', required: false, description: 'Results per page (max 100)' }
+                            ],
+                        },
+                        {
+                            name: 'Get Repository Issues',
+                            method: 'GET',
+                            path: '/repos/{owner}/{repo}/issues',
+                            description: 'Get issues for a repository',
+                            parameters: [
+                                { name: 'owner', type: 'string', required: true, description: 'Repository owner' },
+                                { name: 'repo', type: 'string', required: true, description: 'Repository name' }
+                            ],
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            id: 'demo',
+            name: 'Demo API',
+            description: 'JSONPlaceholder for testing',
+            icon: Database,
+            color: 'bg-orange-500',
+            tags: ['Testing', 'No Auth'],
+            config: {
+                name: 'Demo API (JSONPlaceholder)',
+                description: 'Free fake API for testing and prototyping. No authentication required.',
+                apiConfig: {
+                    name: 'JSONPlaceholder API',
+                    baseUrl: 'https://jsonplaceholder.typicode.com',
+                    description: 'Free fake REST API for testing and prototyping',
+                    authentication: { type: 'none' },
+                    endpoints: [
+                        {
+                            name: 'Get All Posts',
+                            method: 'GET',
+                            path: '/posts',
+                            description: 'Retrieve all posts',
+                            parameters: [],
+                        },
+                        {
+                            name: 'Get Post by ID',
+                            method: 'GET',
+                            path: '/posts/{id}',
+                            description: 'Retrieve a specific post by ID',
+                            parameters: [
+                                { name: 'id', type: 'number', required: true, description: 'Post ID' }
+                            ],
+                        },
+                        {
+                            name: 'Get All Users',
+                            method: 'GET',
+                            path: '/users',
+                            description: 'Retrieve all users',
+                            parameters: [],
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            id: 'slack',
+            name: 'Slack API',
+            description: 'Team communication and messaging',
+            icon: Zap,
+            color: 'bg-purple-600',
+            tags: ['Chat', 'OAuth'],
+            config: {
+                name: 'Slack API',
+                description: 'Send messages and manage Slack workspaces.',
+                apiConfig: {
+                    name: 'Slack Web API',
+                    baseUrl: 'https://slack.com/api',
+                    description: 'Slack Web API for team communication',
+                    authentication: { type: 'bearer', token: '' },
+                    endpoints: [
+                        {
+                            name: 'Send Message',
+                            method: 'POST',
+                            path: '/chat.postMessage',
+                            description: 'Send a message to a channel',
+                            parameters: [
+                                { name: 'channel', type: 'string', required: true, description: 'Channel ID or name' },
+                                { name: 'text', type: 'string', required: true, description: 'Message text' }
+                            ],
+                        },
+                        {
+                            name: 'List Channels',
+                            method: 'GET',
+                            path: '/conversations.list',
+                            description: 'Get list of channels',
+                            parameters: [
+                                { name: 'types', type: 'string', required: false, description: 'Channel types (public_channel,private_channel)' }
+                            ],
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            id: 'openai',
+            name: 'OpenAI API',
+            description: 'AI models and completions',
+            icon: Zap,
+            color: 'bg-green-600',
+            tags: ['AI', 'Bearer'],
+            config: {
+                name: 'OpenAI API',
+                description: 'Access OpenAI models for AI-powered features.',
+                apiConfig: {
+                    name: 'OpenAI API',
+                    baseUrl: 'https://api.openai.com/v1',
+                    description: 'OpenAI API for AI models',
+                    authentication: { type: 'bearer', token: '' },
+                    endpoints: [
+                        {
+                            name: 'Create Completion',
+                            method: 'POST',
+                            path: '/chat/completions',
+                            description: 'Generate AI completions',
+                            parameters: [
+                                { name: 'model', type: 'string', required: true, description: 'Model ID (e.g., gpt-4)' },
+                                { name: 'messages', type: 'array', required: true, description: 'Array of message objects' }
+                            ],
+                        },
+                        {
+                            name: 'List Models',
+                            method: 'GET',
+                            path: '/models',
+                            description: 'List available models',
+                            parameters: [],
+                        }
+                    ]
+                }
+            }
+        },
+    ];
+
+    const applyTemplate = (template: typeof templates[0]) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('contextlayer-template', JSON.stringify(template.config));
+            setEditingBridge(undefined);
+            setShowBridgeForm(true);
+        }
+    };
 
     const handleSaveBridge = async (bridge: BridgeConfig) => {
         try {
@@ -181,9 +396,44 @@ export default function BridgesPage() {
                                     Quick Guide
                                 </Link>
                             </Button>
+                            {/* Template Dropdown */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Use Template
+                                        <ChevronDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    {templates.map((template) => {
+                                        const IconComponent = template.icon;
+                                        return (
+                                            <DropdownMenuItem
+                                                key={template.id}
+                                                onClick={() => applyTemplate(template)}
+                                                className="flex items-center gap-3 py-3"
+                                            >
+                                                <div className={`w-8 h-8 rounded-md ${template.color} flex items-center justify-center shrink-0`}>
+                                                    <IconComponent className="h-4 w-4 text-white" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium">{template.name}</div>
+                                                    <div className="text-xs text-muted-foreground truncate">
+                                                        {template.description}
+                                                    </div>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        );
+                                    })}
+                                    <DropdownMenuItem className="border-t">
+                                        <div className="text-xs text-muted-foreground">More templates coming soon...</div>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button onClick={createNewBridge}>
                                 <Plus className="mr-2 h-4 w-4" />
-                                Create MCP Server
+                                Create Custom
                             </Button>
                         </div>
                     </div>
@@ -203,6 +453,8 @@ export default function BridgesPage() {
                             </div>
                         </CardContent>
                     </Card>
+
+
 
                     {/* Bridges Grid */}
                     <div className="space-y-4">
