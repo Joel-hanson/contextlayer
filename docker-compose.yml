@@ -11,11 +11,6 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:password@db:5432/mcp_bridge
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=mcp_bridge
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
       - NEXTAUTH_SECRET=your-secret-key-change-this
       - NEXTAUTH_URL=http://localhost:3000
     volumes:

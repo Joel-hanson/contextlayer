@@ -1,8 +1,4 @@
 {
-    "framework": "nextjs",
-    "buildCommand": "npm run build",
-    "outputDirectory": ".next",
-    "installCommand": "npm ci",
     "functions": {
         "src/app/api/**": {
             "maxDuration": 30
@@ -11,35 +7,10 @@
             "maxDuration": 30
         }
     },
-    "build": {
-        "env": {
-            "PRISMA_GENERATE_DATAPROXY": "true",
-            "SKIP_ENV_VALIDATION": "true"
-        }
-    },
     "rewrites": [
         {
             "source": "/health",
             "destination": "/api/health"
-        }
-    ],
-    "headers": [
-        {
-            "source": "/mcp/(.*)",
-            "headers": [
-                {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                },
-                {
-                    "key": "Access-Control-Allow-Methods",
-                    "value": "GET, POST, PUT, DELETE, OPTIONS"
-                },
-                {
-                    "key": "Access-Control-Allow-Headers",
-                    "value": "Content-Type, Authorization"
-                }
-            ]
         }
     ]
 }
