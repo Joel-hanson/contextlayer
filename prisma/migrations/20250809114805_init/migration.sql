@@ -155,6 +155,24 @@ CREATE TABLE "public"."api_requests" (
     CONSTRAINT "api_requests_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "public"."access_tokens" (
+    "id" UUID NOT NULL,
+    "bridgeId" UUID NOT NULL,
+    "token" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "permissions" JSONB NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "expiresAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "lastUsedAt" TIMESTAMP(3),
+    "metadata" JSONB,
+
+    CONSTRAINT "access_tokens_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_username_key" ON "public"."users"("username");
 
@@ -221,6 +239,21 @@ CREATE INDEX "api_requests_success_createdAt_idx" ON "public"."api_requests"("su
 -- CreateIndex
 CREATE INDEX "api_requests_createdAt_idx" ON "public"."api_requests"("createdAt");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "access_tokens_token_key" ON "public"."access_tokens"("token");
+
+-- CreateIndex
+CREATE INDEX "access_tokens_bridgeId_idx" ON "public"."access_tokens"("bridgeId");
+
+-- CreateIndex
+CREATE INDEX "access_tokens_token_idx" ON "public"."access_tokens"("token");
+
+-- CreateIndex
+CREATE INDEX "access_tokens_bridgeId_isActive_idx" ON "public"."access_tokens"("bridgeId", "isActive");
+
+-- CreateIndex
+CREATE INDEX "access_tokens_expiresAt_idx" ON "public"."access_tokens"("expiresAt");
+
 -- AddForeignKey
 ALTER TABLE "public"."accounts" ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -244,3 +277,6 @@ ALTER TABLE "public"."api_requests" ADD CONSTRAINT "api_requests_bridgeId_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "public"."api_requests" ADD CONSTRAINT "api_requests_endpointId_fkey" FOREIGN KEY ("endpointId") REFERENCES "public"."api_endpoints"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."access_tokens" ADD CONSTRAINT "access_tokens_bridgeId_fkey" FOREIGN KEY ("bridgeId") REFERENCES "public"."bridges"("id") ON DELETE CASCADE ON UPDATE CASCADE;

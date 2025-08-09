@@ -11,48 +11,7 @@ import { FileText, Info } from 'lucide-react';
 import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { OpenAPIImportDialog } from './OpenAPIImportDialog';
-
-interface BridgeFormData {
-    name: string;
-    description?: string;
-    apiConfig: {
-        name: string;
-        baseUrl: string;
-        description?: string;
-        headers?: Record<string, string>;
-        authentication?: {
-            type: 'none' | 'bearer' | 'apikey' | 'basic';
-            token?: string;
-            apiKey?: string;
-            username?: string;
-            password?: string;
-            headerName?: string;
-        };
-        endpoints: Array<{
-            name: string;
-            method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-            path: string;
-            description?: string;
-            parameters?: Array<{
-                name: string;
-                type: 'string' | 'number' | 'boolean' | 'object' | 'array';
-                required: boolean;
-                description?: string;
-            }>;
-        }>;
-    };
-    routing?: {
-        type: 'path' | 'subdomain' | 'websocket';
-        customDomain?: string;
-        pathPrefix?: string;
-    };
-    access?: {
-        public: boolean;
-        allowedOrigins?: string[];
-        authRequired: boolean;
-        apiKey?: string;
-    };
-}
+import { type BridgeFormData } from './types';
 
 interface BasicInfoTabProps {
     form: UseFormReturn<BridgeFormData>;
@@ -102,8 +61,12 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
             form.setValue('apiConfig.headers', importData.headers);
         }
 
-        // Set endpoints
-        form.setValue('apiConfig.endpoints', importData.endpoints);
+        // Set endpoints with proper parameters
+        const endpointsWithDefaults = importData.endpoints.map(endpoint => ({
+            ...endpoint,
+            parameters: endpoint.parameters || []
+        }));
+        form.setValue('apiConfig.endpoints', endpointsWithDefaults);
 
         // Auto-generate bridge name if empty
         const currentBridgeName = form.getValues('name');

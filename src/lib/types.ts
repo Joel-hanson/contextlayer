@@ -64,6 +64,29 @@ export const McpToolSchema = z.object({
 
 export type McpTool = z.infer<typeof McpToolSchema>;
 
+// MCP Resource Schema
+export const McpResourceSchema = z.object({
+    uri: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    mimeType: z.string().optional(),
+});
+
+export type McpResource = z.infer<typeof McpResourceSchema>;
+
+// MCP Prompt Schema
+export const McpPromptSchema = z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    arguments: z.array(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        required: z.boolean().default(false),
+    })).optional(),
+});
+
+export type McpPrompt = z.infer<typeof McpPromptSchema>;
+
 // Bridge Configuration
 export const BridgeConfigSchema = z.object({
     id: z.string(),
@@ -72,11 +95,13 @@ export const BridgeConfigSchema = z.object({
     description: z.string(),
     apiConfig: ApiConfigSchema,
     mcpTools: z.array(McpToolSchema),
+    mcpResources: z.array(McpResourceSchema).optional().default([]),
+    mcpPrompts: z.array(McpPromptSchema).optional().default([]),
     enabled: z.boolean(),
 
-    // Routing configuration (path-based)
+    // MCP Transport configuration (HTTP)
     routing: z.object({
-        type: z.enum(['path', 'subdomain', 'websocket']).default('path'),
+        type: z.literal('http').default('http'),
         customDomain: z.string().optional(),
         pathPrefix: z.string().optional(),
     }).optional(),
@@ -87,6 +112,77 @@ export const BridgeConfigSchema = z.object({
         allowedOrigins: z.array(z.string()).optional(),
         authRequired: z.boolean().default(false),
         apiKey: z.string().optional(),
+        // New token-based authentication
+        tokens: z.array(z.object({
+            id: z.string(),
+            token: z.string(),
+            name: z.string(),
+            description: z.string().optional(),
+            permissions: z.array(z.object({
+                type: z.enum(['tools', 'resources', 'prompts', 'admin']),
+                actions: z.array(z.string()),
+                constraints: z.object({
+                    rateLimit: z.number().optional(),
+                    allowedEndpoints: z.array(z.string()).optional(),
+                    timeWindows: z.array(z.string()).optional(),
+                }).optional(),
+            })),
+            expiresAt: z.string().optional(),
+            createdAt: z.string(),
+            lastUsedAt: z.string().optional(),
+            isActive: z.boolean(),
+            metadata: z.record(z.string()).optional(),
+        })).optional().default([]),
+        security: z.object({
+            tokenAuth: z.object({
+                enabled: z.boolean().default(true),
+                requireToken: z.boolean().default(false),
+                allowMultipleTokens: z.boolean().default(true),
+                defaultExpiry: z.number().optional(),
+                rotationPeriod: z.number().optional(),
+            }).default({
+                enabled: true,
+                requireToken: false,
+                allowMultipleTokens: true,
+            }),
+            permissions: z.object({
+                defaultPermissions: z.array(z.object({
+                    type: z.enum(['tools', 'resources', 'prompts', 'admin']),
+                    actions: z.array(z.string()),
+                })).default([]),
+                requireExplicitGrants: z.boolean().default(false),
+                allowSelfManagement: z.boolean().default(true),
+            }).default({
+                defaultPermissions: [],
+                requireExplicitGrants: false,
+                allowSelfManagement: true,
+            }),
+            audit: z.object({
+                enabled: z.boolean().default(true),
+                logRequests: z.boolean().default(true),
+                retentionDays: z.number().default(30),
+            }).default({
+                enabled: true,
+                logRequests: true,
+                retentionDays: 30,
+            }),
+        }).optional().default({
+            tokenAuth: {
+                enabled: true,
+                requireToken: false,
+                allowMultipleTokens: true,
+            },
+            permissions: {
+                defaultPermissions: [],
+                requireExplicitGrants: false,
+                allowSelfManagement: true,
+            },
+            audit: {
+                enabled: true,
+                logRequests: true,
+                retentionDays: 30,
+            },
+        }),
     }).optional(),
 
     // Performance settings

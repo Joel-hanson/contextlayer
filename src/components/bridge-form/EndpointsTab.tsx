@@ -9,48 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
 import { UseFieldArrayReturn, UseFormReturn, useFieldArray } from 'react-hook-form';
-
-interface BridgeFormData {
-    name: string;
-    description?: string;
-    apiConfig: {
-        name: string;
-        baseUrl: string;
-        description?: string;
-        headers?: Record<string, string>;
-        authentication?: {
-            type: 'none' | 'bearer' | 'apikey' | 'basic';
-            token?: string;
-            apiKey?: string;
-            username?: string;
-            password?: string;
-            headerName?: string;
-        };
-        endpoints: Array<{
-            name: string;
-            method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-            path: string;
-            description?: string;
-            parameters?: Array<{
-                name: string;
-                type: 'string' | 'number' | 'boolean' | 'object' | 'array';
-                required: boolean;
-                description?: string;
-            }>;
-        }>;
-    };
-    routing?: {
-        type: 'path' | 'subdomain' | 'websocket';
-        customDomain?: string;
-        pathPrefix?: string;
-    };
-    access?: {
-        public: boolean;
-        allowedOrigins?: string[];
-        authRequired: boolean;
-        apiKey?: string;
-    };
-}
+import { type BridgeFormData } from './types';
 
 interface EndpointsTabProps {
     form: UseFormReturn<BridgeFormData>;

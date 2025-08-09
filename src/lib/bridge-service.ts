@@ -14,6 +14,14 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
         headerName?: string;
     } | null;
 
+    // Parse access config from JSON
+    const accessConfig = bridge.accessConfig as {
+        public?: boolean;
+        allowedOrigins?: string[];
+        authRequired?: boolean;
+        apiKey?: string;
+    } | null;
+
     return {
         id: bridge.id,
         name: bridge.name,
@@ -54,16 +62,36 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
             }),
         },
         mcpTools: [], // This will be generated from endpoints
+        mcpResources: [], // Default empty array for MCP resources
+        mcpPrompts: [], // Default empty array for MCP prompts
         routing: {
-            type: 'path' as const,
+            type: 'http' as const,
             customDomain: undefined,
             pathPrefix: undefined,
         },
         access: {
-            public: true,
-            allowedOrigins: undefined,
-            authRequired: false,
-            apiKey: undefined,
+            public: accessConfig?.public ?? true,
+            allowedOrigins: accessConfig?.allowedOrigins,
+            authRequired: accessConfig?.authRequired ?? false,
+            apiKey: accessConfig?.apiKey,
+            tokens: [],
+            security: {
+                tokenAuth: {
+                    enabled: true,
+                    requireToken: false,
+                    allowMultipleTokens: true,
+                },
+                permissions: {
+                    defaultPermissions: [],
+                    requireExplicitGrants: false,
+                    allowSelfManagement: true,
+                },
+                audit: {
+                    enabled: true,
+                    logRequests: true,
+                    retentionDays: 30,
+                },
+            }
         },
         performance: {
             timeout: 30000,
@@ -96,17 +124,17 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
 
         // Routing config
         routingConfig: {
-            type: 'path',
+            type: 'http',
             pathPrefix: null,
             customDomain: null
         },
 
         // Access config
         accessConfig: {
-            isPublic: true,
-            allowedOrigins: [],
-            authRequired: false,
-            apiKey: null
+            public: config.access?.public ?? true,
+            allowedOrigins: config.access?.allowedOrigins || [],
+            authRequired: config.access?.authRequired ?? false,
+            apiKey: config.access?.apiKey || null
         },
 
         // Performance config with defaults
