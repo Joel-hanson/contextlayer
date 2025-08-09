@@ -16,6 +16,7 @@ export interface AppSettings {
         cacheDuration: number;
         enableRateLimiting: boolean;
         requestsPerMinute: number;
+        autoStart: boolean; // Whether new bridges should start automatically
     };
     notifications: {
         emailNotifications: boolean;
@@ -49,6 +50,7 @@ const defaultSettings: AppSettings = {
         cacheDuration: 300,
         enableRateLimiting: false,
         requestsPerMinute: 100,
+        autoStart: true, // New bridges should be enabled/started by default
     },
     notifications: {
         emailNotifications: true,
