@@ -1,7 +1,7 @@
-import { authOptions } from '@/lib/auth'
+import { addSecurityHeaders, requireAuth, requireBridgeOwnership } from '@/lib/api-security'
 import { BridgeService } from '@/lib/bridge-service'
+import { apiRateLimit } from '@/lib/rate-limit'
 import { BridgeConfigSchema } from '@/lib/types'
-import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/bridges/[id] - Get a specific bridge
@@ -10,26 +10,54 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions)
-        const { id } = await params
-
-        // Pass userId for user-specific filtering if authenticated
-        const bridge = await BridgeService.getBridgeById(id, session?.user.id)
-
-        if (!bridge) {
-            return NextResponse.json(
-                { error: 'Bridge not found' },
-                { status: 404 }
-            )
+        // Apply rate limiting
+        const rateLimitResult = apiRateLimit.check(request);
+        if (!rateLimitResult.allowed) {
+            const response = NextResponse.json(
+                { error: 'Too many requests' },
+                { status: 429 }
+            );
+            return addSecurityHeaders(response);
         }
 
-        return NextResponse.json(bridge)
+        // Require authentication
+        const authResult = await requireAuth();
+        if (authResult instanceof NextResponse) {
+            return addSecurityHeaders(authResult);
+        }
+
+        const { id } = await params;
+        const userId = authResult.user.id;
+
+        // Check bridge ownership
+        const ownershipResult = await requireBridgeOwnership(id, userId);
+        if (!ownershipResult) {
+            const response = NextResponse.json(
+                { error: 'Bridge not found or access denied' },
+                { status: 404 }
+            );
+            return addSecurityHeaders(response);
+        }
+
+        const bridge = await BridgeService.getBridgeById(id, userId);
+
+        if (!bridge) {
+            const response = NextResponse.json(
+                { error: 'Bridge not found' },
+                { status: 404 }
+            );
+            return addSecurityHeaders(response);
+        }
+
+        const response = NextResponse.json(bridge);
+        return addSecurityHeaders(response);
     } catch (error) {
-        console.error(`Error fetching bridge:`, error)
-        return NextResponse.json(
+        console.error(`Error fetching bridge:`, error);
+        const response = NextResponse.json(
             { error: 'Failed to fetch bridge' },
             { status: 500 }
-        )
+        );
+        return addSecurityHeaders(response);
     }
 }
 
@@ -39,43 +67,66 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions)
-
-        if (!session?.user.id) {
-            return NextResponse.json(
-                { error: 'Authentication required' },
-                { status: 401 }
-            )
+        // Apply rate limiting
+        const rateLimitResult = apiRateLimit.check(request);
+        if (!rateLimitResult.allowed) {
+            const response = NextResponse.json(
+                { error: 'Too many requests' },
+                { status: 429 }
+            );
+            return addSecurityHeaders(response);
         }
 
-        const { id } = await params
-        const body = await request.json()
+        // Require authentication
+        const authResult = await requireAuth();
+        if (authResult instanceof NextResponse) {
+            return addSecurityHeaders(authResult);
+        }
+
+        const { id } = await params;
+        const userId = authResult.user.id;
+
+        // Check bridge ownership
+        const ownershipResult = await requireBridgeOwnership(id, userId);
+        if (!ownershipResult) {
+            const response = NextResponse.json(
+                { error: 'Bridge not found or access denied' },
+                { status: 404 }
+            );
+            return addSecurityHeaders(response);
+        }
+
+        const body = await request.json();
 
         // Validate the request body
-        const validationResult = BridgeConfigSchema.safeParse(body)
+        const validationResult = BridgeConfigSchema.safeParse(body);
         if (!validationResult.success) {
-            return NextResponse.json(
+            const response = NextResponse.json(
                 { error: 'Invalid bridge configuration', details: validationResult.error },
                 { status: 400 }
-            )
+            );
+            return addSecurityHeaders(response);
         }
 
-        const updatedBridge = await BridgeService.updateBridge(id, validationResult.data, session.user.id)
+        const updatedBridge = await BridgeService.updateBridge(id, validationResult.data, userId);
 
         if (!updatedBridge) {
-            return NextResponse.json(
+            const response = NextResponse.json(
                 { error: 'Bridge not found' },
                 { status: 404 }
-            )
+            );
+            return addSecurityHeaders(response);
         }
 
-        return NextResponse.json(updatedBridge)
+        const response = NextResponse.json(updatedBridge);
+        return addSecurityHeaders(response);
     } catch (error) {
-        console.error(`Error updating bridge:`, error)
-        return NextResponse.json(
+        console.error(`Error updating bridge:`, error);
+        const response = NextResponse.json(
             { error: 'Failed to update bridge' },
             { status: 500 }
-        )
+        );
+        return addSecurityHeaders(response);
     }
 }
 
@@ -85,24 +136,45 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions)
-
-        if (!session?.user.id) {
-            return NextResponse.json(
-                { error: 'Authentication required' },
-                { status: 401 }
-            )
+        // Apply rate limiting
+        const rateLimitResult = apiRateLimit.check(request);
+        if (!rateLimitResult.allowed) {
+            const response = NextResponse.json(
+                { error: 'Too many requests' },
+                { status: 429 }
+            );
+            return addSecurityHeaders(response);
         }
 
-        const { id } = await params
-        await BridgeService.deleteBridge(id, session.user.id)
+        // Require authentication
+        const authResult = await requireAuth();
+        if (authResult instanceof NextResponse) {
+            return addSecurityHeaders(authResult);
+        }
 
-        return NextResponse.json({ success: true })
+        const { id } = await params;
+        const userId = authResult.user.id;
+
+        // Check bridge ownership
+        const ownershipResult = await requireBridgeOwnership(id, userId);
+        if (!ownershipResult) {
+            const response = NextResponse.json(
+                { error: 'Bridge not found or access denied' },
+                { status: 404 }
+            );
+            return addSecurityHeaders(response);
+        }
+
+        await BridgeService.deleteBridge(id, userId);
+
+        const response = NextResponse.json({ success: true });
+        return addSecurityHeaders(response);
     } catch (error) {
-        console.error(`Error deleting bridge:`, error)
-        return NextResponse.json(
+        console.error(`Error deleting bridge:`, error);
+        const response = NextResponse.json(
             { error: 'Failed to delete bridge' },
             { status: 500 }
-        )
+        );
+        return addSecurityHeaders(response);
     }
 }

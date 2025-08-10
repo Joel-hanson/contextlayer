@@ -1,147 +1,123 @@
-import { authOptions } from '@/lib/auth'
+import { addSecurityHeaders, requireAuth } from '@/lib/api-security'
 import { BridgeService } from '@/lib/bridge-service'
-import { checkUserLimits, rateLimitMiddleware } from '@/lib/rate-limiter'
+import { apiRateLimit } from '@/lib/rate-limit'
+import { checkUserLimits } from '@/lib/rate-limiter'
 import { BridgeConfigSchema } from '@/lib/types'
-import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/bridges - Get all bridges
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        // Apply rate limiting
+        const rateLimitResult = apiRateLimit.check(request);
+        if (!rateLimitResult.allowed) {
+            const response = NextResponse.json(
+                { error: 'Too many requests' },
+                { status: 429 }
+            );
+            response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+            response.headers.set('X-RateLimit-Reset', new Date(rateLimitResult.resetTime).toISOString());
+            return addSecurityHeaders(response);
+        }
 
-        // For now, return all bridges if no session (for development)
-        // In production, you might want to require authentication
-        const bridges = await BridgeService.getAllBridges(session?.user.id)
-        return NextResponse.json(bridges)
+        // Require authentication
+        const authResult = await requireAuth();
+        if (authResult instanceof NextResponse) {
+            return addSecurityHeaders(authResult);
+        }
+
+        const bridges = await BridgeService.getAllBridges(authResult.user.id);
+
+        // Note: sanitization will be done in BridgeService if needed
+        const response = NextResponse.json(bridges);
+        response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+        response.headers.set('X-RateLimit-Reset', new Date(rateLimitResult.resetTime).toISOString());
+
+        return addSecurityHeaders(response);
     } catch (error) {
         console.error('Error fetching bridges:', error)
-        return NextResponse.json(
+        const response = NextResponse.json(
             { error: 'Failed to fetch bridges' },
             { status: 500 }
-        )
+        );
+        return addSecurityHeaders(response);
     }
 }
 
 // POST /api/bridges - Create a new bridge
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
-
-        let userId: string;
-
-        if (!session?.user.id) {
-            // For development: use the existing seeded user
-            console.log('No session found, using development mode...');
-
-            // Use the user we created earlier
-            const { PrismaClient } = await import('@prisma/client');
-            const prisma = new PrismaClient();
-
-            try {
-                const defaultUser = await prisma.user.findFirst({
-                    where: { email: 'dev@example.com' }
-                });
-
-                if (!defaultUser) {
-                    console.error('No development user found! Please seed the database first.');
-                    return NextResponse.json(
-                        { error: 'No development user found. Please seed the database.' },
-                        { status: 500 }
-                    );
-                }
-
-                userId = defaultUser.id;
-                console.log('Found and using development user:', defaultUser.id);
-                await prisma.$disconnect();
-            } catch (dbError) {
-                console.error('Database error creating/finding user:', dbError);
-                return NextResponse.json(
-                    { error: 'Database connection failed. Please check your database setup.', details: dbError },
-                    { status: 500 }
-                );
-            }
-        } else {
-            userId = session.user.id;
-            console.log('Using session userId:', userId);
-
-            // Check rate limits and user limits for authenticated users
-            const rateLimitResult = await rateLimitMiddleware();
-            if (!rateLimitResult.success) {
-                return NextResponse.json(
-                    {
-                        error: 'Rate limit exceeded. Please try again later.',
-                        details: 'Too many requests. Demo users are limited to 30 requests per minute.'
-                    },
-                    {
-                        status: 429,
-                        headers: rateLimitResult.headers
-                    }
-                );
-            }
-
-            // Check if user can create more bridges
-            const userLimitCheck = await checkUserLimits(userId, 'bridge');
-            if (!userLimitCheck.allowed) {
-                return NextResponse.json(
-                    {
-                        error: 'Bridge limit reached',
-                        details: userLimitCheck.message
-                    },
-                    { status: 403 }
-                );
-            }
+        // Apply rate limiting
+        const rateLimitResult = apiRateLimit.check(request);
+        if (!rateLimitResult.allowed) {
+            const response = NextResponse.json(
+                { error: 'Too many requests' },
+                { status: 429 }
+            );
+            response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+            response.headers.set('X-RateLimit-Reset', new Date(rateLimitResult.resetTime).toISOString());
+            return addSecurityHeaders(response);
         }
 
-        const body = await request.json()
+        // Require authentication
+        const authResult = await requireAuth();
+        if (authResult instanceof NextResponse) {
+            return addSecurityHeaders(authResult);
+        }
 
-        // Validate the bridge configuration
-        const validatedConfig = BridgeConfigSchema.parse(body)
+        const userId = authResult.user.id;
+        const body = await request.json();
 
-        // Generate unique ID if not provided (should be UUID)
+        // Validate the bridge configuration using Zod schema
+        const validatedConfig = BridgeConfigSchema.parse(body);
+
+        // Generate unique ID if not provided
         if (!validatedConfig.id) {
-            validatedConfig.id = crypto.randomUUID()
+            validatedConfig.id = crypto.randomUUID();
         }
 
         // Set timestamps
-        const now = new Date().toISOString()
+        const now = new Date().toISOString();
         if (!validatedConfig.createdAt) {
-            validatedConfig.createdAt = now
+            validatedConfig.createdAt = now;
         }
-        validatedConfig.updatedAt = now
+        validatedConfig.updatedAt = now;
 
-        console.log('About to create bridge with userId:', userId);
-        console.log('Bridge config ID:', validatedConfig.id);
-        console.log('Bridge config slug:', validatedConfig.slug);
-
-        // Double-check that the user exists before creating bridge
-        const { PrismaClient } = await import('@prisma/client');
-        const checkPrisma = new PrismaClient();
-        const userExists = await checkPrisma.user.findUnique({
-            where: { id: userId }
-        });
-        console.log('User exists check:', userExists ? 'YES' : 'NO');
-        if (userExists) {
-            console.log('Found user:', userExists.email, userExists.id);
+        // Check if user can create more bridges
+        const userLimitCheck = await checkUserLimits(userId, 'bridge');
+        if (!userLimitCheck.allowed) {
+            const response = NextResponse.json(
+                {
+                    error: 'Bridge limit reached',
+                    details: userLimitCheck.message
+                },
+                { status: 403 }
+            );
+            return addSecurityHeaders(response);
         }
-        await checkPrisma.$disconnect();
 
-        const bridge = await BridgeService.createBridge(validatedConfig, userId)
+        const bridge = await BridgeService.createBridge(validatedConfig, userId);
 
-        return NextResponse.json(bridge, { status: 201 })
+        const response = NextResponse.json(bridge, { status: 201 });
+        response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+        response.headers.set('X-RateLimit-Reset', new Date(rateLimitResult.resetTime).toISOString());
+
+        return addSecurityHeaders(response);
     } catch (error) {
-        console.error('Error creating bridge:', error)
+        console.error('Error creating bridge:', error);
 
         if (error instanceof Error && error.name === 'ZodError') {
-            return NextResponse.json(
+            const response = NextResponse.json(
                 { error: 'Invalid bridge configuration', details: error.message },
                 { status: 400 }
-            )
+            );
+            return addSecurityHeaders(response);
         }
 
-        return NextResponse.json(
+        const response = NextResponse.json(
             { error: 'Failed to create bridge' },
             { status: 500 }
-        )
+        );
+        return addSecurityHeaders(response);
     }
 }
