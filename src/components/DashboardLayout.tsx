@@ -120,7 +120,7 @@ export function DashboardLayout({ children }: SidebarProps) {
                                     </div>
                                     <Link href="/auth/signin">
                                         <Button size="sm" variant="default">
-                                            Upgrade Account
+                                            Create Account
                                         </Button>
                                     </Link>
                                 </div>
