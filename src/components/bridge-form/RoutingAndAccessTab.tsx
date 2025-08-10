@@ -56,7 +56,7 @@ export function RoutingAndAccessTab({ form, bridge }: RoutingAndAccessTabProps) 
                             HTTP Transport
                         </h4>
                         <p className="text-xs text-zinc-700">
-                            Your MCP bridge will be accessible via HTTP transport at:{' '}
+                            Your Context layer will be accessible via HTTP transport at:{' '}
                             <code className="bg-zinc-200 px-1.5 py-0.5 rounded ml-1 font-mono text-zinc-800 text-xs">
                                 /mcp/{bridge?.slug || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'}
                             </code>
