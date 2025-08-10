@@ -208,6 +208,18 @@ async function handleMcpJsonRpc(
             case 'tools/call':
                 return handleToolCall(jsonRpcRequest, bridge);
 
+            case 'resources/list':
+                return handleResourcesList(jsonRpcRequest, bridge);
+
+            case 'resources/read':
+                return handleResourcesRead(jsonRpcRequest, bridge);
+
+            case 'prompts/list':
+                return handlePromptsList(jsonRpcRequest, bridge);
+
+            case 'prompts/get':
+                return handlePromptsGet(jsonRpcRequest, bridge);
+
             default:
                 return NextResponse.json(
                     {
@@ -251,14 +263,27 @@ async function handleMcpJsonRpc(
 }
 
 async function handleInitialize(jsonRpcRequest: any, bridge: any) {
+    // Check what capabilities this bridge supports based on available MCP content
+    const capabilities: any = {
+        tools: {}
+    };
+
+    // Add resources capability if bridge has resources
+    if (bridge.mcpResources && Array.isArray(bridge.mcpResources) && bridge.mcpResources.length > 0) {
+        capabilities.resources = {};
+    }
+
+    // Add prompts capability if bridge has prompts
+    if (bridge.mcpPrompts && Array.isArray(bridge.mcpPrompts) && bridge.mcpPrompts.length > 0) {
+        capabilities.prompts = {};
+    }
+
     return NextResponse.json(
         {
             jsonrpc: '2.0',
             result: {
                 protocolVersion: '2024-11-05',
-                capabilities: {
-                    tools: {}
-                },
+                capabilities,
                 serverInfo: {
                     name: bridge.name,
                     version: '1.0.0'
@@ -277,55 +302,65 @@ async function handleInitialize(jsonRpcRequest: any, bridge: any) {
 
 async function handleToolsList(jsonRpcRequest: any, bridge: any) {
     console.log('Listing tools for bridge:', bridge.name);
-    const tools = bridge.endpoints.map((endpoint: any) => {
-        // Parse endpoint config from the database JSON structure
-        const endpointConfig = endpoint.config as {
-            parameters?: Array<{
-                name: string;
-                type: string;
-                required: boolean;
-                description?: string;
-                defaultValue?: unknown;
-            }>;
-            requestBody?: {
-                contentType?: string;
-                schema?: unknown;
-                required?: boolean;
-                properties?: Record<string, {
+    const tools: any[] = [];
+
+    // First, add tools from MCP JSON field if available
+    if (bridge.mcpTools && Array.isArray(bridge.mcpTools)) {
+        tools.push(...bridge.mcpTools);
+    }
+
+    // Then, add tools generated from endpoints (if no MCP tools exist)
+    if (tools.length === 0 && bridge.endpoints) {
+        bridge.endpoints.forEach((endpoint: any) => {
+            // Parse endpoint config from the database JSON structure
+            const endpointConfig = endpoint.config as {
+                parameters?: Array<{
+                    name: string;
                     type: string;
+                    required: boolean;
                     description?: string;
-                    required?: boolean;
-                    enum?: string[];
-                    format?: string;
-                    minimum?: number;
-                    maximum?: number;
-                    pattern?: string;
-                    items?: unknown;
-                    properties?: Record<string, unknown>;
+                    defaultValue?: unknown;
                 }>;
+                requestBody?: {
+                    contentType?: string;
+                    schema?: unknown;
+                    required?: boolean;
+                    properties?: Record<string, {
+                        type: string;
+                        description?: string;
+                        required?: boolean;
+                        enum?: string[];
+                        format?: string;
+                        minimum?: number;
+                        maximum?: number;
+                        pattern?: string;
+                        items?: unknown;
+                        properties?: Record<string, unknown>;
+                    }>;
+                };
+                responseSchema?: unknown;
+            } | null;
+
+            // Create endpoint object with parsed config
+            const endpointWithConfig = {
+                ...endpoint,
+                parameters: endpointConfig?.parameters || [],
+                requestBody: endpointConfig?.requestBody,
+                responseSchema: endpointConfig?.responseSchema,
             };
-            responseSchema?: unknown;
-        } | null;
 
-        // Create endpoint object with parsed config
-        const endpointWithConfig = {
-            ...endpoint,
-            parameters: endpointConfig?.parameters || [],
-            requestBody: endpointConfig?.requestBody,
-            responseSchema: endpointConfig?.responseSchema,
-        };
-
-        const inputSchema = buildInputSchema(endpointWithConfig);
-        return {
-            name: endpoint.name || `${endpoint.method.toLowerCase()}_${endpoint.path.replace(/[^a-zA-Z0-9]/g, '_')}`,
-            description: buildToolDescription(endpointWithConfig),
-            inputSchema: {
-                type: 'object',
-                properties: inputSchema.properties,
-                required: inputSchema.required
-            }
-        };
-    });
+            const inputSchema = buildInputSchema(endpointWithConfig);
+            tools.push({
+                name: endpoint.name || `${endpoint.method.toLowerCase()}_${endpoint.path.replace(/[^a-zA-Z0-9]/g, '_')}`,
+                description: buildToolDescription(endpointWithConfig),
+                inputSchema: {
+                    type: 'object',
+                    properties: inputSchema.properties,
+                    required: inputSchema.required
+                }
+            });
+        });
+    }
 
     return NextResponse.json(
         {
@@ -347,7 +382,73 @@ async function handleToolsList(jsonRpcRequest: any, bridge: any) {
 async function handleToolCall(jsonRpcRequest: any, bridge: any) {
     const { name: toolName, arguments: toolArgs } = jsonRpcRequest.params;
 
-    // Find the matching endpoint
+    // First check if this is an MCP tool from the JSON field
+    const mcpTools = bridge.mcpTools || [];
+    const mcpTool = mcpTools.find((tool: any) => tool.name === toolName);
+
+    if (mcpTool) {
+        // Handle MCP tool call - for now, we need to map it to an endpoint
+        // This is a simplified approach - in a full implementation, you'd have more sophisticated mapping
+        const endpoint = bridge.endpoints.find((ep: any) => {
+            const endpointName = ep.name || `${ep.method.toLowerCase()}_${ep.path.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            return endpointName === toolName || ep.name === toolName;
+        });
+
+        if (endpoint) {
+            // Parse endpoint config and execute
+            const endpointConfig = endpoint.config as any;
+            const endpointWithConfig = {
+                ...endpoint,
+                parameters: endpointConfig?.parameters || [],
+                requestBody: endpointConfig?.requestBody,
+                responseSchema: endpointConfig?.responseSchema,
+            };
+
+            try {
+                const result = await executeApiCall(bridge, endpointWithConfig, toolArgs || {});
+                return NextResponse.json(
+                    {
+                        jsonrpc: '2.0',
+                        result: {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
+                                }
+                            ]
+                        },
+                        id: jsonRpcRequest.id
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*',
+                        }
+                    }
+                );
+            } catch (error) {
+                return NextResponse.json(
+                    {
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32603,
+                            message: 'API call failed',
+                            data: error instanceof Error ? error.message : 'Unknown error'
+                        },
+                        id: jsonRpcRequest.id
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*',
+                        }
+                    }
+                );
+            }
+        }
+    }
+
+    // Fallback to endpoint-based tool lookup
     const endpoint = bridge.endpoints.find((ep: any) => {
         const endpointName = ep.name || `${ep.method.toLowerCase()}_${ep.path.replace(/[^a-zA-Z0-9]/g, '_')}`;
         return endpointName === toolName;
@@ -704,4 +805,220 @@ function buildRequestBody(endpoint: any, args: any): any {
 
     // Fallback: look for a requestBody argument
     return args.requestBody || null;
+}
+
+async function handleResourcesList(jsonRpcRequest: any, bridge: any) {
+    const resources = bridge.mcpResources || [];
+
+    return NextResponse.json(
+        {
+            jsonrpc: '2.0',
+            result: {
+                resources
+            },
+            id: jsonRpcRequest.id
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+        }
+    );
+}
+
+async function handleResourcesRead(jsonRpcRequest: any, bridge: any) {
+    const { uri } = jsonRpcRequest.params;
+    const resources = bridge.mcpResources || [];
+
+    // Find the resource by URI
+    const resource = resources.find((r: any) => r.uri === uri);
+
+    if (!resource) {
+        return NextResponse.json(
+            {
+                jsonrpc: '2.0',
+                error: {
+                    code: -32602,
+                    message: `Resource with URI '${uri}' not found`
+                },
+                id: jsonRpcRequest.id
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                }
+            }
+        );
+    }
+
+    // Generate appropriate content based on resource URI
+    let content = '';
+    let mimeType = resource.mimeType || 'text/plain';
+
+    if (uri === 'openapi://spec/full') {
+        // Return the OpenAPI spec (if we have it stored)
+        content = JSON.stringify({
+            openapi: '3.0.0',
+            info: {
+                title: bridge.name,
+                description: bridge.description || '',
+                version: '1.0.0'
+            },
+            servers: [{ url: bridge.baseUrl }],
+            paths: generatePathsFromEndpoints(bridge.endpoints)
+        }, null, 2);
+        mimeType = 'application/json';
+    } else if (uri === 'openapi://endpoints/summary') {
+        content = generateEndpointsSummary(bridge.endpoints);
+        mimeType = 'text/markdown';
+    } else if (uri.startsWith('openapi://schema/')) {
+        const schemaName = uri.replace('openapi://schema/', '');
+        content = `# ${schemaName} Schema\n\nSchema information would be available here.`;
+        mimeType = 'text/markdown';
+    } else {
+        content = resource.description || 'Resource content not available';
+    }
+
+    return NextResponse.json(
+        {
+            jsonrpc: '2.0',
+            result: {
+                contents: [
+                    {
+                        uri,
+                        mimeType,
+                        text: content
+                    }
+                ]
+            },
+            id: jsonRpcRequest.id
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+        }
+    );
+}
+
+async function handlePromptsList(jsonRpcRequest: any, bridge: any) {
+    const prompts = bridge.mcpPrompts || [];
+
+    return NextResponse.json(
+        {
+            jsonrpc: '2.0',
+            result: {
+                prompts
+            },
+            id: jsonRpcRequest.id
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+        }
+    );
+}
+
+async function handlePromptsGet(jsonRpcRequest: any, bridge: any) {
+    const { name, arguments: promptArgs } = jsonRpcRequest.params;
+    const prompts = bridge.mcpPrompts || [];
+
+    // Find the prompt by name
+    const prompt = prompts.find((p: any) => p.name === name);
+
+    if (!prompt) {
+        return NextResponse.json(
+            {
+                jsonrpc: '2.0',
+                error: {
+                    code: -32602,
+                    message: `Prompt '${name}' not found`
+                },
+                id: jsonRpcRequest.id
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                }
+            }
+        );
+    }
+
+    // Generate prompt content based on the prompt and provided arguments
+    let promptText = prompt.description || `Execute ${name} workflow`;
+
+    if (promptArgs) {
+        // Add argument information to the prompt
+        Object.entries(promptArgs).forEach(([key, value]) => {
+            promptText += `\n- ${key}: ${value}`;
+        });
+    }
+
+    return NextResponse.json(
+        {
+            jsonrpc: '2.0',
+            result: {
+                description: prompt.description,
+                messages: [
+                    {
+                        role: 'user',
+                        content: {
+                            type: 'text',
+                            text: promptText
+                        }
+                    }
+                ]
+            },
+            id: jsonRpcRequest.id
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+        }
+    );
+}
+
+function generatePathsFromEndpoints(endpoints: any[]): any {
+    const paths: any = {};
+
+    endpoints.forEach(endpoint => {
+        if (!paths[endpoint.path]) {
+            paths[endpoint.path] = {};
+        }
+
+        paths[endpoint.path][endpoint.method.toLowerCase()] = {
+            summary: endpoint.description || `${endpoint.method} ${endpoint.path}`,
+            operationId: endpoint.name,
+            responses: {
+                '200': {
+                    description: 'Successful response'
+                }
+            }
+        };
+    });
+
+    return paths;
+}
+
+function generateEndpointsSummary(endpoints: any[]): string {
+    let summary = `# API Endpoints Summary\n\n`;
+
+    endpoints.forEach(endpoint => {
+        summary += `## ${endpoint.method} ${endpoint.path}\n`;
+        summary += `**Name:** ${endpoint.name}\n`;
+        if (endpoint.description) {
+            summary += `**Description:** ${endpoint.description}\n`;
+        }
+        summary += '\n';
+    });
+
+    return summary;
 }

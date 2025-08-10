@@ -17,6 +17,7 @@ export const bridgeFormSchema = z.object({
             headerName: z.string().optional(),
         }).optional(),
         endpoints: z.array(z.object({
+            id: z.string(),
             path: z.string().min(1, 'Path is required'),
             name: z.string().min(1, 'Endpoint name is required'),
             method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']),
@@ -29,6 +30,15 @@ export const bridgeFormSchema = z.object({
             description: z.string().optional(),
         })),
     }),
+    mcpTools: z.array(z.object({
+        name: z.string().min(1, 'Tool name is required'),
+        description: z.string().min(1, 'Tool description is required'),
+        inputSchema: z.object({
+            type: z.literal('object'),
+            properties: z.record(z.any()),
+            required: z.array(z.string()).optional(),
+        }),
+    })),
     mcpResources: z.array(z.object({
         uri: z.string().min(1, 'URI is required'),
         name: z.string().min(1, 'Resource name is required'),
@@ -42,7 +52,7 @@ export const bridgeFormSchema = z.object({
             name: z.string().min(1, 'Argument name is required'),
             description: z.string().optional(),
             required: z.boolean(),
-        })),
+        })).optional(),
     })),
     routing: z.object({
         type: z.literal('http'),

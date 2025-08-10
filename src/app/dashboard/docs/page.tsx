@@ -260,10 +260,10 @@ export default function DocsPage() {
                             <ExternalLink className="h-4 w-4 mr-2" />
                             MCP Protocol Docs
                         </Button>
-                        <Button variant="outline" size="sm">
+                        {/* <Button variant="outline" size="sm">
                             <ExternalLink className="h-4 w-4 mr-2" />
                             GitHub Repository
-                        </Button>
+                        </Button> */}
                     </div>
                 </CardContent>
             </Card>

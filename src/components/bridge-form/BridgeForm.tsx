@@ -45,7 +45,8 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
     const form = useForm<BridgeFormData>({
         resolver: zodResolver(bridgeFormSchema),
-        mode: 'onChange',
+        mode: 'all', // Validate on all changes
+        reValidateMode: 'onChange',
         defaultValues: {
             name: '',
             description: '',
@@ -57,6 +58,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 authentication: { type: 'none' },
                 endpoints: [],
             },
+            mcpTools: [],
             mcpResources: [],
             mcpPrompts: [],
             routing: {
@@ -76,6 +78,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
     const endpointFields = useFieldArray({
         control: form.control,
         name: 'apiConfig.endpoints',
+    });
+
+    const toolFields = useFieldArray({
+        control: form.control,
+        name: 'mcpTools',
     });
 
     const resourceFields = useFieldArray({
@@ -107,11 +114,17 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             parameters: endpoint.parameters || []
                         })),
                     },
+                    mcpTools: bridge.mcpTools || [],
                     mcpResources: bridge.mcpResources || [],
                     mcpPrompts: bridge.mcpPrompts || [],
                     routing: bridge.routing || { type: 'http' },
                     access: bridge.access || { public: true, authRequired: false },
                 });
+
+                // Trigger validation after loading existing bridge data
+                setTimeout(() => {
+                    form.trigger();
+                }, 0);
             } else {
                 // Creating new bridge - check for template or reset to defaults
                 const templateData = localStorage.getItem('contextlayer-template');
@@ -129,6 +142,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 authentication: template.apiConfig?.authentication || { type: 'none' },
                                 endpoints: template.apiConfig?.endpoints || [],
                             },
+                            mcpTools: template.mcpTools || [],
                             mcpResources: template.mcpResources || [],
                             mcpPrompts: template.mcpPrompts || [],
                             routing: { type: 'http' },
@@ -136,6 +150,27 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         });
                         // Clear template data after use
                         localStorage.removeItem('contextlayer-template');
+
+                        // Fix endpoints to have IDs if they don't already
+                        const currentEndpoints = form.getValues('apiConfig.endpoints');
+                        const endpointsWithIds = currentEndpoints.map((endpoint, index) => ({
+                            ...endpoint,
+                            id: endpoint.id || `endpoint-${Date.now()}-${index}`,
+                            parameters: endpoint.parameters || []
+                        }));
+                        form.setValue('apiConfig.endpoints', endpointsWithIds);
+
+                        // Manually trigger validation to ensure form is marked as valid
+                        setTimeout(() => {
+                            form.trigger().then(() => {
+                                console.log('Template validation state:', {
+                                    isValid: form.formState.isValid,
+                                    errors: form.formState.errors,
+                                    values: form.getValues()
+                                });
+                            });
+                        }, 100);
+
                         toast({
                             title: "Template Applied",
                             description: `Template "${template.name}" has been applied to the form.`,
@@ -159,6 +194,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             routing: { type: 'http' },
                             access: { public: true, authRequired: false },
                         });
+
+                        // Trigger validation after reset
+                        setTimeout(() => {
+                            form.trigger();
+                        }, 0);
                     }
                 } else {
                     // Reset to defaults
@@ -178,6 +218,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         routing: { type: 'http' },
                         access: { public: true, authRequired: false },
                     });
+
+                    // Trigger validation after reset
+                    setTimeout(() => {
+                        form.trigger();
+                    }, 0);
                 }
             }
         }
@@ -270,7 +315,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         };
                     }),
                 },
-                mcpTools: bridge?.mcpTools || [],
+                mcpTools: data.mcpTools || [],
                 mcpResources: data.mcpResources || [],
                 mcpPrompts: data.mcpPrompts || [],
                 enabled: bridge?.enabled ?? true, // Default to enabled for new bridges
@@ -528,9 +573,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 </TabsTrigger>
                                 <TabsTrigger value="resources" className="text-xs">
                                     {getTabIcon('resources')} Resources
+                                    <span className="ml-1 px-1 py-0.5 text-[8px] bg-orange-100 text-orange-600 rounded font-medium">BETA</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="prompts" className="text-xs">
                                     {getTabIcon('prompts')} Prompts
+                                    <span className="ml-1 px-1 py-0.5 text-[8px] bg-orange-100 text-orange-600 rounded font-medium">BETA</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="routing" className="text-xs">
                                     {getTabIcon('routing')} Routing
@@ -610,7 +657,27 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                     </Button>
                                     <Button
                                         type="submit"
-                                        disabled={!form.formState.isValid || form.formState.isSubmitting}
+                                        disabled={form.formState.isSubmitting ||
+                                            !form.getValues('name')?.trim() ||
+                                            !form.getValues('apiConfig.name')?.trim() ||
+                                            !form.getValues('apiConfig.baseUrl')?.trim()}
+                                        onClick={() => {
+                                            const values = form.getValues();
+                                            console.log('Button click - Form state:', {
+                                                isValid: form.formState.isValid,
+                                                isSubmitting: form.formState.isSubmitting,
+                                                errors: form.formState.errors,
+                                                requiredFields: {
+                                                    name: values.name,
+                                                    apiName: values.apiConfig.name,
+                                                    baseUrl: values.apiConfig.baseUrl
+                                                },
+                                                isDisabled: form.formState.isSubmitting ||
+                                                    !values.name?.trim() ||
+                                                    !values.apiConfig.name?.trim() ||
+                                                    !values.apiConfig.baseUrl?.trim()
+                                            });
+                                        }}
                                     >
                                         <Save className="h-4 w-4 mr-2" />
                                         {bridge ? 'Update MCP Server' : 'Create MCP Server'}

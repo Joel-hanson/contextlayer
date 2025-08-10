@@ -138,6 +138,7 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
 
     const addEndpoint = () => {
         append({
+            id: `endpoint-${Date.now()}`,
             name: '',
             method: 'GET',
             path: '',
