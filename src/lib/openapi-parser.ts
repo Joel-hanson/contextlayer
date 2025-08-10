@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
-import { ApiConfig } from './types';
+import { ApiConfig, McpPrompt, McpResource, McpTool } from './types';
 
 // Fallback for environments where crypto is not available
 function generateId(): string {
@@ -79,6 +79,10 @@ export interface ParsedOpenAPIResult {
         endpoints: ApiConfig['endpoints'];
         authentication: ApiConfig['authentication'];
         headers: Record<string, string>;
+        // MCP-specific content generated from OpenAPI
+        mcpTools: McpTool[];
+        mcpPrompts: McpPrompt[];
+        mcpResources: McpResource[];
     };
     error?: string;
     warnings?: string[];
@@ -114,6 +118,11 @@ export class OpenAPIParser {
                 warnings.push('No valid endpoints found in the OpenAPI spec');
             }
 
+            // Generate MCP content based on the OpenAPI spec
+            const mcpTools = this.generateMcpTools(endpoints);
+            const mcpPrompts = this.generateMcpPrompts(spec, endpoints);
+            const mcpResources = this.generateMcpResources(spec);
+
             // Extract common headers (if any)
             const headers: Record<string, string> = {};
 
@@ -126,6 +135,9 @@ export class OpenAPIParser {
                     endpoints,
                     authentication,
                     headers,
+                    mcpTools,
+                    mcpPrompts,
+                    mcpResources,
                 },
                 warnings: warnings.length > 0 ? warnings : undefined,
             };
@@ -363,6 +375,270 @@ export class OpenAPIParser {
             default:
                 return 'string';
         }
+    }
+
+    /**
+     * Generate MCP tools based on API endpoints
+     */
+    private static generateMcpTools(endpoints: ApiConfig['endpoints']): McpTool[] {
+        return endpoints.map(endpoint => {
+            // Build input schema for the tool
+            const properties: Record<string, {
+                type: string;
+                description: string;
+                default?: unknown;
+                enum?: string[];
+            }> = {};
+            const required: string[] = [];
+
+            // Add path parameters, query parameters, etc.
+            if (endpoint.parameters) {
+                endpoint.parameters.forEach(param => {
+                    properties[param.name] = {
+                        type: param.type,
+                        description: param.description || `Parameter: ${param.name}`,
+                    };
+
+                    if (param.defaultValue !== undefined) {
+                        properties[param.name].default = param.defaultValue;
+                    }
+
+                    if (param.required) {
+                        required.push(param.name);
+                    }
+                });
+            }
+
+            // Add request body properties for POST/PUT/PATCH methods
+            if (['POST', 'PUT', 'PATCH'].includes(endpoint.method) && endpoint.requestBody?.properties) {
+                Object.entries(endpoint.requestBody.properties).forEach(([propName, propSchema]) => {
+                    properties[propName] = {
+                        type: propSchema.type,
+                        description: propSchema.description || `Request body field: ${propName}`,
+                    };
+
+                    if (propSchema.enum) {
+                        properties[propName].enum = propSchema.enum;
+                    }
+
+                    if (propSchema.required) {
+                        required.push(propName);
+                    }
+                });
+            }
+
+            return {
+                name: this.sanitizeToolName(endpoint.name),
+                description: endpoint.description || `${endpoint.method} ${endpoint.path}`,
+                inputSchema: {
+                    type: 'object' as const,
+                    properties,
+                    required: required.length > 0 ? required : undefined,
+                },
+            };
+        });
+    }
+
+    /**
+     * Generate MCP prompts based on API operations and common use cases
+     */
+    private static generateMcpPrompts(spec: OpenAPISpec, endpoints: ApiConfig['endpoints']): McpPrompt[] {
+        const prompts: McpPrompt[] = [];
+
+        // Group endpoints by tags for better organization
+        const endpointsByTag: Record<string, typeof endpoints> = {};
+        endpoints.forEach(endpoint => {
+            // Find the original OpenAPI operation to get tags
+            for (const [path, pathItem] of Object.entries(spec.paths)) {
+                for (const [method, operation] of Object.entries(pathItem)) {
+                    if (endpoint.path === path && endpoint.method === method.toUpperCase()) {
+                        const tags = operation.tags || ['default'];
+                        tags.forEach(tag => {
+                            if (!endpointsByTag[tag]) {
+                                endpointsByTag[tag] = [];
+                            }
+                            endpointsByTag[tag].push(endpoint);
+                        });
+                    }
+                }
+            }
+        });
+
+        // Generate prompts for each tag/category
+        Object.entries(endpointsByTag).forEach(([tag, tagEndpoints]) => {
+            // Create operation prompts
+            const readOperations = tagEndpoints.filter(e => e.method === 'GET');
+            const writeOperations = tagEndpoints.filter(e => ['POST', 'PUT', 'PATCH'].includes(e.method));
+            const deleteOperations = tagEndpoints.filter(e => e.method === 'DELETE');
+
+            if (readOperations.length > 0) {
+                prompts.push({
+                    name: `query_${tag}_data`,
+                    description: `Query and retrieve ${tag} data from the API`,
+                    arguments: [
+                        {
+                            name: 'operation',
+                            description: `The type of query operation (${readOperations.map(op => op.name).join(', ')})`,
+                            required: true,
+                        },
+                        {
+                            name: 'parameters',
+                            description: 'Query parameters and filters',
+                            required: false,
+                        }
+                    ],
+                });
+            }
+
+            if (writeOperations.length > 0) {
+                prompts.push({
+                    name: `manage_${tag}_data`,
+                    description: `Create, update, or modify ${tag} data via the API`,
+                    arguments: [
+                        {
+                            name: 'operation',
+                            description: `The management operation (${writeOperations.map(op => op.name).join(', ')})`,
+                            required: true,
+                        },
+                        {
+                            name: 'data',
+                            description: 'The data to create or update',
+                            required: false,
+                        }
+                    ],
+                });
+            }
+
+            if (deleteOperations.length > 0) {
+                prompts.push({
+                    name: `delete_${tag}_data`,
+                    description: `Delete ${tag} data from the API`,
+                    arguments: [
+                        {
+                            name: 'identifier',
+                            description: 'The identifier of the resource to delete',
+                            required: true,
+                        },
+                        {
+                            name: 'confirmation',
+                            description: 'Confirmation for the delete operation',
+                            required: false,
+                        }
+                    ],
+                });
+            }
+        });
+
+        // Add general-purpose prompts
+        prompts.push({
+            name: 'api_workflow',
+            description: `Execute a workflow using the ${spec.info.title} API`,
+            arguments: [
+                {
+                    name: 'workflow_description',
+                    description: 'Description of the workflow to execute',
+                    required: true,
+                },
+                {
+                    name: 'steps',
+                    description: 'Ordered list of API operations to perform',
+                    required: false,
+                }
+            ],
+        });
+
+        prompts.push({
+            name: 'api_analysis',
+            description: `Analyze data or perform operations using the ${spec.info.title} API`,
+            arguments: [
+                {
+                    name: 'analysis_type',
+                    description: 'Type of analysis to perform',
+                    required: true,
+                },
+                {
+                    name: 'data_sources',
+                    description: 'API endpoints to use as data sources',
+                    required: false,
+                }
+            ],
+        });
+
+        return prompts;
+    }
+
+    /**
+     * Generate MCP resources based on API documentation and schemas
+     */
+    private static generateMcpResources(spec: OpenAPISpec): McpResource[] {
+        const resources: McpResource[] = [];
+
+        // API Documentation resource
+        resources.push({
+            uri: 'openapi://spec/full',
+            name: `${spec.info.title} API Specification`,
+            description: `Complete OpenAPI specification for ${spec.info.title}`,
+            mimeType: 'application/json',
+        });
+
+        // Schema documentation
+        if (spec.components?.schemas && Object.keys(spec.components.schemas).length > 0) {
+            resources.push({
+                uri: 'openapi://schemas/all',
+                name: 'API Data Schemas',
+                description: 'All data schemas and models defined in the API',
+                mimeType: 'application/json',
+            });
+
+            // Individual schema resources
+            Object.keys(spec.components.schemas).forEach(schemaName => {
+                resources.push({
+                    uri: `openapi://schema/${schemaName}`,
+                    name: `${schemaName} Schema`,
+                    description: `Schema definition for ${schemaName}`,
+                    mimeType: 'application/json',
+                });
+            });
+        }
+
+        // Endpoint documentation
+        resources.push({
+            uri: 'openapi://endpoints/summary',
+            name: 'API Endpoints Summary',
+            description: 'Summary of all available API endpoints and their capabilities',
+            mimeType: 'text/markdown',
+        });
+
+        // Authentication guide
+        if (spec.components?.securitySchemes) {
+            resources.push({
+                uri: 'openapi://auth/guide',
+                name: 'Authentication Guide',
+                description: 'Guide for authenticating with the API',
+                mimeType: 'text/markdown',
+            });
+        }
+
+        // Examples resource
+        resources.push({
+            uri: 'openapi://examples/common',
+            name: 'Common Usage Examples',
+            description: 'Examples of common API usage patterns and workflows',
+            mimeType: 'text/markdown',
+        });
+
+        return resources;
+    }
+
+    /**
+     * Sanitize tool names to be valid MCP tool identifiers
+     */
+    private static sanitizeToolName(name: string): string {
+        return name
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '_')
+            .replace(/_{2,}/g, '_')
+            .replace(/^_+|_+$/g, '');
     }
 
     static async parseFromUrl(url: string): Promise<ParsedOpenAPIResult> {

@@ -1,13 +1,14 @@
 'use client';
 
 import { TokenManager } from '@/components/TokenManager';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTokens } from '@/hooks/useTokens';
 import { BridgeConfig } from '@/lib/types';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Lock, Unlock } from 'lucide-react';
 import { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { type BridgeFormData } from './types';
@@ -18,21 +19,23 @@ interface RoutingAndAccessTabProps {
 }
 
 export function RoutingAndAccessTab({ form, bridge }: RoutingAndAccessTabProps) {
-    const watchAuthRequired = form.watch('access.authRequired');
     const bridgeName = form.getValues('name') || 'Untitled Bridge';
     const bridgeId = bridge?.id || 'temp-bridge-id';
 
-    // Get tokens to check if auth should be automatically enabled
+    // Get tokens to automatically determine authentication status
     // Only load tokens for existing bridges (not temp ones)
     const shouldLoadTokens = bridge?.id && bridge.id !== 'temp-bridge-id';
     const { tokens } = useTokens(shouldLoadTokens ? bridge.id : '');
 
-    // Auto-enable authentication if there are existing tokens for an existing bridge
+    // Automatically sync authRequired with token existence
+    const hasTokens = tokens.length > 0;
+
+    // Automatically update form when token state changes
     useEffect(() => {
-        if (shouldLoadTokens && tokens.length > 0 && !watchAuthRequired) {
-            form.setValue('access.authRequired', true);
+        if (shouldLoadTokens) {
+            form.setValue('access.authRequired', hasTokens);
         }
-    }, [shouldLoadTokens, tokens.length, watchAuthRequired, form]);
+    }, [shouldLoadTokens, hasTokens, tokens, form]);
 
     return (
         <div className="space-y-6">
@@ -111,39 +114,49 @@ export function RoutingAndAccessTab({ form, bridge }: RoutingAndAccessTabProps) 
                             </Label>
                         </div>
 
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="authRequired"
-                                checked={form.watch('access.authRequired')}
-                                onCheckedChange={(checked) => form.setValue('access.authRequired', !!checked)}
-                            />
-                            <Label htmlFor="authRequired" className="text-sm font-medium cursor-pointer">
-                                Require Authentication
-                            </Label>
+                        {/* Authentication Status - Auto-determined by token presence */}
+                        <div className="flex items-center space-x-2" key={`auth-status-${tokens.length}`}>
+                            <div className="flex items-center space-x-2">
+                                {tokens.length > 0 ? (
+                                    <>
+                                        <Lock className="h-4 w-4 text-green-600" />
+                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                            Authentication Required ({tokens.length} token{tokens.length !== 1 ? 's' : ''})
+                                        </Badge>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Unlock className="h-4 w-4 text-gray-500" />
+                                        <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
+                                            No Authentication (0 tokens)
+                                        </Badge>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div className="flex items-start gap-2">
-                            <Shield className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    {shouldLoadTokens && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                             <div className="text-sm">
-                                <p className="font-medium text-blue-900 mb-1">Secure Token Authentication</p>
+                                <p className="font-medium text-blue-900 mb-1">Automatic Authentication Control</p>
                                 <p className="text-blue-800 text-xs">
-                                    We recommend using secure access tokens instead of basic API keys.
-                                    Tokens provide better security with expiration, permissions, and audit logging.
+                                    Authentication is automatically {tokens.length > 0 ? 'enabled' : 'disabled'} based on token presence.
+                                    {tokens.length > 0
+                                        ? ' Remove all tokens to disable authentication.'
+                                        : ' Create a token below to enable authentication.'}
                                 </p>
                             </div>
                         </div>
-                    </div> */}
-
-                    {watchAuthRequired && (
-                        <div className="space-y-4">
-                            <TokenManager
-                                bridgeId={bridgeId}
-                                bridgeName={bridgeName}
-                            />
-                        </div>
                     )}
+
+                    {/* Always show TokenManager for existing bridges, or when creating new ones */}
+                    <div className="space-y-4">
+                        <TokenManager
+                            bridgeId={bridgeId}
+                            bridgeName={bridgeName}
+                        />
+                    </div>
                 </CardContent>
             </Card>
         </div>

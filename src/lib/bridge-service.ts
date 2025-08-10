@@ -61,9 +61,30 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
                 }
             }),
         },
-        mcpTools: [], // This will be generated from endpoints
-        mcpResources: [], // Default empty array for MCP resources
-        mcpPrompts: [], // Default empty array for MCP prompts
+        mcpTools: (bridge.mcpTools as Array<{
+            name: string;
+            description: string;
+            inputSchema: {
+                type: 'object';
+                properties: Record<string, unknown>;
+                required?: string[];
+            };
+        }>) || [],
+        mcpResources: (bridge.mcpResources as Array<{
+            uri: string;
+            name: string;
+            description?: string;
+            mimeType?: string;
+        }>) || [],
+        mcpPrompts: (bridge.mcpPrompts as Array<{
+            name: string;
+            description?: string;
+            arguments?: Array<{
+                name: string;
+                required: boolean;
+                description?: string;
+            }>;
+        }>) || [],
         routing: {
             type: 'http' as const,
             customDomain: undefined,
@@ -144,6 +165,11 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
             rateLimiting: false,
             caching: false
         },
+
+        // MCP Content
+        mcpTools: config.mcpTools && config.mcpTools.length > 0 ? config.mcpTools : undefined,
+        mcpPrompts: config.mcpPrompts && config.mcpPrompts.length > 0 ? config.mcpPrompts : undefined,
+        mcpResources: config.mcpResources && config.mcpResources.length > 0 ? config.mcpResources : undefined,
 
         enabled: config.enabled || false,
         status: 'inactive' as const,

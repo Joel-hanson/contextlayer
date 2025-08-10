@@ -1,5 +1,6 @@
 'use client';
 
+import { FeedbackWidget } from '@/components/FeedbackWidget';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -42,6 +43,7 @@ export function DashboardLayout({ children }: SidebarProps) {
         { name: 'MCP Servers', href: '/dashboard/bridges', icon: Database, current: pathname === '/dashboard/bridges' },
         { name: 'Quick Guide', href: '/guide', icon: BookOpen, current: pathname === '/guide' },
         { name: 'Documentation', href: '/dashboard/docs', icon: FileText, current: pathname === '/dashboard/docs' },
+        // { name: 'My Feedback', href: '/dashboard/feedback', icon: MessageCircle, current: pathname === '/dashboard/feedback' },
         { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: pathname === '/dashboard/settings' },
     ];
 
@@ -102,6 +104,7 @@ export function DashboardLayout({ children }: SidebarProps) {
                     </div>
                 </main>
             </div>
+            <FeedbackWidget />
         </div>
     );
 }

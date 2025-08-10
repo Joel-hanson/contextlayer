@@ -77,8 +77,8 @@ export default function LandingPage() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-[750px] text-lg text-muted-foreground sm:text-xl">
-            Transform any REST API into an MCP server that AI assistants like Claude and VS Code Copilot can use.
-            No coding required - just configure and connect.
+            Transform any REST API into an MCP server that AI assistants like Claude Desktop can use.
+            Configure your APIs through our web interface and connect via HTTP.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 mt-8">
@@ -88,26 +88,30 @@ export default function LandingPage() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
-          <Button variant="outline" size="lg" className="w-full sm:w-auto">
-            <Bot className="mr-2 h-4 w-4" />
-            View Examples
-          </Button>
+          <Link href="/guide">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto">
+              <Bot className="mr-2 h-4 w-4" />
+              View Examples
+            </Button>
+          </Link>
         </div>
 
         {/* Quick stats */}
         <div className="flex items-center space-x-8 pt-8 text-sm text-muted-foreground">
           <div className="flex items-center space-x-2">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>No Coding Required</span>
+            <span>Web-based Configuration</span>
           </div>
           <div className="flex items-center space-x-2">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>Real-time Updates</span>
+            <span>Use your existing endpoints</span>
           </div>
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>Open Source</span>
-          </div>
+            <a href="https://github.com/Joel-hanson/contextlayer" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+              Open Source
+            </a>
+          </div> */}
         </div>
       </section>
 
@@ -128,9 +132,9 @@ export default function LandingPage() {
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Zap className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Lightning Fast Setup</CardTitle>
+              <CardTitle>Quick Setup</CardTitle>
               <CardDescription>
-                Configure your API bridge in minutes with our intuitive interface. No complex configurations needed.
+                Configure your API bridge through our web interface. Authentication and endpoint configuration made easy.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -176,9 +180,9 @@ export default function LandingPage() {
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Cpu className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Real-time Monitoring</CardTitle>
+              <CardTitle>Bridge Management</CardTitle>
               <CardDescription>
-                Monitor your bridges with live status updates, error tracking, and performance metrics.
+                Manage your bridges with database storage, start/stop controls, and configuration templates.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -188,9 +192,9 @@ export default function LandingPage() {
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <GitBranch className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Version Control Ready</CardTitle>
+              <CardTitle>Configuration Templates</CardTitle>
               <CardDescription>
-                Export and version your bridge configurations. Perfect for team collaboration.
+                Built-in templates for popular APIs and export/import your bridge configurations for backup.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -225,7 +229,7 @@ export default function LandingPage() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Generate MCP Server</h3>
             <p className="text-muted-foreground">
-              Our system automatically converts your API endpoints into MCP-compatible tools that AI assistants can understand and use.
+              Our system creates MCP-compatible tools from your API endpoints that AI assistants can discover and use.
             </p>
           </div>
 
@@ -323,7 +327,7 @@ export default function LandingPage() {
         </div>
 
         <div className="text-center mt-8">
-          <Link href="/dashboard">
+          <Link href="/dashboard/bridges">
             <Button size="lg">
               Start Creating Your Bridges
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -340,18 +344,20 @@ export default function LandingPage() {
           </h2>
           <p className="mx-auto mt-4 max-w-[750px] text-lg text-muted-foreground mb-8">
             Start connecting your REST APIs to the Model Context Protocol ecosystem today.
-            It&apos;s free, open source, and takes just minutes to set up.
+            {/* It&apos;s free, open source, and takes just minutes to set up. */}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/dashboard">
+            <Link href="/dashboard/bridges">
               <Button size="lg" className="w-full sm:w-auto">
                 Get Started for Free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto">
-              View Documentation
-            </Button>
+            <Link href="/dashboard/docs">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                View Documentation
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -367,19 +373,20 @@ export default function LandingPage() {
               <span className="font-bold">ContextLayer</span>
             </Link>
             <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-              Built with Next.js and shadcn/ui. Open source and free to use.
+              Built with Next.js and shadcn/ui.
+              {/* Open source and free to use. */}
             </p>
           </div>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">
+            {/* <a href="https://github.com/Joel-hanson/contextlayer" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
               GitHub
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </a> */}
+            <Link href="/dashboard/docs" className="hover:text-foreground transition-colors">
               Documentation
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </Link>
+            <Link href="/guide" className="hover:text-foreground transition-colors">
               Support
-            </a>
+            </Link>
           </div>
         </div>
       </footer>

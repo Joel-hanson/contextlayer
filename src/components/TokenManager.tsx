@@ -1,5 +1,6 @@
 'use client';
 
+import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { useTokens } from "@/hooks/useTokens";
 import { McpAccessToken, TokenPermission } from "@/lib/security";
-import { AlertCircle, Check, Copy, Eye, EyeOff, Play, Plus, Square, Trash2 } from "lucide-react";
+import { AlertCircle, Check, Copy, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface TokenManagerProps {
@@ -35,11 +37,25 @@ export function TokenManager({
     bridgeId,
     bridgeName,
 }: TokenManagerProps) {
-    const { tokens, loading, error, createToken, toggleToken, deleteToken } = useTokens(bridgeId);
+    const { tokens, loading, error, createToken, deleteToken } = useTokens(bridgeId);
+    const { toast } = useToast();
     const [showTokens, setShowTokens] = useState<Record<string, boolean>>({});
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
-    const [newToken, setNewToken] = useState<NewTokenForm>(initialNewToken); const handleCreateToken = async () => {
+    const [newToken, setNewToken] = useState<NewTokenForm>(initialNewToken);
+
+    // Confirmation dialog state
+    const [confirmationDialog, setConfirmationDialog] = useState<{
+        open: boolean;
+        tokenId: string | null;
+        tokenName: string;
+    }>({
+        open: false,
+        tokenId: null,
+        tokenName: '',
+    });
+
+    const handleCreateToken = async () => {
         if (!newToken.name.trim()) {
             return;
         }
@@ -59,27 +75,80 @@ export function TokenManager({
                 // Reset form
                 setNewToken(initialNewToken);
                 setIsCreating(false);
+
+                // Show success toast
+                toast({
+                    title: "Token created successfully",
+                    description: `Access token "${token.name}" has been created and is now active.`,
+                });
             }
         } catch (error) {
             console.error('Failed to create token:', error);
+            toast({
+                title: "Failed to create token",
+                description: "An error occurred while creating the access token. Please try again.",
+                variant: "destructive",
+            });
         }
     };
 
-    const handleToggleToken = async (tokenId: string) => {
+    // const handleToggleToken = async (tokenId: string) => {
+    //     try {
+    //         const success = await toggleToken(tokenId);
+    //         if (success) {
+    //             const token = tokens.find(t => t.id === tokenId);
+    //             const newStatus = token ? !token.isActive : false;
+    //             toast({
+    //                 title: `Token ${newStatus ? 'enabled' : 'disabled'}`,
+    //                 description: `Access token has been ${newStatus ? 'enabled' : 'disabled'}.`,
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to toggle token:', error);
+    //         toast({
+    //             title: "Failed to update token",
+    //             description: "An error occurred while updating the token status.",
+    //             variant: "destructive",
+    //         });
+    //     }
+    // };
+
+    const handleDeleteToken = (tokenId: string) => {
+        const token = tokens.find(t => t.id === tokenId);
+        if (!token) return;
+
+        setConfirmationDialog({
+            open: true,
+            tokenId: tokenId,
+            tokenName: token.name,
+        });
+    };
+
+    const confirmDeleteToken = async () => {
+        const { tokenId } = confirmationDialog;
+        if (!tokenId) return;
+
         try {
-            await toggleToken(tokenId);
-        } catch (error) {
-            console.error('Failed to toggle token:', error);
-        }
-    };
-
-    const handleDeleteToken = async (tokenId: string) => {
-        if (window.confirm('Are you sure you want to delete this token? This action cannot be undone.')) {
-            try {
-                await deleteToken(tokenId);
-            } catch (error) {
-                console.error('Failed to delete token:', error);
+            const success = await deleteToken(tokenId);
+            if (success) {
+                toast({
+                    title: "Token deleted",
+                    description: "Access token has been permanently deleted.",
+                });
             }
+        } catch (error) {
+            console.error('Failed to delete token:', error);
+            toast({
+                title: "Failed to delete token",
+                description: "An error occurred while deleting the access token.",
+                variant: "destructive",
+            });
+        } finally {
+            setConfirmationDialog({
+                open: false,
+                tokenId: null,
+                tokenName: '',
+            });
         }
     };
 
@@ -95,8 +164,17 @@ export function TokenManager({
             await navigator.clipboard.writeText(text);
             setCopiedToken(tokenId);
             setTimeout(() => setCopiedToken(null), 2000);
+            toast({
+                title: "Token copied",
+                description: "Access token has been copied to clipboard.",
+            });
         } catch (error) {
             console.error('Failed to copy to clipboard:', error);
+            toast({
+                title: "Failed to copy token",
+                description: "Could not copy token to clipboard. Please copy it manually.",
+                variant: "destructive",
+            });
         }
     };
 
@@ -293,14 +371,15 @@ export function TokenManager({
                                                         </Button>
                                                     )}
 
-                                                    <Button
+                                                    {/* <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleToggleToken(token.id)}
                                                         disabled={isTokenExpired(token.expiresAt)}
                                                     >
                                                         {token.isActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                                                    </Button>                                                    <Button
+                                                    </Button> */}
+                                                    <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleDeleteToken(token.id)}
@@ -325,6 +404,17 @@ export function TokenManager({
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Confirmation Dialog for Token Deletion */}
+            <ConfirmationDialog
+                open={confirmationDialog.open}
+                onOpenChange={(open) => setConfirmationDialog(prev => ({ ...prev, open }))}
+                onConfirm={confirmDeleteToken}
+                title="Delete Access Token"
+                description={`Are you sure you want to delete the token "${confirmationDialog.tokenName}"? This action cannot be undone and will immediately revoke access for this token.`}
+                confirmText="Delete Token"
+                cancelText="Cancel"
+            />
         </div>
     );
 }

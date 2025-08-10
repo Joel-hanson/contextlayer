@@ -90,7 +90,37 @@ export default function BridgesPage() {
                             ],
                         }
                     ]
-                }
+                },
+                mcpResources: [
+                    {
+                        uri: 'weather://cities',
+                        name: 'Weather Cities',
+                        description: 'List of popular cities for weather queries',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'weather://units',
+                        name: 'Weather Units',
+                        description: 'Available unit systems for weather data',
+                        mimeType: 'text/plain'
+                    }
+                ],
+                mcpPrompts: [
+                    {
+                        name: 'weather_summary',
+                        description: 'Generate a comprehensive weather summary for a city',
+                        arguments: [
+                            { name: 'city', description: 'City name for weather summary', required: true }
+                        ]
+                    },
+                    {
+                        name: 'weather_comparison',
+                        description: 'Compare weather between multiple cities',
+                        arguments: [
+                            { name: 'cities', description: 'Comma-separated list of cities', required: true }
+                        ]
+                    }
+                ]
             }
         },
         {
@@ -130,7 +160,46 @@ export default function BridgesPage() {
                             ],
                         }
                     ]
-                }
+                },
+                mcpResources: [
+                    {
+                        uri: 'github://profile',
+                        name: 'User Profile',
+                        description: 'GitHub user profile information',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'github://organizations',
+                        name: 'User Organizations',
+                        description: 'Organizations the user belongs to',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'github://limits',
+                        name: 'Rate Limits',
+                        description: 'Current API rate limit status',
+                        mimeType: 'application/json'
+                    }
+                ],
+                mcpPrompts: [
+                    {
+                        name: 'repo_analysis',
+                        description: 'Analyze a GitHub repository structure and activity',
+                        arguments: [
+                            { name: 'owner', description: 'Repository owner', required: true },
+                            { name: 'repo', description: 'Repository name', required: true }
+                        ]
+                    },
+                    {
+                        name: 'issue_summary',
+                        description: 'Summarize issues and pull requests for a repository',
+                        arguments: [
+                            { name: 'owner', description: 'Repository owner', required: true },
+                            { name: 'repo', description: 'Repository name', required: true },
+                            { name: 'state', description: 'Issue state (open/closed/all)', required: false }
+                        ]
+                    }
+                ]
             }
         },
         {
@@ -173,7 +242,43 @@ export default function BridgesPage() {
                             parameters: [],
                         }
                     ]
-                }
+                },
+                mcpResources: [
+                    {
+                        uri: 'demo://posts/stats',
+                        name: 'Posts Statistics',
+                        description: 'Statistics about posts in the demo API',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'demo://users/guide',
+                        name: 'Users Guide',
+                        description: 'Guide on working with demo users',
+                        mimeType: 'text/markdown'
+                    },
+                    {
+                        uri: 'demo://api/schema',
+                        name: 'API Schema',
+                        description: 'JSONPlaceholder API schema documentation',
+                        mimeType: 'application/json'
+                    }
+                ],
+                mcpPrompts: [
+                    {
+                        name: 'post_analysis',
+                        description: 'Analyze posts and provide insights',
+                        arguments: [
+                            { name: 'limit', description: 'Number of posts to analyze', required: false }
+                        ]
+                    },
+                    {
+                        name: 'user_profile',
+                        description: 'Generate a detailed user profile summary',
+                        arguments: [
+                            { name: 'user_id', description: 'User ID to analyze', required: true }
+                        ]
+                    }
+                ]
             }
         },
         {
@@ -212,7 +317,45 @@ export default function BridgesPage() {
                             ],
                         }
                     ]
-                }
+                },
+                mcpResources: [
+                    {
+                        uri: 'slack://workspace/info',
+                        name: 'Workspace Info',
+                        description: 'Current Slack workspace information',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'slack://channels/guidelines',
+                        name: 'Channel Guidelines',
+                        description: 'Best practices for channel management',
+                        mimeType: 'text/markdown'
+                    },
+                    {
+                        uri: 'slack://messaging/templates',
+                        name: 'Message Templates',
+                        description: 'Common message templates for team communication',
+                        mimeType: 'application/json'
+                    }
+                ],
+                mcpPrompts: [
+                    {
+                        name: 'channel_summary',
+                        description: 'Summarize channel activity and key discussions',
+                        arguments: [
+                            { name: 'channel', description: 'Channel ID or name', required: true },
+                            { name: 'days', description: 'Number of days to analyze', required: false }
+                        ]
+                    },
+                    {
+                        name: 'message_composer',
+                        description: 'Compose professional messages for team communication',
+                        arguments: [
+                            { name: 'purpose', description: 'Purpose of the message', required: true },
+                            { name: 'tone', description: 'Tone (formal/casual/urgent)', required: false }
+                        ]
+                    }
+                ]
             }
         },
         {
@@ -249,14 +392,73 @@ export default function BridgesPage() {
                             parameters: [],
                         }
                     ]
-                }
+                },
+                mcpResources: [
+                    {
+                        uri: 'openai://models/capabilities',
+                        name: 'Model Capabilities',
+                        description: 'Detailed capabilities of different OpenAI models',
+                        mimeType: 'application/json'
+                    },
+                    {
+                        uri: 'openai://usage/guidelines',
+                        name: 'Usage Guidelines',
+                        description: 'Best practices for using OpenAI API',
+                        mimeType: 'text/markdown'
+                    },
+                    {
+                        uri: 'openai://pricing/calculator',
+                        name: 'Pricing Calculator',
+                        description: 'Token usage and pricing information',
+                        mimeType: 'application/json'
+                    }
+                ],
+                mcpPrompts: [
+                    {
+                        name: 'model_selector',
+                        description: 'Help choose the right OpenAI model for a specific task',
+                        arguments: [
+                            { name: 'task', description: 'Description of the task', required: true },
+                            { name: 'budget', description: 'Budget considerations (low/medium/high)', required: false }
+                        ]
+                    },
+                    {
+                        name: 'prompt_optimizer',
+                        description: 'Optimize prompts for better AI responses',
+                        arguments: [
+                            { name: 'prompt', description: 'Original prompt to optimize', required: true },
+                            { name: 'goal', description: 'Desired outcome', required: true }
+                        ]
+                    },
+                    {
+                        name: 'response_analyzer',
+                        description: 'Analyze and improve AI-generated responses',
+                        arguments: [
+                            { name: 'response', description: 'AI response to analyze', required: true },
+                            { name: 'criteria', description: 'Evaluation criteria', required: false }
+                        ]
+                    }
+                ]
             }
         },
     ];
 
     const applyTemplate = (template: typeof templates[0]) => {
         if (typeof window !== 'undefined') {
-            localStorage.setItem('contextlayer-template', JSON.stringify(template.config));
+            // Process the template to add required IDs to endpoints
+            const processedConfig = {
+                ...template.config,
+                apiConfig: {
+                    ...template.config.apiConfig,
+                    endpoints: template.config.apiConfig?.endpoints?.map((endpoint, index) => ({
+                        ...endpoint,
+                        id: `endpoint-${Date.now()}-${index}`,
+                        parameters: endpoint.parameters || []
+                    })) || []
+                }
+            };
+
+            localStorage.setItem('contextlayer-template', JSON.stringify(processedConfig));
             setEditingBridge(undefined);
             setShowBridgeForm(true);
         }
@@ -495,14 +697,33 @@ export default function BridgesPage() {
                                             </CardHeader>
                                             <CardContent className="space-y-4">
                                                 {/* API Info - Simplified */}
-                                                <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
-                                                    <div className="flex items-center gap-2">
-                                                        <Database className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="text-sm font-medium">{bridge.apiConfig.name}</span>
+                                                <div className="py-2 px-3 bg-muted/50 rounded-lg space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <Database className="h-4 w-4 text-muted-foreground" />
+                                                            <span className="text-sm font-medium">{bridge.apiConfig.name}</span>
+                                                        </div>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {bridge.apiConfig.endpoints?.length || 0} endpoint{(bridge.apiConfig.endpoints?.length || 0) !== 1 ? 's' : ''}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {bridge.apiConfig.endpoints?.length || 0} tool{(bridge.apiConfig.endpoints?.length || 0) !== 1 ? 's' : ''}
-                                                    </span>
+
+                                                    {/* MCP Content Stats - Equal Grid Layout */}
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        <Badge variant="outline" className="text-xs py-0.5 px-2 flex items-center justify-center">
+                                                            <Zap className="h-3 w-3 mr-1 flex-shrink-0" />
+                                                            <span className="truncate">{bridge.mcpTools?.length || 0} tool{(bridge.mcpTools?.length || 0) !== 1 ? 's' : ''}</span>
+                                                        </Badge>
+                                                        <Badge variant="outline" className="text-xs py-0.5 px-2 flex items-center justify-center">
+                                                            <BookOpen className="h-3 w-3 mr-1 flex-shrink-0" />
+                                                            <span className="truncate">{bridge.mcpResources?.length || 0} resource{(bridge.mcpResources?.length || 0) !== 1 ? 's' : ''}</span>
+                                                        </Badge>
+                                                        <Badge variant="outline" className="text-xs py-0.5 px-2 flex items-center justify-center">
+                                                            <Settings className="h-3 w-3 mr-1 flex-shrink-0" />
+                                                            <span className="truncate">{bridge.mcpPrompts?.length || 0} prompt{(bridge.mcpPrompts?.length || 0) !== 1 ? 's' : ''}</span>
+                                                        </Badge>
+                                                    </div>
+
                                                 </div>
 
                                                 {/* MCP Endpoint - More prominent */}
