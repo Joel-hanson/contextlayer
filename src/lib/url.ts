@@ -22,6 +22,11 @@ export function getBaseUrl(): string {
         return process.env.PRODUCTION_URL || 'https://localhost:3000';
     }
 
+    if (process.env.VERCEL_ENV === 'production') {
+        // In production, try to get from headers or default to localhost
+        return process.env.PRODUCTION_URL || 'https://localhost:3000';
+    }
+
     // Development fallback
     return 'http://localhost:3000';
 }
