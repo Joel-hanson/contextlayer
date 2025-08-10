@@ -1,5 +1,6 @@
 import { authOptions } from '@/lib/auth'
 import { BridgeService } from '@/lib/bridge-service'
+import { checkUserLimits, rateLimitMiddleware } from '@/lib/rate-limiter'
 import { BridgeConfigSchema } from '@/lib/types'
 import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
@@ -63,6 +64,33 @@ export async function POST(request: NextRequest) {
         } else {
             userId = session.user.id;
             console.log('Using session userId:', userId);
+
+            // Check rate limits and user limits for authenticated users
+            const rateLimitResult = await rateLimitMiddleware();
+            if (!rateLimitResult.success) {
+                return NextResponse.json(
+                    {
+                        error: 'Rate limit exceeded. Please try again later.',
+                        details: 'Too many requests. Demo users are limited to 30 requests per minute.'
+                    },
+                    {
+                        status: 429,
+                        headers: rateLimitResult.headers
+                    }
+                );
+            }
+
+            // Check if user can create more bridges
+            const userLimitCheck = await checkUserLimits(userId, 'bridge');
+            if (!userLimitCheck.allowed) {
+                return NextResponse.json(
+                    {
+                        error: 'Bridge limit reached',
+                        details: userLimitCheck.message
+                    },
+                    { status: 403 }
+                );
+            }
         }
 
         const body = await request.json()

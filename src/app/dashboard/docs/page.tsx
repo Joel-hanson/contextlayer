@@ -256,9 +256,11 @@ export default function DocsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-wrap gap-3">
-                        <Button variant="outline" size="sm">
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            MCP Protocol Docs
+                        <Button variant="outline" size="sm" asChild>
+                            <a href="https://modelcontextprotocol.io/introduction" target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                MCP Protocol Docs
+                            </a>
                         </Button>
                         {/* <Button variant="outline" size="sm">
                             <ExternalLink className="h-4 w-4 mr-2" />
