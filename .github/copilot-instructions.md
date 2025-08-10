@@ -154,9 +154,6 @@ Current API routes return mock data - when implementing real functionality:
 Focus on the path-based architecture migration for scalability improvements.
 
 - What is the strategy for releasing this project
-- For now we will disable signup and will allow only sign in via google to be safe that I don't get spammed
-- The frontend stucks if tried ot login with wrong cred and try again it stuck
-- The frontend page has link that are note functional and says opensource
 - Is the whole application secure?
 - Oauth implementation
 - Write automated tests for the apis.
@@ -176,3 +173,6 @@ Done
 - The resources and prompts
 - routing tab is it really worth it, does it have ws connection. Can we just have the route that are only support for mcp
 - require authentication thing should create new token which customers can copy.
+- For now we will disable signup and will allow only sign in via google to be safe that I don't get spammed
+- The frontend stucks if tried ot login with wrong cred and try again it stuck
+- The frontend page has link that are note functional and says opensource

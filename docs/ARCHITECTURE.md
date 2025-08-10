@@ -1,10 +1,10 @@
-# MCP Bridge Data Architecture
+# Context Layer Data Architecture
 
-This document explains the data architecture and flow for the MCP Bridge application, clarifying how REST API endpoints are transformed into MCP tools, prompts, and resources.
+This document explains the data architecture and flow for the Context Layer application, clarifying how REST API endpoints are transformed into MCP tools, prompts, and resources.
 
 ## Architecture Overview
 
-The MCP Bridge uses a **hybrid data storage approach** that combines relational tables for source data with JSON fields for generated protocol data.
+The Context Layer uses a **hybrid data storage approach** that combines relational tables for source data with JSON fields for generated protocol data.
 
 ### Core Principle
 

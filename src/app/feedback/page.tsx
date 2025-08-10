@@ -31,7 +31,7 @@ export default function FeedbackPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!formData.subject.trim() || !formData.message.trim()) {
             toast({
                 title: "Required Fields Missing",
@@ -47,13 +47,13 @@ export default function FeedbackPage() {
             // Create GitHub issue
             const title = `[${formData.type.toUpperCase()}] ${formData.subject}`;
             const body = generateIssueBody(formData);
-            
-            const githubIssueUrl = `https://github.com/Joel-hanson/mcp-bridge/issues/new?` +
+
+            const githubIssueUrl = `https://github.com/Joel-hanson/contextlayer/issues/new?` +
                 `title=${encodeURIComponent(title)}&` +
                 `body=${encodeURIComponent(body)}`;
-            
+
             window.open(githubIssueUrl, '_blank');
-            
+
             toast({
                 title: "Feedback Submitted",
                 description: "Thank you! Your feedback has been submitted as a GitHub issue.",
@@ -83,16 +83,16 @@ export default function FeedbackPage() {
         let body = `## ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Report\n\n`;
         body += `**Priority:** ${data.priority}\n\n`;
         body += `**Description:**\n${data.message}\n\n`;
-        
+
         if (data.email) {
             body += `**Contact:** ${data.email}\n\n`;
         }
-        
+
         body += `---\n`;
         body += `**Submitted via:** Feedback Form\n`;
         body += `**Timestamp:** ${new Date().toISOString()}\n`;
         body += `**User Agent:** ${navigator.userAgent}\n`;
-        
+
         return body;
     };
 
@@ -242,8 +242,8 @@ export default function FeedbackPage() {
                             <Button
                                 variant="outline"
                                 className="w-full"
-                                onClick={() => 
-                                    window.open('https://github.com/Joel-hanson/mcp-bridge/issues', '_blank')
+                                onClick={() =>
+                                    window.open('https://github.com/Joel-hanson/contextlayer/issues', '_blank')
                                 }
                             >
                                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -266,7 +266,7 @@ export default function FeedbackPage() {
                             <Button
                                 variant="outline"
                                 className="w-full"
-                                onClick={() => 
+                                onClick={() =>
                                     window.location.href = 'mailto:joel@contextlayer.dev?subject=ContextLayer Feedback'
                                 }
                             >
