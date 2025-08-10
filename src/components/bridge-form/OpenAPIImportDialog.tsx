@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { OpenAPIParser, ParsedOpenAPIResult } from '@/lib/openapi-parser';
+import { McpPrompt, McpResource, McpTool } from '@/lib/types';
 import { AlertTriangle, CheckCircle, FileText, Globe, Upload } from 'lucide-react';
 import { useState } from 'react';
 
@@ -40,6 +41,10 @@ interface OpenAPIImportDialogProps {
             headerName?: string;
         };
         headers?: Record<string, string>;
+        // MCP-specific content
+        mcpTools?: McpTool[];
+        mcpPrompts?: McpPrompt[];
+        mcpResources?: McpResource[];
     }) => void;
 }
 
@@ -244,6 +249,10 @@ export function OpenAPIImportDialog({ open, onOpenChange, onImport }: OpenAPIImp
                 }),
                 authentication: result.data.authentication,
                 headers: result.data.headers,
+                // Include generated MCP content
+                mcpTools: result.data.mcpTools,
+                mcpPrompts: result.data.mcpPrompts,
+                mcpResources: result.data.mcpResources,
             };
 
             onImport(transformedData);
@@ -308,6 +317,21 @@ export function OpenAPIImportDialog({ open, onOpenChange, onImport }: OpenAPIImp
                             <span className="font-medium text-gray-600">Endpoints:</span>
                             <p className="text-gray-900">{result.data.endpoints.length} found</p>
                         </div>
+
+                        <div>
+                            <span className="font-medium text-gray-600">MCP Tools:</span>
+                            <p className="text-gray-900">{result.data.mcpTools.length} generated</p>
+                        </div>
+
+                        <div>
+                            <span className="font-medium text-gray-600">MCP Prompts:</span>
+                            <p className="text-gray-900">{result.data.mcpPrompts.length} generated</p>
+                        </div>
+
+                        <div>
+                            <span className="font-medium text-gray-600">MCP Resources:</span>
+                            <p className="text-gray-900">{result.data.mcpResources.length} generated</p>
+                        </div>
                     </div>
 
                     {result.data.description && (
@@ -352,6 +376,72 @@ export function OpenAPIImportDialog({ open, onOpenChange, onImport }: OpenAPIImp
                             </div>
                         </div>
                     )}
+
+                    {result.data.mcpTools && result.data.mcpTools.length > 0 && (
+                        <div>
+                            <span className="font-medium text-gray-600">MCP Tools Preview:</span>
+                            <div className="mt-2 max-h-24 overflow-y-auto">
+                                {result.data.mcpTools.slice(0, 3).map((tool, index) => (
+                                    <div key={index} className="flex items-center gap-2 py-1 text-sm">
+                                        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-mono">
+                                            TOOL
+                                        </span>
+                                        <span className="font-mono text-gray-600">{tool.name}</span>
+                                        <span className="text-gray-500">({tool.description})</span>
+                                    </div>
+                                ))}
+                                {result.data.mcpTools.length > 3 && (
+                                    <p className="text-gray-500 text-sm mt-1">
+                                        ...and {result.data.mcpTools.length - 3} more tools
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {result.data.mcpPrompts && result.data.mcpPrompts.length > 0 && (
+                        <div>
+                            <span className="font-medium text-gray-600">MCP Prompts Preview:</span>
+                            <div className="mt-2 max-h-24 overflow-y-auto">
+                                {result.data.mcpPrompts.slice(0, 3).map((prompt, index) => (
+                                    <div key={index} className="flex items-center gap-2 py-1 text-sm">
+                                        <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-mono">
+                                            PROMPT
+                                        </span>
+                                        <span className="font-mono text-gray-600">{prompt.name}</span>
+                                        <span className="text-gray-500">({prompt.description})</span>
+                                    </div>
+                                ))}
+                                {result.data.mcpPrompts.length > 3 && (
+                                    <p className="text-gray-500 text-sm mt-1">
+                                        ...and {result.data.mcpPrompts.length - 3} more prompts
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {result.data.mcpResources && result.data.mcpResources.length > 0 && (
+                        <div>
+                            <span className="font-medium text-gray-600">MCP Resources Preview:</span>
+                            <div className="mt-2 max-h-24 overflow-y-auto">
+                                {result.data.mcpResources.slice(0, 3).map((resource, index) => (
+                                    <div key={index} className="flex items-center gap-2 py-1 text-sm">
+                                        <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs font-mono">
+                                            RESOURCE
+                                        </span>
+                                        <span className="font-mono text-gray-600">{resource.name}</span>
+                                        <span className="text-gray-500">({resource.mimeType})</span>
+                                    </div>
+                                ))}
+                                {result.data.mcpResources.length > 3 && (
+                                    <p className="text-gray-500 text-sm mt-1">
+                                        ...and {result.data.mcpResources.length - 3} more resources
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -367,7 +457,7 @@ export function OpenAPIImportDialog({ open, onOpenChange, onImport }: OpenAPIImp
                     </DialogTitle>
                     <DialogDescription>
                         Import your API configuration from an OpenAPI 3.0 or Swagger specification.
-                        This will automatically configure endpoints, authentication, and other settings.
+                        This will automatically configure endpoints, authentication, and generate MCP tools, prompts, and resources.
                     </DialogDescription>
                 </DialogHeader>
 

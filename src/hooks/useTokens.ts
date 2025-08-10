@@ -1,6 +1,12 @@
 import { McpAccessToken, TokenPermission } from '@/lib/security';
 import { useCallback, useEffect, useState } from 'react';
 
+// UUID validation helper function
+function isValidUUID(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+}
+
 interface UseTokensResult {
     tokens: McpAccessToken[];
     loading: boolean;
@@ -17,7 +23,8 @@ export function useTokens(bridgeId: string): UseTokensResult {
     const [error, setError] = useState<string | null>(null);
 
     const refreshTokens = useCallback(async () => {
-        if (!bridgeId) return;
+        // Don't make API calls for invalid bridge IDs (like 'temp-bridge-id')
+        if (!bridgeId || bridgeId === 'temp-bridge-id' || !isValidUUID(bridgeId)) return;
 
         try {
             setLoading(true);
@@ -55,7 +62,7 @@ export function useTokens(bridgeId: string): UseTokensResult {
         expiresInDays?: number,
         permissions?: TokenPermission[]
     ): Promise<McpAccessToken | null> => {
-        if (!bridgeId) return null;
+        if (!bridgeId || bridgeId === 'temp-bridge-id' || !isValidUUID(bridgeId)) return null;
 
         try {
             setError(null);
@@ -96,7 +103,7 @@ export function useTokens(bridgeId: string): UseTokensResult {
     }, [bridgeId]);
 
     const toggleToken = useCallback(async (tokenId: string): Promise<boolean> => {
-        if (!bridgeId) return false;
+        if (!bridgeId || bridgeId === 'temp-bridge-id' || !isValidUUID(bridgeId)) return false;
 
         try {
             setError(null);
@@ -134,7 +141,7 @@ export function useTokens(bridgeId: string): UseTokensResult {
     }, [bridgeId]);
 
     const deleteToken = useCallback(async (tokenId: string): Promise<boolean> => {
-        if (!bridgeId) return false;
+        if (!bridgeId || bridgeId === 'temp-bridge-id' || !isValidUUID(bridgeId)) return false;
 
         try {
             setError(null);
@@ -160,7 +167,7 @@ export function useTokens(bridgeId: string): UseTokensResult {
 
     // Load tokens on mount and when bridgeId changes
     useEffect(() => {
-        if (bridgeId) {
+        if (bridgeId && bridgeId !== 'temp-bridge-id' && isValidUUID(bridgeId)) {
             refreshTokens();
         }
     }, [bridgeId, refreshTokens]);

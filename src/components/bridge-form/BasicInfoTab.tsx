@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { McpPrompt, McpResource, McpTool } from '@/lib/types';
 import { FileText, Info } from 'lucide-react';
 import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
@@ -46,11 +47,27 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
             headerName?: string;
         };
         headers?: Record<string, string>;
+        // MCP content from OpenAPI
+        mcpTools?: McpTool[];
+        mcpPrompts?: McpPrompt[];
+        mcpResources?: McpResource[];
     }) => {
         // Populate form with imported data
         form.setValue('apiConfig.name', importData.name);
         form.setValue('apiConfig.baseUrl', importData.baseUrl);
         form.setValue('apiConfig.description', importData.description);
+
+        // Auto-populate main bridge description if empty
+        const currentBridgeDescription = form.getValues('description');
+        if (!currentBridgeDescription && importData.description) {
+            form.setValue('description', importData.description);
+        }
+
+        // Auto-generate bridge name if empty
+        const currentBridgeName = form.getValues('name');
+        if (!currentBridgeName) {
+            form.setValue('name', `${importData.name} Bridge`);
+        }
 
         // Handle authentication
         if (importData.authentication) {
@@ -61,22 +78,33 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
             form.setValue('apiConfig.headers', importData.headers);
         }
 
-        // Set endpoints with proper parameters
-        const endpointsWithDefaults = importData.endpoints.map(endpoint => ({
+        // Set endpoints with proper parameters and IDs
+        const endpointsWithDefaults = importData.endpoints.map((endpoint, index) => ({
             ...endpoint,
+            id: 'id' in endpoint ? endpoint.id as string : `endpoint-${Date.now()}-${index}`,
             parameters: endpoint.parameters || []
         }));
         form.setValue('apiConfig.endpoints', endpointsWithDefaults);
 
-        // Auto-generate bridge name if empty
-        const currentBridgeName = form.getValues('name');
-        if (!currentBridgeName) {
-            form.setValue('name', `${importData.name} Bridge`);
+        // Set MCP content if provided
+        if (importData.mcpTools) {
+            form.setValue('mcpTools', importData.mcpTools);
+        }
+        if (importData.mcpPrompts) {
+            // Ensure arguments field has default empty array if undefined
+            const promptsWithDefaults = importData.mcpPrompts.map(prompt => ({
+                ...prompt,
+                arguments: prompt.arguments || []
+            }));
+            form.setValue('mcpPrompts', promptsWithDefaults);
+        }
+        if (importData.mcpResources) {
+            form.setValue('mcpResources', importData.mcpResources);
         }
 
         toast({
             title: "Import Successful",
-            description: `Imported ${importData.endpoints.length} endpoints from ${importData.name}`,
+            description: `Imported ${importData.endpoints.length} endpoints, ${importData.mcpTools?.length || 0} tools, ${importData.mcpPrompts?.length || 0} prompts, and ${importData.mcpResources?.length || 0} resources from ${importData.name}`,
             variant: "default",
         });
     };
