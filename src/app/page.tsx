@@ -239,7 +239,7 @@ export default function LandingPage() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Connect & Use</h3>
             <p className="text-muted-foreground">
-              Start your bridge server and connect it to Claude, VS Code, or any MCP-compatible AI assistant to begin using your API.
+              Access your bridge via HTTP at `/mcp/[bridgeId]` and connect it to Claude Desktop or other MCP-compatible clients.
             </p>
           </div>
         </div>
@@ -344,12 +344,12 @@ export default function LandingPage() {
           </h2>
           <p className="mx-auto mt-4 max-w-[750px] text-lg text-muted-foreground mb-8">
             Start connecting your REST APIs to the Model Context Protocol ecosystem today.
-            {/* It&apos;s free, open source, and takes just minutes to set up. */}
+            Built with Next.js and requires user authentication.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/dashboard/bridges">
               <Button size="lg" className="w-full sm:w-auto">
-                Get Started for Free
+                Get Started (Sign Up Required)
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -373,8 +373,7 @@ export default function LandingPage() {
               <span className="font-bold">ContextLayer</span>
             </Link>
             <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-              Built with Next.js and shadcn/ui.
-              {/* Open source and free to use. */}
+              Built with Vercel, Prisma, Next.js, shadcn/ui and Copilot.
             </p>
           </div>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
