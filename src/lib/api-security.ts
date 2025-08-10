@@ -1,6 +1,8 @@
+import { Session } from "next-auth";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import { authOptions } from "./auth";
+import { AppError } from "./error-handler";
 import { prisma } from "./prisma";
 
 interface BridgeData {
@@ -22,36 +24,40 @@ interface BridgeData {
 }
 
 // Authentication middleware for API routes
-export async function requireAuth() {
-    const session = await getServerSession(authOptions);
+export async function requireAuth(): Promise<Session> {
+    try {
+        const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id) {
-        return NextResponse.json(
-            { error: 'Authentication required' },
-            { status: 401 }
-        );
+        if (!session?.user?.id) {
+            throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+        }
+
+        return session;
+    } catch (error) {
+        if (error instanceof AppError) throw error;
+        throw new AppError('INTERNAL_ERROR', 'Authentication check failed', 500);
     }
-
-    return session;
 }
 
 // Check if user owns a bridge
 export async function requireBridgeOwnership(bridgeId: string, userId: string) {
-    const bridge = await prisma.bridge.findFirst({
-        where: {
-            id: bridgeId,
-            userId: userId
+    try {
+        const bridge = await prisma.bridge.findFirst({
+            where: {
+                id: bridgeId,
+                userId: userId
+            }
+        });
+
+        if (!bridge) {
+            throw new AppError('BRIDGE_NOT_FOUND', 'Bridge not found or access denied', 404);
         }
-    });
 
-    if (!bridge) {
-        return NextResponse.json(
-            { error: 'Bridge not found or access denied' },
-            { status: 404 }
-        );
+        return bridge;
+    } catch (error) {
+        if (error instanceof AppError) throw error;
+        throw new AppError('DATABASE_ERROR', 'Failed to verify bridge ownership', 500);
     }
-
-    return bridge;
 }
 
 // Input validation schemas
