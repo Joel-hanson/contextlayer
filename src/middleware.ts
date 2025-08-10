@@ -14,7 +14,7 @@ export default withAuth(
         response.headers.set('X-XSS-Protection', '1; mode=block');
 
         // Content Security Policy
-        const csp = [
+        const cspDirectives = [
             "default-src 'self'",
             "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -23,9 +23,20 @@ export default withAuth(
             "connect-src 'self' https://api.github.com https://accounts.google.com https://*.googleapis.com",
             "frame-src 'self' https://accounts.google.com",
             "object-src 'none'",
-            "base-uri 'self'",
-            "upgrade-insecure-requests"
-        ].join('; ');
+            "base-uri 'self'"
+        ];
+
+        // Only add upgrade-insecure-requests in production
+        if (process.env.NODE_ENV === 'production') {
+            cspDirectives.push("upgrade-insecure-requests");
+        }
+
+        // Only add upgrade-insecure-requests in production (when deployed to Vercel)
+        if (process.env.VERCEL_ENV === 'production') {
+            cspDirectives.push("upgrade-insecure-requests");
+        }
+
+        const csp = cspDirectives.join('; ');
 
         response.headers.set('Content-Security-Policy', csp);
 
@@ -70,13 +81,18 @@ export default withAuth(
 
                 // Routes that require authentication
                 if (pathname.startsWith('/dashboard') ||
-                    pathname.startsWith('/api/')) {
+                    pathname.startsWith('/api/bridges') ||
+                    pathname.startsWith('/api/feedback') ||
+                    pathname.startsWith('/api/user')) {
                     return !!token;
                 }
 
-                // Allow all other routes (public routes, auth routes, etc.)
+                // Allow all other routes (public routes, auth routes, health check, etc.)
                 return true;
             },
+        },
+        pages: {
+            signIn: "/auth/signin",
         },
     }
 );
