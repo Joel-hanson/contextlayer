@@ -1,6 +1,7 @@
 'use client';
 
 import { FeedbackWidget } from '@/components/FeedbackWidget';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -99,6 +100,33 @@ export function DashboardLayout({ children }: SidebarProps) {
 
                 {/* Page content */}
                 <main className="py-10">
+                    {/* Demo user banner */}
+                    {session?.user?.email === 'demo@contextlayer.app' && (
+                        <div className="px-4 sm:px-6 lg:px-8 mb-6">
+                            <div className="border rounded-lg p-4 bg-muted/30">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Badge variant="secondary" className="text-xs">
+                                            Demo Account
+                                        </Badge>
+                                        <div className="text-sm">
+                                            <p className="font-medium">
+                                                Limited demo access
+                                            </p>
+                                            <p className="text-muted-foreground text-xs">
+                                                2 MCP server max • 30 requests/min • Rate limited
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Link href="/auth/signin">
+                                        <Button size="sm" variant="default">
+                                            Upgrade Account
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <div className="px-4 sm:px-6 lg:px-8">
                         {children}
                     </div>
@@ -195,9 +223,16 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
                                                 )}
                                             </div>
                                             <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
-                                                <p className="text-sm font-medium truncate w-full">
-                                                    {session.user.name || session.user.username || 'User'}
-                                                </p>
+                                                <div className="flex items-center gap-2 w-full min-w-0">
+                                                    <p className="text-sm font-medium truncate flex-1">
+                                                        {session.user.name || session.user.username || 'User'}
+                                                    </p>
+                                                    {session.user.email === 'demo@contextlayer.app' && (
+                                                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 shrink-0">
+                                                            Demo
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs text-muted-foreground truncate w-full">
                                                     {session.user.email}
                                                 </p>
