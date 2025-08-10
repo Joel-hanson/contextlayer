@@ -1,10 +1,10 @@
 # Data Transformation Guide
 
-This guide explains how data flows through the MCP Bridge system, from OpenAPI specifications to live MCP tools.
+This guide explains how data flows through the Context Layer system, from OpenAPI specifications to live MCP tools.
 
 ## Overview
 
-The MCP Bridge transforms REST APIs into MCP (Model Context Protocol) tools through a multi-stage process:
+The Context Layer transforms REST APIs into MCP (Model Context Protocol) tools through a multi-stage process:
 
 1. **Import**: OpenAPI spec → Parsed endpoints + Generated MCP content
 2. **Storage**: Relational endpoints + JSON MCP data → Database
