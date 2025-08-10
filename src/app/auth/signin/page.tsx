@@ -6,11 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { getSession, signIn } from 'next-auth/react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function SignInPage() {
     const [email, setEmail] = useState('');
@@ -19,34 +18,158 @@ export default function SignInPage() {
     const [error, setError] = useState('');
     const router = useRouter();
 
+    // Cleanup loading state on component unmount and add timeout protection
+    useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+
+        if (loading) {
+            // Set a timeout to prevent infinite loading state
+            timeoutId = setTimeout(() => {
+                setLoading(false);
+                setError('Request timed out. Please try again.');
+            }, 30000); // 30 seconds timeout
+        }
+
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            setLoading(false);
+        };
+    }, [loading]);
+
+    // Check for any persisted error on component mount
+    useEffect(() => {
+        const persistedError = sessionStorage.getItem('signin_error');
+        if (persistedError) {
+            setError(persistedError);
+            sessionStorage.removeItem('signin_error'); // Clear it immediately
+        }
+    }, []);
+
+    // Reset error when user starts typing in either field (only clear after actual changes)
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        setEmail(newValue);
+        // Only clear error if the user has made a meaningful change (not just focus/blur)
+        if (error && newValue !== email) {
+            setError(''); // Clear error when user modifies the field
+            sessionStorage.removeItem('signin_error'); // Also clear persisted error
+        }
+    };
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        setPassword(newValue);
+        // Only clear error if the user has made a meaningful change (not just focus/blur)
+        if (error && newValue !== password) {
+            setError(''); // Clear error when user modifies the field
+            sessionStorage.removeItem('signin_error'); // Also clear persisted error
+        }
+    };    // Helper function to get user-friendly error messages
+    const getErrorMessage = (error: string | undefined) => {
+        if (!error) return 'An unexpected error occurred';
+
+        switch (error) {
+            case 'CredentialsSignin':
+                return 'Invalid email/username or password. Please check your credentials and try again.';
+            case 'InvalidCredentials':
+                return 'Invalid email/username or password. Please check your credentials and try again.';
+            case 'Invalid credentials':
+                return 'Invalid email/username or password. Please check your credentials and try again.';
+            case 'CallbackRouteError':
+                return 'Authentication failed. Please try again.';
+            case 'OAuthSignin':
+            case 'OAuthCallback':
+                return 'OAuth authentication failed. Please try again.';
+            case 'OAuthCreateAccount':
+                return 'Failed to create account with OAuth provider.';
+            case 'EmailCreateAccount':
+                return 'Failed to create account with this email.';
+            case 'Callback':
+                return 'Authentication callback failed. Please try again.';
+            case 'OAuthAccountNotLinked':
+                return 'This email is already registered with a different sign-in method.';
+            case 'EmailSignin':
+                return 'Failed to send sign-in email.';
+            case 'CredentialsSignInError':
+                return 'Sign-in failed. Please check your credentials.';
+            case 'SessionRequired':
+                return 'You must be signed in to access this page.';
+            default:
+                // If the error message is already user-friendly, return it as-is
+                if (error.includes('User already exists') ||
+                    error.includes('Username and password are required') ||
+                    error.includes('Email is required') ||
+                    error.includes('Invalid credentials')) {
+                    return error;
+                }
+                return 'Sign-in failed. Please try again or contact support if the problem persists.';
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
+
+        // Basic validation
+        if (!email.trim()) {
+            setError('Email or username is required');
+            return;
+        }
+
+        if (!password.trim()) {
+            setError('Password is required');
+            return;
+        }
+
         setLoading(true);
         setError('');
 
         try {
+            console.log('Attempting sign in...'); // Debug log
             const result = await signIn('credentials', {
-                email,
+                email: email.trim(),
                 password,
                 isSignUp: 'false',
-                redirect: false,
+                redirect: false, // This is crucial - prevents automatic redirect
             });
 
+            console.log('Sign in result:', result); // Debug log
+
             if (result?.error) {
-                setError(result.error);
-            } else {
-                // Check if user is authenticated
+                const friendlyError = getErrorMessage(result.error);
+                console.log('Sign in error:', result.error, '-> friendly:', friendlyError); // Debug log
+                setError(friendlyError);
+                // Persist error briefly in case of page reload
+                sessionStorage.setItem('signin_error', friendlyError);
+                setTimeout(() => sessionStorage.removeItem('signin_error'), 10000); // Clear after 10 seconds
+                setLoading(false);
+                return;
+            }
+
+            if (result?.ok) {
+                // Double check authentication status
                 const session = await getSession();
                 if (session) {
+                    console.log('Sign in successful, redirecting...'); // Debug log
                     router.push('/dashboard');
+                    return;
                 } else {
-                    setError('Failed to sign in');
+                    setError('Authentication succeeded but failed to create session. Please try again.');
+                    setLoading(false);
+                    return;
                 }
             }
+
+            // If we get here, something unexpected happened
+            setError('Sign-in failed for an unknown reason. Please try again.');
+            setLoading(false);
         } catch (error) {
-            setError('An unexpected error occurred');
             console.error('Sign in error:', error);
-        } finally {
+            if (error instanceof Error) {
+                setError(getErrorMessage(error.message));
+            } else {
+                setError('A network error occurred. Please check your connection and try again.');
+            }
             setLoading(false);
         }
     };
@@ -56,10 +179,30 @@ export default function SignInPage() {
         setError('');
 
         try {
-            await signIn('google', { callbackUrl: '/dashboard' });
+            const result = await signIn('google', {
+                callbackUrl: '/dashboard',
+                redirect: false
+            });
+
+            if (result?.error) {
+                const friendlyError = getErrorMessage(result.error);
+                setError(friendlyError);
+                setLoading(false);
+            } else if (result?.url) {
+                // Redirect to the callback URL
+                window.location.href = result.url;
+            } else {
+                // If no URL and no error, something went wrong
+                setError('Google sign-in failed to initialize. Please try again.');
+                setLoading(false);
+            }
         } catch (error) {
-            setError('Failed to sign in with Google');
             console.error('Google sign in error:', error);
+            if (error instanceof Error) {
+                setError(`Google sign-in failed: ${error.message}`);
+            } else {
+                setError('Google sign-in failed. Please try again or use email/password.');
+            }
             setLoading(false);
         }
     };
@@ -78,7 +221,10 @@ export default function SignInPage() {
                 <CardContent className="space-y-4">
                     {error && (
                         <Alert variant="destructive">
-                            <AlertDescription>{error}</AlertDescription>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription className="ml-2">
+                                {error}
+                            </AlertDescription>
                         </Alert>
                     )}
 
@@ -90,9 +236,10 @@ export default function SignInPage() {
                                 type="text"
                                 placeholder="Enter your email or username"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={handleEmailChange}
                                 disabled={loading}
                                 required
+                                className={error && error.includes('email') ? 'border-destructive' : ''}
                             />
                         </div>
 
@@ -103,16 +250,17 @@ export default function SignInPage() {
                                 type="password"
                                 placeholder="Enter your password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={handlePasswordChange}
                                 disabled={loading}
                                 required
+                                className={error && error.includes('password') ? 'border-destructive' : ''}
                             />
                         </div>
 
                         <Button
                             type="submit"
                             className="w-full"
-                            disabled={loading}
+                            disabled={loading || !email.trim() || !password.trim()}
                         >
                             {loading ? (
                                 <>
@@ -163,17 +311,93 @@ export default function SignInPage() {
                         Continue with Google
                     </Button>
 
-                    <div className="text-center text-sm">
-                        <span className="text-muted-foreground">
-                            Don&apos;t have an account?{' '}
-                        </span>
-                        <Link
-                            href="/auth/signup"
-                            className="underline underline-offset-4 hover:text-primary"
-                        >
-                            Sign up
-                        </Link>
+                    {/* Demo Login Section */}
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <Separator className="w-full" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                                Try Demo
+                            </span>
+                        </div>
                     </div>
+
+                    <div className="border rounded-lg p-4 bg-muted/30">
+                        <div className="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 className="font-medium text-sm">Demo Account</h3>
+                                <p className="text-muted-foreground text-xs">
+                                    Explore all features with limits
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={async () => {
+                                        setEmail('demo@contextlayer.app');
+                                        setPassword('demo123');
+                                        setError('');
+
+                                        setTimeout(async () => {
+                                            const form = document.querySelector('form') as HTMLFormElement;
+                                            if (form) {
+                                                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                                            }
+                                        }, 100);
+                                    }}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                            Signing in...
+                                        </>
+                                    ) : (
+                                        'Try Demo'
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="text-xs text-muted-foreground space-y-1">
+                            <div className="flex justify-between">
+                                <span>Email:</span>
+                                <code className="bg-muted px-1 rounded text-xs">demo@contextlayer.app</code>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Password:</span>
+                                <code className="bg-muted px-1 rounded text-xs">demo123</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="text-center text-sm text-muted-foreground">
+                        <p>
+                            Don&apos;t have an account?{' '}
+                            <span className="line-through opacity-60">Create account</span>
+                            <span className="block text-xs mt-1 text-amber-600 dark:text-amber-400">
+                                Registration temporarily disabled
+                            </span>
+                        </p>
+                        <p className="mt-3 text-xs">
+                            For full access, use <strong>&quot;Continue with Google&quot;</strong> above
+                        </p>
+                    </div>
+
+                    {/* Helpful tips section */}
+                    {error && error.includes('Invalid') && (
+                        <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
+                            <p className="font-medium mb-1">Having trouble signing in?</p>
+                            <ul className="space-y-1">
+                                <li>• Make sure you&apos;re using the correct email or username</li>
+                                <li>• Check that Caps Lock is not enabled</li>
+                                <li>• Try signing in with Google if you created your account that way</li>
+                                <li>• If you forgot your password, you may need to sign up again</li>
+                            </ul>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
