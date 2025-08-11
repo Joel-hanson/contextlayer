@@ -22,10 +22,19 @@ export default function DocsPage() {
 
             {/* Main Content Tabs */}
             <Tabs defaultValue="getting-started" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
-                    <TabsTrigger value="clients">Client Setup</TabsTrigger>
-                    <TabsTrigger value="testing">Testing</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 gap-1">
+                    <TabsTrigger value="getting-started" className="text-xs sm:text-sm px-2 sm:px-3">
+                        <span className="hidden sm:inline">Getting Started</span>
+                        <span className="sm:hidden">Start</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="clients" className="text-xs sm:text-sm px-2 sm:px-3">
+                        <span className="hidden sm:inline">Client Setup</span>
+                        <span className="sm:hidden">Clients</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="testing" className="text-xs sm:text-sm px-2 sm:px-3">
+                        <span className="hidden sm:inline">Testing</span>
+                        <span className="sm:hidden">Testing</span>
+                    </TabsTrigger>
                 </TabsList>
 
                 {/* Getting Started Tab */}

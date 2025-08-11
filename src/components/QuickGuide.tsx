@@ -37,7 +37,7 @@ export function QuickGuide() {
             </div>
 
             <Tabs defaultValue="quickstart" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                {/* <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="quickstart" className="flex items-center gap-2">
                         <Zap className="h-4 w-4" />
                         Quick Start
@@ -54,8 +54,30 @@ export function QuickGuide() {
                         <TestTube className="h-4 w-4" />
                         Troubleshooting
                     </TabsTrigger>
-                </TabsList>
+                </TabsList> */}
 
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+                    <TabsTrigger value="quickstart" className="flex items-center  sm:gap-2 text-xs sm:text-sm sm:px-3 h-auto">
+                        <Zap className="h-2 w-2 sm:h-4 sm:w-4 shrink-0" />
+                        <span className="hidden sm:inline">Quick Start</span>
+                        <span className="sm:hidden">Start</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="examples" className="flex items-center  sm:gap-2 text-xs sm:text-sm sm:px-2 h-auto">
+                        <Code className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                        <span className="hidden sm:inline">Examples</span>
+                        <span className="sm:hidden">Examples</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="auth" className="flex items-center  sm:gap-2 text-xs sm:text-sm sm:px-3 h-auto">
+                        <Shield className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                        <span className="hidden sm:inline">Authentication</span>
+                        <span className="sm:hidden">Auth</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="troubleshooting" className="flex items-center  sm:gap-2 text-xs sm:text-sm sm:px-3 h-auto">
+                        <TestTube className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                        <span className="hidden sm:inline">Troubleshooting</span>
+                        <span className="sm:hidden">Help</span>
+                    </TabsTrigger>
+                </TabsList>
                 <TabsContent value="quickstart" className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card>
