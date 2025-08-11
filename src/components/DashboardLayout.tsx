@@ -59,8 +59,8 @@ export function DashboardLayout({ children }: SidebarProps) {
                 "fixed inset-0 z-50 lg:hidden",
                 sidebarOpen ? "block" : "hidden"
             )}>
-                <div className="fixed inset-0 bg-black/20" onClick={() => setSidebarOpen(false)} />
-                <div className="fixed left-0 top-0 h-full w-64 bg-background border-r shadow-lg">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+                <div className="fixed left-0 top-0 h-full w-72 bg-background border-r shadow-xl transition-transform duration-200 ease-in-out">
                     <SidebarContent
                         navigation={navigation}
                         onClose={() => setSidebarOpen(false)}
@@ -82,19 +82,68 @@ export function DashboardLayout({ children }: SidebarProps) {
             {/* Main content */}
             <div className="lg:pl-72">
                 {/* Mobile header */}
-                <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
+                <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setSidebarOpen(true)}
+                        className="touch-manipulation"
                     >
                         <Menu className="h-5 w-5" />
+                        <span className="sr-only">Open sidebar</span>
                     </Button>
-                    <div className="flex items-center gap-x-2">
-                        <div className="h-6 w-6 bg-primary rounded-sm flex items-center justify-center">
-                            <BrainCogIcon className="h-4 w-4 text-primary-foreground" />
+                    <div className="flex flex-1 items-center justify-between min-w-0">
+                        <div className="flex items-center gap-x-2 min-w-0">
+                            <div className="h-6 w-6 bg-primary rounded-sm flex items-center justify-center">
+                                <BrainCogIcon className="h-4 w-4 text-primary-foreground" />
+                            </div>
+                            <span className="font-bold truncate">ContextLayer</span>
                         </div>
-                        <span className="font-bold">ContextLayer</span>
+                        {/* Mobile user menu */}
+                        {session?.user && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="touch-manipulation">
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground overflow-hidden">
+                                            {session.user.image ? (
+                                                <Image
+                                                    src={session.user.image}
+                                                    alt={session.user.name || session.user.username || 'User'}
+                                                    width={24}
+                                                    height={24}
+                                                    className="h-full w-full object-cover rounded-full"
+                                                />
+                                            ) : (
+                                                <User className="h-3 w-3" />
+                                            )}
+                                        </div>
+                                        <span className="sr-only">Open user menu</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <div className="px-3 py-2">
+                                        <p className="text-sm font-medium truncate">
+                                            {session.user.name || session.user.username || 'User'}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {session.user.email}
+                                        </p>
+                                    </div>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/dashboard/settings">
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            Settings
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleSignOut}>
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Sign out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </div>
                 </div>
 
@@ -103,14 +152,14 @@ export function DashboardLayout({ children }: SidebarProps) {
                     {/* Demo user banner */}
                     {session?.user?.email === 'demo@contextlayer.app' && (
                         <div className="px-4 sm:px-6 lg:px-8 mb-6">
-                            <div className="border rounded-lg p-4 bg-muted/30">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <Badge variant="secondary" className="text-xs">
+                            <div className="border rounded-lg p-3 sm:p-4 bg-muted/30">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                        <Badge variant="secondary" className="text-xs shrink-0">
                                             Demo Account
                                         </Badge>
-                                        <div className="text-sm">
-                                            <p className="font-medium">
+                                        <div className="text-sm min-w-0">
+                                            <p className="font-medium truncate">
                                                 Limited demo access
                                             </p>
                                             <p className="text-muted-foreground text-xs">
@@ -119,7 +168,7 @@ export function DashboardLayout({ children }: SidebarProps) {
                                         </div>
                                     </div>
                                     <Link href="/auth/signin">
-                                        <Button size="sm" variant="default">
+                                        <Button size="sm" variant="default" className="w-full sm:w-auto touch-manipulation">
                                             Create Account
                                         </Button>
                                     </Link>
@@ -184,7 +233,7 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
                                             item.current
                                                 ? 'bg-muted text-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-medium transition-colors'
+                                            'group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium transition-colors touch-manipulation'
                                         )}
                                         onClick={onClose}
                                     >

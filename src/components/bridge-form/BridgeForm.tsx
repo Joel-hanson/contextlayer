@@ -522,14 +522,14 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
     return (
         <>
             <Dialog open={open} onOpenChange={handleClose}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <DialogTitle className="text-xl font-semibold">
+                <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto sm:max-h-[90vh] p-4 sm:p-6">
+                    <DialogHeader className="space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="min-w-0">
+                                <DialogTitle className="text-lg sm:text-xl font-semibold">
                                     {bridge ? 'Edit MCP Server' : 'Create New MCP Server'}
                                 </DialogTitle>
-                                <DialogDescription>
+                                <DialogDescription className="text-sm sm:text-base">
                                     {bridge
                                         ? 'Modify your existing MCP server configuration'
                                         : 'Configure a new MCP server to expose your API as AI tools'}
@@ -539,10 +539,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setShowGuide(!showGuide)}
-                                className="text-blue-600 hover:text-blue-700"
+                                className="text-blue-600 hover:text-blue-700 shrink-0 touch-manipulation"
                             >
                                 <Lightbulb className="h-4 w-4 mr-1" />
-                                {showGuide ? 'Hide' : 'Show'} Guide
+                                <span className="hidden sm:inline">{showGuide ? 'Hide' : 'Show'} Guide</span>
+                                <span className="sm:hidden">{showGuide ? 'Hide' : 'Guide'}</span>
                             </Button>
                         </div>
                     </DialogHeader>
@@ -561,26 +562,47 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-6">
-                                <TabsTrigger value="basic" className="text-xs">
-                                    {getTabIcon('basic')} Basic Info
+                            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1 h-auto p-1">
+                                <TabsTrigger value="basic" className="text-xs p-2 touch-manipulation">
+                                    <div className="flex items-center gap-1">
+                                        {getTabIcon('basic')}
+                                        <span className="hidden sm:inline">Basic Info</span>
+                                        <span className="sm:hidden">Basic</span>
+                                    </div>
                                 </TabsTrigger>
-                                <TabsTrigger value="auth" className="text-xs">
-                                    {getTabIcon('auth')} Auth
+                                <TabsTrigger value="auth" className="text-xs p-2 touch-manipulation">
+                                    <div className="flex items-center gap-1">
+                                        {getTabIcon('auth')}
+                                        <span>Auth</span>
+                                    </div>
                                 </TabsTrigger>
-                                <TabsTrigger value="endpoints" className="text-xs">
-                                    {getTabIcon('endpoints')} Tools
+                                <TabsTrigger value="endpoints" className="text-xs p-2 touch-manipulation">
+                                    <div className="flex items-center gap-1">
+                                        {getTabIcon('endpoints')}
+                                        <span className="hidden sm:inline">Endpoints</span>
+                                        <span className="sm:hidden">API</span>
+                                    </div>
                                 </TabsTrigger>
-                                <TabsTrigger value="resources" className="text-xs">
-                                    {getTabIcon('resources')} Resources
-                                    <span className="ml-1 px-1 py-0.5 text-[8px] bg-orange-100 text-orange-600 rounded font-medium">BETA</span>
+                                <TabsTrigger value="resources" className="text-xs p-2 touch-manipulation">
+                                    <div className="flex items-center gap-1">
+                                        {getTabIcon('resources')}
+                                        <span className="hidden sm:inline">Resources</span>
+                                        <span className="sm:hidden">Res</span>
+                                    </div>
                                 </TabsTrigger>
-                                <TabsTrigger value="prompts" className="text-xs">
-                                    {getTabIcon('prompts')} Prompts
-                                    <span className="ml-1 px-1 py-0.5 text-[8px] bg-orange-100 text-orange-600 rounded font-medium">BETA</span>
+                                <TabsTrigger value="prompts" className="text-xs p-2 touch-manipulation">
+                                    <div className="flex items-center gap-1">
+                                        {getTabIcon('prompts')}
+                                        <span className="hidden sm:inline">Prompts</span>
+                                        <span className="sm:hidden">Pmt</span>
+                                    </div>
                                 </TabsTrigger>
-                                <TabsTrigger value="routing" className="text-xs">
-                                    {getTabIcon('routing')} Routing
+                                <TabsTrigger value="routing" className="text-xs p-2 touch-manipulation col-span-3 sm:col-span-1">
+                                    <div className="flex items-center gap-1">
+                                        {getTabIcon('routing')}
+                                        <span className="hidden sm:inline">Routing & Access</span>
+                                        <span className="sm:hidden">Settings</span>
+                                    </div>
                                 </TabsTrigger>
                             </TabsList>
 
@@ -622,8 +644,8 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
                         <Separator />
 
-                        <DialogFooter className="flex justify-between items-center">
-                            <div className="flex items-center text-sm text-muted-foreground">
+                        <DialogFooter className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4">
+                            <div className="flex items-center text-sm text-muted-foreground order-2 sm:order-1">
                                 {hasUnsavedChanges && (
                                     <span className="flex items-center gap-1">
                                         <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
@@ -631,20 +653,20 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                     </span>
                                 )}
                                 {!hasUnsavedChanges && form.getValues().apiConfig?.endpoints?.length === 0 && (
-                                    <span className="flex items-center gap-1 text-orange-600">
+                                    <span className="flex items-center gap-1 text-orange-600 text-xs sm:text-sm">
                                         <AlertTriangle className="h-3 w-3" />
                                         No endpoints configured - no MCP tools will be available
                                     </span>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 order-1 sm:order-2">
                                 {bridge && onDelete && (
                                     <Button
                                         type="button"
                                         variant="destructive"
                                         onClick={handleDelete}
-                                        className="text-sm"
+                                        className="text-sm w-full sm:w-auto touch-manipulation"
                                     >
                                         <Trash2 className="h-4 w-4 mr-2" />
                                         Delete Bridge
@@ -652,7 +674,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 )}
 
                                 <div className="flex gap-2">
-                                    <Button type="button" variant="outline" onClick={handleClose}>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleClose}
+                                        className="flex-1 sm:flex-none touch-manipulation"
+                                    >
                                         Cancel
                                     </Button>
                                     <Button
@@ -661,6 +688,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                             !form.getValues('name')?.trim() ||
                                             !form.getValues('apiConfig.name')?.trim() ||
                                             !form.getValues('apiConfig.baseUrl')?.trim()}
+                                        className="flex-1 sm:flex-none touch-manipulation"
                                         onClick={() => {
                                             const values = form.getValues();
                                             console.log('Button click - Form state:', {

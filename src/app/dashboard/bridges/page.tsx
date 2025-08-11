@@ -573,18 +573,19 @@ export default function BridgesPage() {
             {!loading && !error && (
                 <>
                     {/* Header */}
-                    <div className="flex items-center justify-between space-y-2">
+                    <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                         <div>
-                            <h2 className="text-3xl font-bold tracking-tight">MCP Servers</h2>
-                            <p className="text-muted-foreground">
+                            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">MCP Servers</h2>
+                            <p className="text-muted-foreground text-sm sm:text-base">
                                 Manage your MCP servers and their tool configurations
                             </p>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                             <Button
                                 variant="outline"
                                 onClick={refreshBridges}
                                 disabled={loading}
+                                className="w-full sm:w-auto touch-manipulation"
                             >
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Refresh
@@ -592,6 +593,7 @@ export default function BridgesPage() {
                             <Button
                                 variant="outline"
                                 asChild
+                                className="w-full sm:w-auto touch-manipulation"
                             >
                                 <Link href="/guide">
                                     <BookOpen className="mr-2 h-4 w-4" />
@@ -601,13 +603,13 @@ export default function BridgesPage() {
                             {/* Template Dropdown */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">
+                                    <Button variant="outline" className="w-full sm:w-auto touch-manipulation">
                                         <Plus className="mr-2 h-4 w-4" />
                                         Use Template
                                         <ChevronDown className="ml-2 h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuContent align="end" className="w-56 sm:w-80">
                                     {templates.map((template) => {
                                         const IconComponent = template.icon;
                                         return (
@@ -633,7 +635,7 @@ export default function BridgesPage() {
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button onClick={createNewBridge}>
+                            <Button onClick={createNewBridge} className="w-full sm:w-auto touch-manipulation">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Create Custom
                             </Button>
@@ -643,11 +645,11 @@ export default function BridgesPage() {
                     {/* MCP Usage Info */}
                     <Card>
                         <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                                <Database className="h-5 w-5 text-muted-foreground mt-0.5" />
-                                <div className="space-y-2">
-                                    <h3 className="font-semibold">Using MCP Tools</h3>
-                                    <p className="text-muted-foreground text-sm">
+                            <div className="flex flex-col sm:flex-row items-start gap-3">
+                                <Database className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                                <div className="space-y-2 min-w-0">
+                                    <h3 className="font-semibold text-sm sm:text-base">Using MCP Tools</h3>
+                                    <p className="text-muted-foreground text-xs sm:text-sm">
                                         Copy the MCP server URL and configure it in your MCP client (Claude Desktop, VS Code Copilot, etc.).
                                         The server provides AI tools that your assistant can call to interact with your APIs.
                                     </p>
@@ -682,43 +684,43 @@ export default function BridgesPage() {
 
                                     return (
                                         <Card key={bridge.id} className="hover:shadow-lg transition-shadow">
-                                            <CardHeader>
-                                                <div className="flex items-start justify-between">
-                                                    <div className="space-y-1">
-                                                        <CardTitle className="text-lg">{bridge.name}</CardTitle>
-                                                        <CardDescription className="line-clamp-2">
+                                            <CardHeader className="pb-3">
+                                                <div className="flex flex-col sm:flex-row items-start justify-between gap-2">
+                                                    <div className="space-y-1 min-w-0 flex-1">
+                                                        <CardTitle className="text-base sm:text-lg truncate">{bridge.name}</CardTitle>
+                                                        <CardDescription className="line-clamp-2 text-xs sm:text-sm">
                                                             {bridge.description || 'No description provided'}
                                                         </CardDescription>
                                                     </div>
-                                                    <Badge variant={isRunning ? 'default' : 'secondary'}>
+                                                    <Badge variant={isRunning ? 'default' : 'secondary'} className="shrink-0">
                                                         {isRunning ? 'Running' : 'Stopped'}
                                                     </Badge>
                                                 </div>
                                             </CardHeader>
-                                            <CardContent className="space-y-4">
+                                            <CardContent className="space-y-4 pt-0">
                                                 {/* API Info - Simplified */}
                                                 <div className="py-2 px-3 bg-muted/50 rounded-lg space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <Database className="h-4 w-4 text-muted-foreground" />
-                                                            <span className="text-sm font-medium">{bridge.apiConfig.name}</span>
+                                                    <div className="flex items-center justify-between min-w-0">
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <Database className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                            <span className="text-sm font-medium truncate">{bridge.apiConfig.name}</span>
                                                         </div>
-                                                        <span className="text-xs text-muted-foreground">
+                                                        <span className="text-xs text-muted-foreground shrink-0">
                                                             {bridge.apiConfig.endpoints?.length || 0} endpoint{(bridge.apiConfig.endpoints?.length || 0) !== 1 ? 's' : ''}
                                                         </span>
                                                     </div>
 
-                                                    {/* MCP Content Stats - Equal Grid Layout */}
-                                                    <div className="grid grid-cols-3 gap-2">
-                                                        <Badge variant="outline" className="text-xs py-0.5 px-2 flex items-center justify-center">
+                                                    {/* MCP Content Stats - Responsive Grid Layout */}
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                        <Badge variant="outline" className="text-xs py-1 px-2 flex items-center justify-center">
                                                             <Zap className="h-3 w-3 mr-1 flex-shrink-0" />
                                                             <span className="truncate">{bridge.mcpTools?.length || 0} tool{(bridge.mcpTools?.length || 0) !== 1 ? 's' : ''}</span>
                                                         </Badge>
-                                                        <Badge variant="outline" className="text-xs py-0.5 px-2 flex items-center justify-center">
+                                                        <Badge variant="outline" className="text-xs py-1 px-2 flex items-center justify-center">
                                                             <BookOpen className="h-3 w-3 mr-1 flex-shrink-0" />
                                                             <span className="truncate">{bridge.mcpResources?.length || 0} resource{(bridge.mcpResources?.length || 0) !== 1 ? 's' : ''}</span>
                                                         </Badge>
-                                                        <Badge variant="outline" className="text-xs py-0.5 px-2 flex items-center justify-center">
+                                                        <Badge variant="outline" className="text-xs py-1 px-2 flex items-center justify-center sm:col-span-1 col-span-1">
                                                             <Settings className="h-3 w-3 mr-1 flex-shrink-0" />
                                                             <span className="truncate">{bridge.mcpPrompts?.length || 0} prompt{(bridge.mcpPrompts?.length || 0) !== 1 ? 's' : ''}</span>
                                                         </Badge>
@@ -890,22 +892,22 @@ export default function BridgesPage() {
                                                         size="sm"
                                                         onClick={() => handleToggleBridge(bridge.id)}
                                                         disabled={operatingBridges.has(bridge.id)}
-                                                        className="flex-1"
+                                                        className="flex-1 touch-manipulation"
                                                     >
                                                         {operatingBridges.has(bridge.id) ? (
                                                             <>
                                                                 <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
-                                                                {isRunning ? 'Stopping...' : 'Starting...'}
+                                                                <span className="text-xs sm:text-sm">{isRunning ? 'Stopping...' : 'Starting...'}</span>
                                                             </>
                                                         ) : isRunning ? (
                                                             <>
                                                                 <Square className="h-4 w-4 mr-2" />
-                                                                Stop
+                                                                <span className="text-xs sm:text-sm">Stop</span>
                                                             </>
                                                         ) : (
                                                             <>
                                                                 <Play className="h-4 w-4 mr-2" />
-                                                                Start
+                                                                <span className="text-xs sm:text-sm">Start</span>
                                                             </>
                                                         )}
                                                     </Button>
@@ -914,17 +916,20 @@ export default function BridgesPage() {
                                                         size="sm"
                                                         onClick={() => editBridge(bridge)}
                                                         title="Edit Bridge"
+                                                        className="touch-manipulation"
                                                     >
                                                         <Edit className="h-4 w-4" />
+                                                        <span className="sr-only">Edit</span>
                                                     </Button>
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleDeleteBridge(bridge.id)}
-                                                        className="hover:bg-muted"
+                                                        className="hover:bg-muted touch-manipulation"
                                                         title="Delete MCP Server"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
+                                                        <span className="sr-only">Delete</span>
                                                     </Button>
                                                 </div>
                                             </CardContent>

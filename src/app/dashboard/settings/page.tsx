@@ -11,12 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
     Bell,
-    Download,
     RefreshCw,
-    Save,
     Settings2,
     Trash2,
-    Upload,
     User,
     Zap
 } from 'lucide-react';
@@ -317,7 +314,7 @@ export default function SettingsPage() {
                         Manage your profile and bridge preferences
                     </p>
                 </div>
-                <div className="flex items-center space-x-2">
+                {/* <div className="flex items-center space-x-2">
                     <Button variant="outline" onClick={exportSettings}>
                         <Download className="mr-2 h-4 w-4" />
                         Export
@@ -348,15 +345,27 @@ export default function SettingsPage() {
                             <div className="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full animate-pulse"></div>
                         )}
                     </Button>
-                </div>
+                </div> */}
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="profile">Profile</TabsTrigger>
-                    <TabsTrigger value="bridges">Bridges</TabsTrigger>
-                    <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                    <TabsTrigger value="preferences">Preferences</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+                    <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3">
+                        <span className="hidden sm:inline">Profile</span>
+                        <span className="sm:hidden">Profile</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="bridges" className="text-xs sm:text-sm px-2 sm:px-3">
+                        <span className="hidden sm:inline">Bridges</span>
+                        <span className="sm:hidden">Bridges</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="text-xs sm:text-sm px-2 sm:px-3">
+                        <span className="hidden sm:inline">Notifications</span>
+                        <span className="sm:hidden">Notify</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="preferences" className="text-xs sm:text-sm px-2 sm:px-3">
+                        <span className="hidden sm:inline">Preferences</span>
+                        <span className="sm:hidden">Prefs</span>
+                    </TabsTrigger>
                 </TabsList>
 
                 {/* Profile Settings */}

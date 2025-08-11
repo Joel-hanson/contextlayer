@@ -67,3 +67,55 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile-specific improvements */
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Improve form inputs on mobile */
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Better button touch targets */
+  
+  /* Modal and dialog improvements for mobile */
+  [data-radix-dialog-content] {
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    margin: 1rem;
+    width: calc(100vw - 2rem);
+    max-width: none;
+  }
+  
+  /* Better scrollable areas on mobile */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Improve table responsiveness */
+  .responsive-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better card layouts on mobile */
+  .mobile-card {
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  }
+
+  @media (max-width: 640px) {
+    [data-radix-dialog-content] {
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      max-height: 100vh;
+    }
+  }
+}
