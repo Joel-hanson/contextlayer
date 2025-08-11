@@ -101,23 +101,27 @@ export default function Dashboard() {
       {!loading && !error && (
         <>
           {/* Header */}
-          <div className="flex items-center justify-between space-y-2">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h2>
+              <p className="text-muted-foreground text-sm sm:text-base">
                 Here&apos;s what&apos;s happening with your MCP servers today.
               </p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
               <Button
                 variant="outline"
                 onClick={refreshBridges}
                 disabled={loading}
+                className="w-full sm:w-auto touch-manipulation"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
-              <Button onClick={createNewBridge}>
+              <Button
+                onClick={createNewBridge}
+                className="w-full sm:w-auto touch-manipulation"
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Create MCP Server
               </Button>
@@ -128,21 +132,21 @@ export default function Dashboard() {
             /* Getting Started Section - Empty State */
             <div className="grid gap-6">
               <Card className="border-dashed border-2">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full flex items-center justify-center mb-6">
-                    <Database className="h-8 w-8 text-primary" />
+                <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-6">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+                    <Database className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                   </div>
-                  <h3 className="text-2xl font-semibold mb-2">Welcome to ContextLayer!</h3>
-                  <p className="text-muted-foreground text-center mb-6 max-w-md">
+                  <h3 className="text-xl sm:text-2xl font-semibold mb-2 text-center">Welcome to ContextLayer!</h3>
+                  <p className="text-muted-foreground text-center mb-4 sm:mb-6 max-w-md text-sm sm:text-base">
                     Transform any REST API into a Model Context Protocol server that AI assistants can use. Get started by creating your first MCP server.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button onClick={createNewBridge} size="lg">
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <Button onClick={createNewBridge} size="lg" className="touch-manipulation">
                       <Plus className="h-5 w-5 mr-2" />
                       Create Your First MCP Server
                     </Button>
                     <Link href="/dashboard/docs">
-                      <Button variant="outline" size="lg">
+                      <Button variant="outline" size="lg" className="touch-manipulation">
                         <Globe className="h-5 w-5 mr-2" />
                         View Documentation
                       </Button>
@@ -152,34 +156,34 @@ export default function Dashboard() {
               </Card>
 
               {/* Quick Tips for New Users */}
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Card>
-                  <CardContent className="p-6 text-center">
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Database className="h-6 w-6 text-muted-foreground" />
+                  <CardContent className="p-4 sm:p-6 text-center">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <Database className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                     </div>
-                    <h4 className="font-semibold mb-2">Create a Bridge</h4>
-                    <p className="text-sm text-muted-foreground">Connect any REST API by providing the base URL and endpoints you want to expose.</p>
+                    <h4 className="font-semibold mb-2 text-sm sm:text-base">Create a Bridge</h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Connect any REST API by providing the base URL and endpoints you want to expose.</p>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className="p-6 text-center">
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Zap className="h-6 w-6 text-muted-foreground" />
+                  <CardContent className="p-4 sm:p-6 text-center">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                     </div>
-                    <h4 className="font-semibold mb-2">Start the Bridge</h4>
-                    <p className="text-sm text-muted-foreground">Activate your bridge to make it available as an MCP server endpoint.</p>
+                    <h4 className="font-semibold mb-2 text-sm sm:text-base">Start the Bridge</h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Activate your bridge to make it available as an MCP server endpoint.</p>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-6 text-center">
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Settings className="h-6 w-6 text-muted-foreground" />
+                <Card className="sm:col-span-2 lg:col-span-1">
+                  <CardContent className="p-4 sm:p-6 text-center">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                     </div>
-                    <h4 className="font-semibold mb-2">Configure Client</h4>
-                    <p className="text-sm text-muted-foreground">Add the MCP endpoint to your AI assistant configuration (Claude, VS Code, etc.).</p>
+                    <h4 className="font-semibold mb-2 text-sm sm:text-base">Configure Client</h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Add the MCP endpoint to your AI assistant configuration (Claude, VS Code, etc.).</p>
                   </CardContent>
                 </Card>
               </div>
@@ -188,16 +192,16 @@ export default function Dashboard() {
             /* Main Dashboard with Bridges */
             <div className="grid gap-6">
               {/* Status Overview */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="text-xs sm:text-sm font-medium truncate">
                       MCP Servers
                     </CardTitle>
-                    <Database className="h-4 w-4 text-muted-foreground" />
+                    <Database className="h-4 w-4 text-muted-foreground shrink-0" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{bridges.length}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{bridges.length}</div>
                     <p className="text-xs text-muted-foreground">
                       {bridges.length === 1 ? '+1 from last month' : 'servers configured'}
                     </p>
@@ -205,13 +209,13 @@ export default function Dashboard() {
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="text-xs sm:text-sm font-medium truncate">
                       Active Servers
                     </CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{runningBridges}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{runningBridges}</div>
                     <p className="text-xs text-muted-foreground">
                       {runningBridges === 1 ? 'server running' : 'servers running'}
                     </p>

@@ -463,18 +463,21 @@ export function OpenAPIImportDialog({ open, onOpenChange, onImport }: OpenAPIImp
 
                 <div className="space-y-6">
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="url" className="text-sm">
-                                <Globe className="h-4 w-4 mr-2" />
-                                From URL
+                        <TabsList className="grid w-full grid-cols-3 gap-1">
+                            <TabsTrigger value="url" className="text-xs sm:text-sm px-2 sm:px-3">
+                                <Globe className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden sm:inline">From URL</span>
+                                <span className="sm:hidden">URL</span>
                             </TabsTrigger>
-                            <TabsTrigger value="json" className="text-sm">
-                                <FileText className="h-4 w-4 mr-2" />
-                                From JSON
+                            <TabsTrigger value="file" className="text-xs sm:text-sm px-2 sm:px-3">
+                                <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden sm:inline">Upload File</span>
+                                <span className="sm:hidden">File</span>
                             </TabsTrigger>
-                            <TabsTrigger value="file" className="text-sm">
-                                <Upload className="h-4 w-4 mr-2" />
-                                From File
+                            <TabsTrigger value="text" className="text-xs sm:text-sm px-2 sm:px-3">
+                                <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden sm:inline">Paste Text</span>
+                                <span className="sm:hidden">Text</span>
                             </TabsTrigger>
                         </TabsList>
 
