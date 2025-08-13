@@ -33,11 +33,30 @@ export function RoutingAndAccessTab({ form, bridge }: RoutingAndAccessTabProps) 
     // Automatically update form when token state changes
     useEffect(() => {
         if (shouldLoadTokens) {
-            form.setValue('access.authRequired', hasTokens);
-        }
-    }, [shouldLoadTokens, hasTokens, tokens, form]);
+            const currentAccess = form.getValues('access') || {};
+            form.setValue('access.authRequired', hasTokens, {
+                shouldValidate: true,
+                shouldDirty: true
+            });
 
-    return (
+            // Ensure access object has all required fields with proper types
+            if (!currentAccess.hasOwnProperty('public')) {
+                form.setValue('access.public', true);
+            }
+            if (!currentAccess.hasOwnProperty('authRequired')) {
+                form.setValue('access.authRequired', hasTokens);
+            }
+
+            // Fix null values that should be undefined for Zod validation
+            if ('apiKey' in currentAccess && currentAccess.apiKey === null) {
+                form.setValue('access.apiKey', undefined);
+            }
+
+            // Clear validation errors and revalidate
+            form.clearErrors('access');
+            form.trigger('access');
+        }
+    }, [shouldLoadTokens, hasTokens, tokens, form]); return (
         <div className="space-y-6">
             {/* MCP Transport Configuration */}
             <Card>
