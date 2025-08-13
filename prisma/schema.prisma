@@ -131,12 +131,6 @@ enum HttpMethod {
     PATCH
 }
 
-enum BridgeStatus {
-    active
-    inactive
-    error
-}
-
 model Bridge {
     id          String  @id @default(uuid()) @db.Uuid
     userId      String  @db.Uuid
@@ -145,30 +139,22 @@ model Bridge {
     description String?
     baseUrl     String
 
-    // Consolidated authentication config for external API calls
+    // Simplified authentication config for external API calls
     authConfig Json? // { type: 'none|bearer|apikey|basic', token?, apiKey?, username?, password?, headerName? }
 
     // Request headers
     headers Json? // Custom headers as JSONB
 
-    // Status
-    enabled Boolean      @default(false)
-    status  BridgeStatus @default(inactive)
+    // Status - simplified to just enabled/disabled
+    enabled Boolean @default(true) // Default to enabled for easier use
 
-    // Routing and access control
-    routingConfig Json? // { type: 'http', customDomain?: string, pathPrefix?: string }
-    accessConfig  Json? // { public: boolean, allowedOrigins?: string[], authRequired: boolean } - NOTE: tokens managed separately in AccessToken table
-
-    // Performance settings
-    performanceConfig Json? // { timeout: 30000, retryAttempts: 3, rateLimiting?, caching? }
+    // Simplified access control - removed complex routing config
+    accessConfig Json? // { public: boolean, allowedOrigins?: string[], authRequired: boolean }
 
     // MCP Content - Store as JSON for flexibility
     mcpTools     Json? // Array of McpTool objects: [{ name: string, description: string, inputSchema: {...} }]
     mcpPrompts   Json? // Array of McpPrompt objects: [{ name: string, description?: string, arguments?: [...] }]
     mcpResources Json? // Array of McpResource objects: [{ uri: string, name: string, description?: string, mimeType?: string }]
-
-    // Soft delete support
-    deletedAt DateTime?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -180,11 +166,10 @@ model Bridge {
     requests  ApiRequest[]
     tokens    AccessToken[] // Add relation to tokens
 
-    // Indexes for performance
+    // Simplified indexes
     @@index([userId])
     @@index([slug])
-    @@index([status, enabled])
-    @@index([userId, status])
+    @@index([enabled])
     @@map("bridges")
 }
 

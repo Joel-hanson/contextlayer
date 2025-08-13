@@ -99,14 +99,7 @@ export const BridgeConfigSchema = z.object({
     mcpPrompts: z.array(McpPromptSchema).optional().default([]),
     enabled: z.boolean(),
 
-    // MCP Transport configuration (HTTP)
-    routing: z.object({
-        type: z.literal('http').default('http'),
-        customDomain: z.string().optional(),
-        pathPrefix: z.string().optional(),
-    }).optional(),
-
-    // Access control
+    // Access control - simplified
     access: z.object({
         public: z.boolean().default(true),
         allowedOrigins: z.array(z.string()).optional(),
@@ -226,7 +219,7 @@ export interface BridgeDiscoveryResponse {
         name: string;
         description: string;
         url: string; // Full URL to access the bridge
-        status: 'active' | 'inactive' | 'error';
+        status: 'active' | 'inactive'; // Simplified status
         version: string;
         capabilities: string[];
         lastUpdated: string;

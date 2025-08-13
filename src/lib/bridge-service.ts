@@ -1,4 +1,4 @@
-import { ApiEndpoint, Bridge, BridgeLog, BridgeStatus, HttpMethod } from '@prisma/client';
+import { ApiEndpoint, Bridge, BridgeLog, HttpMethod } from '@prisma/client';
 import prisma from './prisma';
 import { BridgeConfig } from './types';
 
@@ -85,11 +85,6 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
                 description?: string;
             }>;
         }>) || [],
-        routing: {
-            type: 'http' as const,
-            customDomain: undefined,
-            pathPrefix: undefined,
-        },
         access: {
             public: accessConfig?.public ?? true,
             allowedOrigins: accessConfig?.allowedOrigins,
@@ -143,14 +138,7 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
 
         headers: config.apiConfig.headers || undefined,
 
-        // Routing config
-        routingConfig: {
-            type: 'http',
-            pathPrefix: null,
-            customDomain: null
-        },
-
-        // Access config
+        // Simplified access config
         accessConfig: {
             public: config.access?.public ?? true,
             allowedOrigins: config.access?.allowedOrigins || [],
@@ -158,21 +146,12 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
             apiKey: config.access?.apiKey || null
         },
 
-        // Performance config with defaults
-        performanceConfig: {
-            timeout: 30000,
-            retryAttempts: 3,
-            rateLimiting: false,
-            caching: false
-        },
-
         // MCP Content
         mcpTools: config.mcpTools && config.mcpTools.length > 0 ? config.mcpTools : undefined,
         mcpPrompts: config.mcpPrompts && config.mcpPrompts.length > 0 ? config.mcpPrompts : undefined,
         mcpResources: config.mcpResources && config.mcpResources.length > 0 ? config.mcpResources : undefined,
 
-        enabled: config.enabled || false,
-        status: 'inactive' as const,
+        enabled: config.enabled ?? true, // Default to enabled
         createdAt: config.createdAt ? new Date(config.createdAt) : new Date(),
         updatedAt: config.updatedAt ? new Date(config.updatedAt) : new Date(),
     }
@@ -339,8 +318,8 @@ export class BridgeService {
         }
     }
 
-    // Update bridge status (with user filtering)
-    static async updateBridgeStatus(id: string, enabled: boolean, status: BridgeStatus = 'inactive', userId?: string): Promise<void> {
+    // Update bridge status (with user filtering) - Simplified since we removed status field
+    static async updateBridgeStatus(id: string, enabled: boolean, userId?: string): Promise<void> {
         try {
             await prisma.bridge.update({
                 where: {
@@ -349,7 +328,6 @@ export class BridgeService {
                 },
                 data: {
                     enabled,
-                    status,
                     updatedAt: new Date(),
                 },
             })

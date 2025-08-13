@@ -54,11 +54,6 @@ export const bridgeFormSchema = z.object({
             required: z.boolean(),
         })).optional(),
     })),
-    routing: z.object({
-        type: z.literal('http'),
-        customDomain: z.string().optional(),
-        pathPrefix: z.string().optional(),
-    }).optional(),
     access: z.object({
         public: z.boolean(),
         allowedOrigins: z.array(z.string()).optional(),
