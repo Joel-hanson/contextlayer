@@ -225,6 +225,7 @@ export function TokenManager({
                             </CardDescription>
                         </div>
                         <Button
+                            type="button"
                             onClick={() => setIsCreating(!isCreating)}
                             variant="outline"
                             size="sm"
@@ -294,6 +295,7 @@ export function TokenManager({
 
                                 <div className="flex justify-end space-x-2">
                                     <Button
+                                        type="button"
                                         variant="outline"
                                         onClick={() => {
                                             setIsCreating(false);
@@ -303,6 +305,7 @@ export function TokenManager({
                                         Cancel
                                     </Button>
                                     <Button
+                                        type="button"
                                         onClick={handleCreateToken}
                                         disabled={!newToken.name.trim()}
                                     >
@@ -350,6 +353,7 @@ export function TokenManager({
 
                                                 <div className="flex items-center space-x-2">
                                                     <Button
+                                                        type="button"
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => toggleTokenVisibility(token.id)}
@@ -359,6 +363,7 @@ export function TokenManager({
 
                                                     {isVisible && (
                                                         <Button
+                                                            type="button"
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => copyToClipboard(token.token, token.id)}
@@ -380,6 +385,7 @@ export function TokenManager({
                                                         {token.isActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                                                     </Button> */}
                                                     <Button
+                                                        type="button"
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleDeleteToken(token.id)}
