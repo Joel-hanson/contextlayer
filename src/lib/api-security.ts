@@ -11,7 +11,6 @@ interface BridgeData {
     description: string;
     baseUrl: string;
     enabled: boolean;
-    status: string;
     createdAt: Date;
     updatedAt: Date;
     endpoints?: Array<{
@@ -102,7 +101,6 @@ export function sanitizeBridgeForClient(bridge: BridgeData): BridgeData {
         description: bridge.description,
         baseUrl: bridge.baseUrl,
         enabled: bridge.enabled,
-        status: bridge.status,
         createdAt: bridge.createdAt,
         updatedAt: bridge.updatedAt,
         endpoints: bridge.endpoints?.map((endpoint) => ({

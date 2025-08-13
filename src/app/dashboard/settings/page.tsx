@@ -790,7 +790,7 @@ export default function SettingsPage() {
             </Tabs>
 
             {hasChanges && (
-                <div className="fixed bottom-4 right-4 p-4 bg-card border rounded-lg shadow-lg">
+                <div className="fixed bottom-12 right-4 p-4 bg-card border rounded-lg shadow-lg">
                     <div className="flex items-center gap-2 text-sm">
                         <div className="h-2 w-2 bg-yellow-500 rounded-full animate-pulse"></div>
                         <span>Unsaved changes</span>
