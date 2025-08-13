@@ -125,7 +125,7 @@ export default function FeedbackPage() {
                                         <Label htmlFor="type">Feedback Type *</Label>
                                         <Select
                                             value={formData.type}
-                                            onValueChange={(value: any) =>
+                                            onValueChange={(value: 'bug' | 'feature' | 'general' | 'business') =>
                                                 setFormData({ ...formData, type: value })
                                             }
                                         >
@@ -145,7 +145,7 @@ export default function FeedbackPage() {
                                         <Label htmlFor="priority">Priority</Label>
                                         <Select
                                             value={formData.priority}
-                                            onValueChange={(value: any) =>
+                                            onValueChange={(value: 'low' | 'medium' | 'high') =>
                                                 setFormData({ ...formData, priority: value })
                                             }
                                         >
@@ -200,7 +200,7 @@ export default function FeedbackPage() {
                                         }
                                     />
                                     <p className="text-sm text-muted-foreground">
-                                        We'll use this to follow up on your feedback if needed
+                                        We&apos;ll use this to follow up on your feedback if needed
                                     </p>
                                 </div>
 
