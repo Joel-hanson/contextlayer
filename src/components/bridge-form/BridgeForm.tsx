@@ -80,10 +80,10 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         name: 'apiConfig.endpoints',
     });
 
-    const toolFields = useFieldArray({
-        control: form.control,
-        name: 'mcpTools',
-    });
+    // const toolFields = useFieldArray({
+    //     control: form.control,
+    //     name: 'mcpTools',
+    // });
 
     const resourceFields = useFieldArray({
         control: form.control,
@@ -478,7 +478,15 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 return hasErrors.apiConfig?.authentication ?
                     <AlertTriangle className="h-3 w-3 mx-2" /> :
                     <LockIcon className="h-3 w-3 mx-2" />;
-            case 'endpoints':
+            case 'resources':
+                return hasErrors?.mcpResources ?
+                    <AlertTriangle className="h-3 w-3 mx-2" /> :
+                    <Link className="h-3 w-3 mx-2" />;
+            case 'prompts':
+                return hasErrors?.mcpPrompts ?
+                    <AlertTriangle className="h-3 w-3 mx-2" /> :
+                    <Link className="h-3 w-3 mx-2" />;
+            case 'tools':
                 const hasEndpointErrors = hasErrors.apiConfig?.endpoints;
                 const hasNoEndpoints = form.getValues().apiConfig?.endpoints?.length === 0;
                 if (hasEndpointErrors) {
@@ -489,7 +497,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     return <Link className="h-3 w-3 mx-2" />;
                 }
             case 'routing':
-                return hasErrors.routing || hasErrors.access ?
+                return hasErrors.access ?
                     <AlertTriangle className="h-3 w-3 mx-2" /> :
                     <Settings className="h-3 w-3 mx-2" />;
             default:
@@ -576,11 +584,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                         <span>Auth</span>
                                     </div>
                                 </TabsTrigger>
-                                <TabsTrigger value="endpoints" className="text-xs p-2 touch-manipulation">
+                                <TabsTrigger value="tools" className="text-xs p-2 touch-manipulation">
                                     <div className="flex items-center gap-1">
-                                        {getTabIcon('endpoints')}
-                                        <span className="hidden sm:inline">Endpoints</span>
-                                        <span className="sm:hidden">API</span>
+                                        {getTabIcon('tools')}
+                                        <span className="hidden sm:inline">Tools</span>
+                                        <span className="sm:hidden">Tools</span>
                                     </div>
                                 </TabsTrigger>
                                 <TabsTrigger value="resources" className="text-xs p-2 touch-manipulation">
@@ -600,7 +608,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 <TabsTrigger value="routing" className="text-xs p-2 touch-manipulation col-span-3 sm:col-span-1">
                                     <div className="flex items-center gap-1">
                                         {getTabIcon('routing')}
-                                        <span className="hidden sm:inline">Routing & Access</span>
+                                        <span className="hidden sm:inline">Settings</span>
                                         <span className="sm:hidden">Settings</span>
                                     </div>
                                 </TabsTrigger>

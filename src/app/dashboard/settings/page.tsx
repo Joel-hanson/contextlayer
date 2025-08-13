@@ -273,37 +273,37 @@ export default function SettingsPage() {
         setShowResetDialog(false);
     };
 
-    const exportSettings = () => {
-        const dataStr = JSON.stringify(settings, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'contextlayer-settings.json';
-        link.click();
-        URL.revokeObjectURL(url);
-    };
+    // const exportSettings = () => {
+    //     const dataStr = JSON.stringify(settings, null, 2);
+    //     const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    //     const url = URL.createObjectURL(dataBlob);
+    //     const link = document.createElement('a');
+    //     link.href = url;
+    //     link.download = 'contextlayer-settings.json';
+    //     link.click();
+    //     URL.revokeObjectURL(url);
+    // };
 
-    const importSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const imported = JSON.parse(e.target?.result as string);
-                    setSettings({ ...defaultSettings, ...imported });
-                    setHasChanges(true);
-                } catch {
-                    toast({
-                        title: "Import Failed",
-                        description: "Failed to import settings file. Please check the file format.",
-                        variant: "destructive",
-                    });
-                }
-            };
-            reader.readAsText(file);
-        }
-    };
+    // const importSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //     const file = event.target.files?.[0];
+    //     if (file) {
+    //         const reader = new FileReader();
+    //         reader.onload = (e) => {
+    //             try {
+    //                 const imported = JSON.parse(e.target?.result as string);
+    //                 setSettings({ ...defaultSettings, ...imported });
+    //                 setHasChanges(true);
+    //             } catch {
+    //                 toast({
+    //                     title: "Import Failed",
+    //                     description: "Failed to import settings file. Please check the file format.",
+    //                     variant: "destructive",
+    //                 });
+    //             }
+    //         };
+    //         reader.readAsText(file);
+    //     }
+    // };
 
     return (
         <div className="flex-1 space-y-4 font-mono">
@@ -349,7 +349,8 @@ export default function SettingsPage() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+                {/* <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1"> */}
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-2 gap-1">
                     <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3">
                         <span className="hidden sm:inline">Profile</span>
                         <span className="sm:hidden">Profile</span>
@@ -358,14 +359,14 @@ export default function SettingsPage() {
                         <span className="hidden sm:inline">Bridges</span>
                         <span className="sm:hidden">Bridges</span>
                     </TabsTrigger>
-                    <TabsTrigger value="notifications" className="text-xs sm:text-sm px-2 sm:px-3">
+                    {/* <TabsTrigger value="notifications" className="text-xs sm:text-sm px-2 sm:px-3">
                         <span className="hidden sm:inline">Notifications</span>
                         <span className="sm:hidden">Notify</span>
                     </TabsTrigger>
                     <TabsTrigger value="preferences" className="text-xs sm:text-sm px-2 sm:px-3">
                         <span className="hidden sm:inline">Preferences</span>
                         <span className="sm:hidden">Prefs</span>
-                    </TabsTrigger>
+                    </TabsTrigger> */}
                 </TabsList>
 
                 {/* Profile Settings */}

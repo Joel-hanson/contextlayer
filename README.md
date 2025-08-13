@@ -75,6 +75,43 @@ npm run dev
 - **API Client**: Axios
 - **Validation**: Zod schemas
 
+## Admin Dashboard
+
+The application includes a comprehensive admin dashboard for monitoring and management:
+
+### Features
+- User analytics and growth metrics
+- Bridge usage statistics
+- API endpoint monitoring
+- System health indicators
+- User feedback and ratings
+
+### Setup Admin Users
+
+1. Set the `ADMIN_EMAILS` environment variable in your `.env.local`:
+
+```bash
+ADMIN_EMAILS="admin@example.com,admin2@example.com"
+```
+
+2. Run the admin seed script:
+
+```bash
+npm run db:seed-admin
+```
+
+3. Admin users will be created with the email addresses specified and default password `admin123`
+
+4. Access the admin dashboard at `/admin` (requires admin role)
+
+### Default Admin Account
+
+If no `ADMIN_EMAILS` is set, a default admin account will be created:
+- Email: `admin@contextlayer.com`
+- Password: `admin123`
+
+**Important**: Change these default credentials in production!
+
 ## Model Context Protocol (MCP)
 
 This project implements the Model Context Protocol specification. For more information:
