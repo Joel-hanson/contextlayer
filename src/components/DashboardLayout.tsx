@@ -48,6 +48,14 @@ export function DashboardLayout({ children }: SidebarProps) {
         { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: pathname === '/dashboard/settings' },
     ];
 
+    // Add admin navigation for admin users
+    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || []
+    const isAdmin = session?.user?.email && (adminEmails.includes(session.user.email))
+
+    if (isAdmin) {
+        navigation.push({ name: 'Admin Dashboard', href: '/admin', icon: BrainCogIcon, current: pathname === '/admin' })
+    }
+
     const handleSignOut = () => {
         signOut({ callbackUrl: '/' });
     };
