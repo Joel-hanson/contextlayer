@@ -20,7 +20,7 @@ export async function POST(
         const { id: bridgeId } = await params
 
         // Update bridge status to disabled (with user filtering)
-        await BridgeService.updateBridgeStatus(bridgeId, false, 'inactive', session.user.id)
+        await BridgeService.updateBridgeStatus(bridgeId, false, session.user.id)
 
         // Log the stop action
         await BridgeService.addBridgeLog(

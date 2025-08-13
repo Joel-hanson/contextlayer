@@ -61,11 +61,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
             mcpTools: [],
             mcpResources: [],
             mcpPrompts: [],
-            routing: {
-                type: 'http',
-                customDomain: '',
-                pathPrefix: '',
-            },
             access: {
                 public: true,
                 allowedOrigins: [],
@@ -117,7 +112,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     mcpTools: bridge.mcpTools || [],
                     mcpResources: bridge.mcpResources || [],
                     mcpPrompts: bridge.mcpPrompts || [],
-                    routing: bridge.routing || { type: 'http' },
                     access: {
                         public: bridge.access?.public ?? true,
                         authRequired: bridge.access?.authRequired ?? false,
@@ -150,7 +144,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             mcpTools: template.mcpTools || [],
                             mcpResources: template.mcpResources || [],
                             mcpPrompts: template.mcpPrompts || [],
-                            routing: { type: 'http' },
                             access: {
                                 public: true,
                                 authRequired: false,
@@ -201,7 +194,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             },
                             mcpResources: [],
                             mcpPrompts: [],
-                            routing: { type: 'http' },
                             access: { public: true, authRequired: false },
                         });
 
@@ -225,7 +217,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         },
                         mcpResources: [],
                         mcpPrompts: [],
-                        routing: { type: 'http' },
                         access: {
                             public: true,
                             authRequired: false,
@@ -335,10 +326,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 mcpPrompts: data.mcpPrompts || [],
                 enabled: bridge?.enabled ?? true, // Default to enabled for new bridges
 
-                // HTTP transport configuration
-                routing: data.routing || { type: 'http' as const },
-
-                // Access control
+                // Access control - simplified
                 access: {
                     public: data.access?.public ?? true,
                     authRequired: data.access?.authRequired ?? false,
@@ -364,7 +352,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     }
                 },
 
-                // Performance settings (using the default structure from BridgeConfig)
+                // Performance settings - simplified with defaults
                 performance: {
                     rateLimiting: { requestsPerMinute: 60, burstLimit: 10 },
                     caching: { enabled: false, ttl: 300 },
@@ -511,7 +499,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 } else {
                     return <Link className="h-3 w-3 mx-2" />;
                 }
-            case 'routing':
+            case 'settings':
                 return hasErrors.access ?
                     <AlertTriangle className="h-3 w-3 mx-2" /> :
                     <Settings className="h-3 w-3 mx-2" />;
@@ -578,7 +566,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 <li>1. <strong>Basic Info:</strong> Enter MCP server name and source API details</li>
                                 <li>2. <strong>Authentication:</strong> Configure how to authenticate with the API</li>
                                 <li>3. <strong>Tools:</strong> Add the API endpoints you want to expose as AI tools</li>
-                                <li>4. <strong>Routing:</strong> Configure access and routing settings</li>
+                                <li>4. <strong>Settings:</strong> Configure access and authentication settings</li>
                             </ol>
                         </div>
                     )}
@@ -620,9 +608,9 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                         <span className="sm:hidden">Pmt</span>
                                     </div>
                                 </TabsTrigger>
-                                <TabsTrigger value="routing" className="text-xs p-2 touch-manipulation col-span-3 sm:col-span-1">
+                                <TabsTrigger value="settings" className="text-xs p-2 touch-manipulation col-span-3 sm:col-span-1">
                                     <div className="flex items-center gap-1">
-                                        {getTabIcon('routing')}
+                                        {getTabIcon('settings')}
                                         <span className="hidden sm:inline">Settings</span>
                                         <span className="sm:hidden">Settings</span>
                                     </div>
@@ -660,7 +648,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 />
                             </TabsContent>
 
-                            <TabsContent value="routing" className="space-y-4">
+                            <TabsContent value="settings" className="space-y-4">
                                 <RoutingAndAccessTab form={form} bridge={bridge} />
                             </TabsContent>
                         </Tabs>

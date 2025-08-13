@@ -22,7 +22,7 @@ export async function POST(
         const { bridgeConfig } = body
 
         // Update bridge status to enabled (with user filtering)
-        await BridgeService.updateBridgeStatus(bridgeId, true, 'active', session.user.id)
+        await BridgeService.updateBridgeStatus(bridgeId, true, session.user.id)
 
         // Log the start action
         await BridgeService.addBridgeLog(
@@ -60,7 +60,7 @@ export async function POST(
 
         // Update bridge status to error (try without user filtering for error logging)
         try {
-            await BridgeService.updateBridgeStatus(bridgeId, false, 'error')
+            await BridgeService.updateBridgeStatus(bridgeId, false)
         } catch (err) {
             console.error('Failed to update bridge status to error:', err)
         }
