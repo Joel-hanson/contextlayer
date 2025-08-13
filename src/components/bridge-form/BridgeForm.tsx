@@ -9,7 +9,7 @@ import { BridgeConfig } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, BadgeAlert, CheckCircle, Lightbulb, Link, LockIcon, Save, Settings, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { ConfirmationDialog } from '../ConfirmationDialog';
 
 // Import modular components
@@ -70,7 +70,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 public: true,
                 allowedOrigins: [],
                 authRequired: false,
-                apiKey: '',
+                apiKey: undefined,
             },
         },
     });
@@ -118,7 +118,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     mcpResources: bridge.mcpResources || [],
                     mcpPrompts: bridge.mcpPrompts || [],
                     routing: bridge.routing || { type: 'http' },
-                    access: bridge.access || { public: true, authRequired: false },
+                    access: {
+                        public: bridge.access?.public ?? true,
+                        authRequired: bridge.access?.authRequired ?? false,
+                        allowedOrigins: bridge.access?.allowedOrigins || [],
+                        apiKey: bridge.access?.apiKey || undefined, // Convert null to undefined
+                    },
                 });
 
                 // Trigger validation after loading existing bridge data
@@ -146,7 +151,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             mcpResources: template.mcpResources || [],
                             mcpPrompts: template.mcpPrompts || [],
                             routing: { type: 'http' },
-                            access: { public: true, authRequired: false },
+                            access: {
+                                public: true,
+                                authRequired: false,
+                                allowedOrigins: [],
+                                apiKey: undefined,
+                            },
                         });
                         // Clear template data after use
                         localStorage.removeItem('contextlayer-template');
@@ -216,7 +226,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         mcpResources: [],
                         mcpPrompts: [],
                         routing: { type: 'http' },
-                        access: { public: true, authRequired: false },
+                        access: {
+                            public: true,
+                            authRequired: false,
+                            allowedOrigins: [],
+                            apiKey: undefined,
+                        },
                     });
 
                     // Trigger validation after reset
@@ -286,7 +301,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         setShowDeleteDialog(true);
     };
 
-    const onSubmit: SubmitHandler<BridgeFormData> = (data) => {
+    const onSubmit = (data: BridgeFormData) => {
         try {
             // Generate UUID for the bridge
             const bridgeId = bridge?.id || crypto.randomUUID();
@@ -703,6 +718,8 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                                 isValid: form.formState.isValid,
                                                 isSubmitting: form.formState.isSubmitting,
                                                 errors: form.formState.errors,
+                                                accessErrors: form.formState.errors?.access,
+                                                accessValues: values.access,
                                                 requiredFields: {
                                                     name: values.name,
                                                     apiName: values.apiConfig.name,
