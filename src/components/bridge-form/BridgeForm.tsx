@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { OpenAPIParser } from '@/lib/openapi-parser';
 import { BridgeConfig } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, BadgeAlert, CheckCircle, Lightbulb, Link, LockIcon, Save, Settings, Trash2 } from 'lucide-react';
@@ -25,7 +26,7 @@ interface BridgeFormProps {
     bridge?: BridgeConfig;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSave: (bridge: BridgeConfig) => void;
+    onSave: (bridge: BridgeConfig) => Promise<void>;
     onDelete?: (bridgeId: string) => void;
 }
 
@@ -34,11 +35,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
     const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showGuide, setShowGuide] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Confirmation dialog states
     const [showLoadDraftDialog, setShowLoadDraftDialog] = useState(false);
     const [showCloseDialog, setShowCloseDialog] = useState(false);
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [draftData, setDraftData] = useState<BridgeFormData & { timestamp: number; editingId: string } | null>(null);
 
     const { toast } = useToast();
@@ -93,6 +95,9 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
     // Initialize form with bridge data when editing
     useEffect(() => {
         if (open) {
+            // Clear any previous submit errors when opening the form
+            setSubmitError(null);
+
             if (bridge) {
                 // Editing existing bridge
                 form.reset({
@@ -287,12 +292,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         onOpenChange(false);
     };
 
-    const handleDelete = () => {
-        if (!bridge || !onDelete) return;
-        setShowDeleteDialog(true);
-    };
+    // Delete functionality moved to parent component
 
-    const onSubmit = (data: BridgeFormData) => {
+    const onSubmit = async (data: BridgeFormData) => {
+        setIsSubmitting(true);
+        setSubmitError(null);
+
         try {
             // Generate UUID for the bridge
             const bridgeId = bridge?.id || crypto.randomUUID();
@@ -321,7 +326,9 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         };
                     }),
                 },
-                mcpTools: data.mcpTools || [],
+                mcpTools: data.mcpTools && data.mcpTools.length > 0
+                    ? data.mcpTools
+                    : OpenAPIParser.generateMcpTools(data.apiConfig.endpoints),
                 mcpResources: data.mcpResources || [],
                 mcpPrompts: data.mcpPrompts || [],
                 enabled: bridge?.enabled ?? true, // Default to enabled for new bridges
@@ -363,17 +370,16 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 updatedAt: new Date().toISOString(),
             };
 
-            onSave(bridgeConfig);
+            await onSave(bridgeConfig);
             setHasUnsavedChanges(false);
             clearDraft();
             onOpenChange(false);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error saving bridge:', error);
-            toast({
-                title: "Save Failed",
-                description: "Failed to save bridge. Please check your configuration and try again.",
-                variant: "destructive",
-            });
+            const errorMessage = error instanceof Error ? error.message : 'Failed to save bridge. Please check your configuration and try again.';
+            setSubmitError(errorMessage);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -482,13 +488,23 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     <AlertTriangle className="h-3 w-3 mx-2" /> :
                     <LockIcon className="h-3 w-3 mx-2" />;
             case 'resources':
-                return hasErrors?.mcpResources ?
-                    <AlertTriangle className="h-3 w-3 mx-2" /> :
-                    <Link className="h-3 w-3 mx-2" />;
+                return (
+                    <div className="flex items-center">
+                        {hasErrors?.mcpResources ?
+                            <AlertTriangle className="h-3 w-3 mr-1" /> :
+                            <Link className="h-3 w-3 mr-1" />}
+                        <span className="text-[10px] font-medium text-orange-600 bg-orange-100 px-1 rounded">BETA</span>
+                    </div>
+                );
             case 'prompts':
-                return hasErrors?.mcpPrompts ?
-                    <AlertTriangle className="h-3 w-3 mx-2" /> :
-                    <Link className="h-3 w-3 mx-2" />;
+                return (
+                    <div className="flex items-center">
+                        {hasErrors?.mcpPrompts ?
+                            <AlertTriangle className="h-3 w-3 mr-1" /> :
+                            <Link className="h-3 w-3 mr-1" />}
+                        <span className="text-[10px] font-medium text-orange-600 bg-orange-100 px-1 rounded">BETA</span>
+                    </div>
+                );
             case 'tools':
                 const hasEndpointErrors = hasErrors.apiConfig?.endpoints;
                 const hasNoEndpoints = form.getValues().apiConfig?.endpoints?.length === 0;
@@ -521,14 +537,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         onOpenChange(false);
     };
 
-    const handleDeleteConfirm = () => {
-        if (bridge && onDelete) {
-            onDelete(bridge.id);
-            clearDraft();
-            onOpenChange(false);
-        }
-        setShowDeleteDialog(false);
-    };
+    // Delete confirmation moved to parent component
 
     return (
         <>
@@ -625,7 +634,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 <AuthenticationTab form={form} />
                             </TabsContent>
 
-                            <TabsContent value="endpoints" className="space-y-4">
+                            <TabsContent value="tools" className="space-y-4">
                                 <EndpointsTab
                                     form={form}
                                     endpointFields={endpointFields}
@@ -655,6 +664,17 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
                         <Separator />
 
+                        {/* Error Display */}
+                        {submitError && (
+                            <div className="flex items-center gap-3 p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
+                                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                                <div>
+                                    <h4 className="font-medium text-destructive">Error Creating MCP Server</h4>
+                                    <p className="text-sm text-destructive/80 mt-1">{submitError}</p>
+                                </div>
+                            </div>
+                        )}
+
                         <DialogFooter className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4">
                             <div className="flex items-center text-sm text-muted-foreground order-2 sm:order-1">
                                 {hasUnsavedChanges && (
@@ -676,7 +696,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                     <Button
                                         type="button"
                                         variant="destructive"
-                                        onClick={handleDelete}
+                                        onClick={() => onDelete(bridge.id)}
                                         className="text-sm w-full sm:w-auto touch-manipulation"
                                     >
                                         <Trash2 className="h-4 w-4 mr-2" />
@@ -695,7 +715,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                     </Button>
                                     <Button
                                         type="submit"
-                                        disabled={form.formState.isSubmitting ||
+                                        disabled={isSubmitting ||
                                             !form.getValues('name')?.trim() ||
                                             !form.getValues('apiConfig.name')?.trim() ||
                                             !form.getValues('apiConfig.baseUrl')?.trim()}
@@ -721,7 +741,10 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                         }}
                                     >
                                         <Save className="h-4 w-4 mr-2" />
-                                        {bridge ? 'Update MCP Server' : 'Create MCP Server'}
+                                        {isSubmitting
+                                            ? (bridge ? 'Updating...' : 'Creating...')
+                                            : (bridge ? 'Update MCP Server' : 'Create MCP Server')
+                                        }
                                     </Button>
                                 </div>
                             </div>
@@ -749,16 +772,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 description="You have unsaved changes. Are you sure you want to close without saving?"
                 confirmText="Close Anyway"
                 cancelText="Keep Editing"
-            />
-
-            <ConfirmationDialog
-                open={showDeleteDialog}
-                onOpenChange={setShowDeleteDialog}
-                onConfirm={handleDeleteConfirm}
-                title="Delete Bridge"
-                description={`Are you sure you want to delete the bridge "${bridge?.name}"? This action cannot be undone.`}
-                confirmText="Delete"
-                cancelText="Cancel"
             />
         </>
     );

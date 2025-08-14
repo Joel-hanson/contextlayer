@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import { useBridges } from '@/hooks/useBridges';
 import { BridgeConfig } from '@/lib/types';
 import { getBaseUrl } from '@/lib/url';
@@ -32,8 +33,10 @@ import { useState } from 'react';
 
 export default function BridgesPage() {
     const baseUrl = getBaseUrl();
+    const { toast } = useToast();
     const {
         bridges,
+        setBridges,
         loading,
         error,
         createBridge,
@@ -42,6 +45,7 @@ export default function BridgesPage() {
         startBridge,
         stopBridge,
         refreshBridges,
+        clearError,
         serverStatuses,
     } = useBridges();
 
@@ -445,6 +449,7 @@ export default function BridgesPage() {
 
     const applyTemplate = (template: typeof templates[0]) => {
         if (typeof window !== 'undefined') {
+            clearError(); // Clear any previous errors
             // Process the template to add required IDs to endpoints
             const processedConfig = {
                 ...template.config,
@@ -465,20 +470,16 @@ export default function BridgesPage() {
     };
 
     const handleSaveBridge = async (bridge: BridgeConfig) => {
-        try {
-            if (editingBridge) {
-                await updateBridge(bridge.id, bridge);
-            } else {
-                // Generate unique ID if not provided
-                if (!bridge.id) {
-                    bridge.id = `bridge-${Date.now()}`;
-                }
-                await createBridge(bridge);
-            }
+        if (editingBridge) {
+            await updateBridge(bridge.id, bridge);
             setEditingBridge(undefined);
-            setShowBridgeForm(false);
-        } catch (error) {
-            console.error('Failed to save bridge:', error);
+        } else {
+            // Generate unique ID if not provided
+            if (!bridge.id) {
+                bridge.id = `bridge-${Date.now()}`;
+            }
+            await createBridge(bridge);
+            setEditingBridge(undefined);
         }
     };
 
@@ -513,22 +514,43 @@ export default function BridgesPage() {
     const handleDeleteConfirm = async () => {
         if (!deletingBridgeId) return;
 
+        // Close dialog immediately
+        setShowDeleteDialog(false);
+        setShowBridgeForm(false);
+        setEditingBridge(undefined);
+
+        // Find bridge to remove
+        const bridgeToDelete = bridges.find(b => b.id === deletingBridgeId);
+        if (!bridgeToDelete) return;
+
+        // Update state optimistically
+        const prevBridges = bridges;
+        setBridges(bridges.filter(b => b.id !== deletingBridgeId));
+
         try {
             await deleteBridge(deletingBridgeId);
         } catch (error) {
             console.error('Failed to delete bridge:', error);
+            // Revert on failure
+            setBridges(prevBridges);
+            toast({
+                title: "Delete Failed",
+                description: error instanceof Error ? error.message : "Failed to delete MCP server",
+                variant: "destructive"
+            });
         } finally {
-            setShowDeleteDialog(false);
             setDeletingBridgeId(null);
         }
     };
 
     const editBridge = (bridge: BridgeConfig) => {
+        clearError(); // Clear any previous errors
         setEditingBridge(bridge);
         setShowBridgeForm(true);
     };
 
     const createNewBridge = () => {
+        clearError(); // Clear any previous errors
         setEditingBridge(undefined);
         setShowBridgeForm(true);
     };
@@ -923,6 +945,7 @@ export default function BridgesPage() {
                                                     </Button>
                                                     <Button
                                                         variant="outline"
+                                                        type="button"
                                                         size="sm"
                                                         onClick={() => handleDeleteBridge(bridge.id)}
                                                         className="hover:bg-muted touch-manipulation"

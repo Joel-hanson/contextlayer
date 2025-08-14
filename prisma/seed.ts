@@ -74,7 +74,6 @@ async function main() {
             baseUrl: 'https://jsonplaceholder.typicode.com',
             authConfig: { type: 'none' },
             enabled: true,
-            status: 'inactive',
             userId: demoUser.id,
             endpoints: {
                 create: [
@@ -168,7 +167,6 @@ async function main() {
             baseUrl: 'https://httpbin.org',
             authConfig: { type: 'none' },
             enabled: true,
-            status: 'inactive',
             userId: demoUser.id,
             endpoints: {
                 create: [
@@ -233,7 +231,6 @@ async function main() {
             baseUrl: 'https://jsonplaceholder.typicode.com',
             authConfig: { type: 'none' }, // Use correct authConfig structure
             enabled: true,
-            status: 'inactive',
             userId: testUser.id,
             endpoints: {
                 create: [
@@ -444,7 +441,6 @@ async function main() {
             baseUrl: 'https://httpbin.org',
             authConfig: { type: 'none' }, // Use new authConfig structure
             enabled: true,
-            status: 'inactive',
             userId: testUser.id,
             endpoints: {
                 create: [
