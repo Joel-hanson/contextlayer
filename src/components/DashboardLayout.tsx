@@ -217,7 +217,7 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
     return (
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center justify-between">
-                <Link href="/" className="flex items-center gap-x-2">
+                <Link href="/dashboard" className="flex items-center gap-x-2">
                     <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
                         <BrainCogIcon className="h-5 w-5 text-primary-foreground" />
                     </div>

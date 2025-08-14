@@ -38,7 +38,7 @@ export const bridgeFormSchema = z.object({
             properties: z.record(z.any()),
             required: z.array(z.string()).optional(),
         }),
-    })),
+    })).optional(),
     mcpResources: z.array(z.object({
         uri: z.string().min(1, 'URI is required'),
         name: z.string().min(1, 'Resource name is required'),
