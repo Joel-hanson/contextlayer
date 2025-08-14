@@ -45,7 +45,7 @@ async function main() {
     const testUser = await prisma.user.create({
         data: {
             id: randomUUID(),
-            email: 'test@example.com',
+            email: 'test@contextlayer.app',
             name: 'Test User',
             username: 'testuser',
             password: testPassword,
@@ -694,7 +694,7 @@ async function main() {
     console.log(`   Restrictions: 30 requests/min, 2 MCP server max, basic tools only`)
     console.log(``)
     console.log(`👤 Test User (Development):`)
-    console.log(`   Email: test@example.com`)
+    console.log(`   Email: test@contextlayer.app`)
     console.log(`   Password: password123`)
     console.log(`   Restrictions: None`)
     console.log(``)

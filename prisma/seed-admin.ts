@@ -98,7 +98,6 @@ async function main() {
                 baseUrl: 'https://httpbin.org',
                 authConfig: { type: 'none' },
                 enabled: true,
-                status: 'active',
                 userId: firstAdmin.id,
                 endpoints: {
                     create: [
