@@ -146,6 +146,7 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.username = user.username;
+                token.sub = user.id.padEnd(32, '0');
             }
             return token;
         },
@@ -160,15 +161,18 @@ export const authOptions: NextAuthOptions = {
             // Handle Google OAuth sign-in
             if (account?.provider === "google") {
                 try {
+                    // Format the UUID to ensure it's the correct length
+                    const formattedUserId = user.id.padEnd(32, '0');
+                    
                     // Check if user settings exist, create if not
                     const existingSettings = await prisma.userSettings.findUnique({
-                        where: { userId: user.id },
+                        where: { userId: formattedUserId },
                     });
 
                     if (!existingSettings) {
                         await prisma.userSettings.create({
                             data: {
-                                userId: user.id,
+                                userId: formattedUserId,
                                 displayName: user.name || user.email?.split("@")[0] || "User",
                             },
                         });
