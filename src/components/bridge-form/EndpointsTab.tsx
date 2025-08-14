@@ -175,30 +175,52 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
 
             {fields.length === 0 ? (
                 <Card className="border-dashed border-orange-200 bg-orange-50">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                        <AlertTriangle className="h-8 w-8 text-orange-600 mb-3" />
-                        <div className="text-center space-y-3">
-                            <p className="font-medium text-orange-900">
-                                No AI tools configured
-                            </p>
-                            <p className="text-sm text-orange-700 max-w-md">
-                                Without tools, this MCP server won&apos;t provide any functionality to AI assistants.
-                                Add at least one endpoint to expose API functionality as AI tools.
-                            </p>
-                            <div className="text-xs text-orange-600 space-y-1 max-w-lg">
-                                <p className="font-medium">💡 Quick Examples:</p>
-                                <p><strong>GET /users</strong> - Retrieve user list</p>
-                                <p><strong>POST /users</strong> - Create new user (with parameters: name, email)</p>
-                                <p><strong>GET /users/{'{'}id{'}'}</strong> - Get specific user (with parameter: id)</p>
+                    <CardContent className="flex flex-col items-center justify-center py-8">
+                        <AlertTriangle className="h-12 w-12 text-orange-600 mb-6" />
+
+                        <div className="text-center space-y-4 max-w-lg">
+                            <div>
+                                <h3 className="text-xl font-semibold text-orange-900 mb-2">
+                                    No AI Tools Configured
+                                </h3>
+                                <p className="text-orange-700 text-base leading-relaxed">
+                                    Your MCP server needs tools to provide functionality to AI assistants.
+                                    Add API endpoints that will become callable tools.
+                                </p>
+                            </div>
+
+                            <div className="bg-white/50 rounded-lg p-4 border border-orange-200">
+                                <p className="font-medium text-orange-900 mb-3 text-sm">
+                                    💡 Common Examples:
+                                </p>
+                                <div className="space-y-2 text-sm text-orange-700">
+                                    <div className="flex items-center gap-2">
+                                        <code className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-mono">GET</code>
+                                        <span>/users - Retrieve user list</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <code className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-mono">POST</code>
+                                        <span>/users - Create new user</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <code className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-mono">GET</code>
+                                        <span>/users/{'{id}'} - Get specific user</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div className="mt-4 space-y-2">
-                            <Button onClick={addEndpoint} variant="outline">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Your First Endpoint
+
+                        <div className="mt-8 flex flex-col items-center gap-3">
+                            <Button
+                                onClick={addEndpoint}
+                                size="lg"
+                                className="h-12 px-8"
+                            >
+                                <Plus className="h-5 w-5 mr-2" />
+                                Add Your First Tool
                             </Button>
-                            <p className="text-xs text-orange-600">
-                                Or use <strong>&quot;Import OpenAPI&quot;</strong> in API Config tab to auto-configure
+                            <p className="text-sm text-orange-600 text-center">
+                                Or use <strong>&quot;Import from OpenAPI&quot;</strong> in the Basic Info tab to auto-configure
                             </p>
                         </div>
                     </CardContent>

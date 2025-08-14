@@ -5,7 +5,13 @@ CREATE TYPE "public"."UserRole" AS ENUM ('USER', 'ADMIN', 'MODERATOR');
 CREATE TYPE "public"."HttpMethod" AS ENUM ('GET', 'POST', 'PUT', 'DELETE', 'PATCH');
 
 -- CreateEnum
-CREATE TYPE "public"."BridgeStatus" AS ENUM ('active', 'inactive', 'error');
+CREATE TYPE "public"."FeedbackType" AS ENUM ('BUG', 'FEATURE', 'GENERAL', 'SUPPORT', 'SECURITY');
+
+-- CreateEnum
+CREATE TYPE "public"."FeedbackPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+
+-- CreateEnum
+CREATE TYPE "public"."FeedbackStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'DUPLICATE');
 
 -- CreateTable
 CREATE TABLE "public"."users" (
@@ -99,12 +105,11 @@ CREATE TABLE "public"."bridges" (
     "baseUrl" TEXT NOT NULL,
     "authConfig" JSONB,
     "headers" JSONB,
-    "enabled" BOOLEAN NOT NULL DEFAULT false,
-    "status" "public"."BridgeStatus" NOT NULL DEFAULT 'inactive',
-    "routingConfig" JSONB,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
     "accessConfig" JSONB,
-    "performanceConfig" JSONB,
-    "deletedAt" TIMESTAMP(3),
+    "mcpTools" JSONB,
+    "mcpPrompts" JSONB,
+    "mcpResources" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -173,6 +178,28 @@ CREATE TABLE "public"."access_tokens" (
     CONSTRAINT "access_tokens_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "public"."feedback" (
+    "id" UUID NOT NULL,
+    "userId" UUID NOT NULL,
+    "type" "public"."FeedbackType" NOT NULL,
+    "subject" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "priority" "public"."FeedbackPriority" NOT NULL DEFAULT 'MEDIUM',
+    "status" "public"."FeedbackStatus" NOT NULL DEFAULT 'OPEN',
+    "contactEmail" TEXT,
+    "pageUrl" TEXT,
+    "userAgent" TEXT,
+    "metadata" JSONB,
+    "adminResponse" TEXT,
+    "assignedTo" UUID,
+    "resolvedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "feedback_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_username_key" ON "public"."users"("username");
 
@@ -210,10 +237,7 @@ CREATE INDEX "bridges_userId_idx" ON "public"."bridges"("userId");
 CREATE INDEX "bridges_slug_idx" ON "public"."bridges"("slug");
 
 -- CreateIndex
-CREATE INDEX "bridges_status_enabled_idx" ON "public"."bridges"("status", "enabled");
-
--- CreateIndex
-CREATE INDEX "bridges_userId_status_idx" ON "public"."bridges"("userId", "status");
+CREATE INDEX "bridges_enabled_idx" ON "public"."bridges"("enabled");
 
 -- CreateIndex
 CREATE INDEX "api_endpoints_bridgeId_idx" ON "public"."api_endpoints"("bridgeId");
@@ -254,6 +278,18 @@ CREATE INDEX "access_tokens_bridgeId_isActive_idx" ON "public"."access_tokens"("
 -- CreateIndex
 CREATE INDEX "access_tokens_expiresAt_idx" ON "public"."access_tokens"("expiresAt");
 
+-- CreateIndex
+CREATE INDEX "feedback_userId_idx" ON "public"."feedback"("userId");
+
+-- CreateIndex
+CREATE INDEX "feedback_type_status_idx" ON "public"."feedback"("type", "status");
+
+-- CreateIndex
+CREATE INDEX "feedback_status_createdAt_idx" ON "public"."feedback"("status", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "feedback_assignedTo_idx" ON "public"."feedback"("assignedTo");
+
 -- AddForeignKey
 ALTER TABLE "public"."accounts" ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -280,3 +316,9 @@ ALTER TABLE "public"."api_requests" ADD CONSTRAINT "api_requests_endpointId_fkey
 
 -- AddForeignKey
 ALTER TABLE "public"."access_tokens" ADD CONSTRAINT "access_tokens_bridgeId_fkey" FOREIGN KEY ("bridgeId") REFERENCES "public"."bridges"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."feedback" ADD CONSTRAINT "feedback_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."feedback" ADD CONSTRAINT "feedback_assignedTo_fkey" FOREIGN KEY ("assignedTo") REFERENCES "public"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;

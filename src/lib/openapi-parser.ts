@@ -380,7 +380,7 @@ export class OpenAPIParser {
     /**
      * Generate MCP tools based on API endpoints
      */
-    private static generateMcpTools(endpoints: ApiConfig['endpoints']): McpTool[] {
+    public static generateMcpTools(endpoints: ApiConfig['endpoints']): McpTool[] {
         return endpoints.map(endpoint => {
             // Build input schema for the tool
             const properties: Record<string, {

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 export interface UseBridgesReturn {
     bridges: BridgeConfig[]
+    setBridges: (bridges: BridgeConfig[]) => void
     loading: boolean
     error: string | null
     createBridge: (config: BridgeConfig) => Promise<void>
@@ -11,6 +12,7 @@ export interface UseBridgesReturn {
     startBridge: (id: string, config: BridgeConfig) => Promise<void>
     stopBridge: (id: string) => Promise<void>
     refreshBridges: () => Promise<void>
+    clearError: () => void
     serverStatuses: Record<string, ServerStatus>
 }
 
@@ -67,14 +69,25 @@ export function useBridges(): UseBridgesReturn {
 
             if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to create bridge')
+                // API returns: { error: { code, message, details } }
+                const errorMessage = errorData.error?.message || errorData.message || 'Failed to create bridge'
+                const error = new Error(errorMessage)
+                setError(errorMessage)
+                throw error
             }
 
             // Refresh bridges list
             await fetchBridges()
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to create bridge')
-            throw err
+            // If it's already our custom error with message, use it
+            if (err instanceof Error) {
+                setError(err.message)
+                throw err
+            }
+            // Fallback for unexpected errors
+            const fallbackMessage = 'Failed to create bridge'
+            setError(fallbackMessage)
+            throw new Error(fallbackMessage)
         }
     }, [fetchBridges])
 
@@ -93,14 +106,25 @@ export function useBridges(): UseBridgesReturn {
 
             if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to update bridge')
+                // API returns: { error: { code, message, details } }
+                const errorMessage = errorData.error?.message || errorData.message || 'Failed to update bridge'
+                const error = new Error(errorMessage)
+                setError(errorMessage)
+                throw error
             }
 
             // Refresh bridges list
             await fetchBridges()
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update bridge')
-            throw err
+            // If it's already our custom error with message, use it
+            if (err instanceof Error) {
+                setError(err.message)
+                throw err
+            }
+            // Fallback for unexpected errors
+            const fallbackMessage = 'Failed to update bridge'
+            setError(fallbackMessage)
+            throw new Error(fallbackMessage)
         }
     }, [fetchBridges])
 
@@ -115,7 +139,7 @@ export function useBridges(): UseBridgesReturn {
 
             if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to delete bridge')
+                throw new Error(errorData.error?.message || errorData.message || 'Failed to delete bridge')
             }
 
             // Remove from local state immediately for better UX
@@ -158,7 +182,7 @@ export function useBridges(): UseBridgesReturn {
                 }))
 
                 const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to start bridge')
+                throw new Error(errorData.error?.message || errorData.message || 'Failed to start bridge')
             }
 
             // Refresh bridges to get updated status
@@ -192,7 +216,7 @@ export function useBridges(): UseBridgesReturn {
                 }))
 
                 const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to stop bridge')
+                throw new Error(errorData.error?.message || errorData.message || 'Failed to stop bridge')
             }
 
             // Refresh bridges to get updated status
@@ -208,6 +232,11 @@ export function useBridges(): UseBridgesReturn {
         await fetchBridges()
     }, [fetchBridges])
 
+    // Clear error state
+    const clearError = useCallback(() => {
+        setError(null)
+    }, [])
+
     // Initial fetch on mount
     useEffect(() => {
         fetchBridges()
@@ -215,6 +244,7 @@ export function useBridges(): UseBridgesReturn {
 
     return {
         bridges,
+        setBridges,
         loading,
         error,
         createBridge,
@@ -223,6 +253,7 @@ export function useBridges(): UseBridgesReturn {
         startBridge,
         stopBridge,
         refreshBridges,
+        clearError,
         serverStatuses,
     }
 }

@@ -100,7 +100,7 @@ export async function checkUserLimits(
     switch (action) {
         case 'bridge':
             const bridgeCount = await prisma.bridge.count({
-                where: { userId, deletedAt: null }
+                where: { userId }
             });
 
             if (bridgeCount >= limits.maxBridges) {
