@@ -38,10 +38,17 @@ export async function GET(
             metadata: token.metadata as Record<string, unknown> || {}
         }));
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: true,
             data: mcpTokens
         });
+
+        // Add caching headers (cache for 10 seconds)
+        response.headers.set('Cache-Control', 'public, s-maxage=10');
+        response.headers.set('CDN-Cache-Control', 'public, s-maxage=10');
+        response.headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=10');
+
+        return response;
     } catch (error) {
         console.error('Error fetching tokens:', error);
         return NextResponse.json({

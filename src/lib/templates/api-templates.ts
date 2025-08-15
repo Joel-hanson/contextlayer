@@ -30,6 +30,127 @@ export interface ApiTemplate {
 
 export const apiTemplates: ApiTemplate[] = [
     {
+        id: 'stripe',
+        name: 'Stripe API',
+        description: 'Payment processing and subscriptions',
+        icon: Zap,
+        color: 'bg-emerald-500',
+        tags: ['Payments', 'Bearer'],
+        config: {
+            name: 'Stripe API',
+            description: 'Process payments and manage subscriptions with Stripe.',
+            apiConfig: {
+                name: 'Stripe API v1',
+                baseUrl: 'https://api.stripe.com/v1',
+                description: 'Stripe payment processing API',
+                authentication: { type: 'bearer', token: '' },
+                endpoints: [
+                    {
+                        id: 'stripe-create-payment',
+                        name: 'Create Payment Intent',
+                        method: 'POST',
+                        path: '/payment_intents',
+                        description: 'Create a PaymentIntent for processing payments',
+                        parameters: [
+                            { name: 'amount', type: 'number', required: true, description: 'Amount in smallest currency unit' },
+                            { name: 'currency', type: 'string', required: true, description: 'Three-letter ISO currency code' }
+                        ],
+                    },
+                    {
+                        id: 'stripe-list-customers',
+                        name: 'List Customers',
+                        method: 'GET',
+                        path: '/customers',
+                        description: 'List all customers',
+                        parameters: [
+                            { name: 'limit', type: 'number', required: false, description: 'Number of customers to return' },
+                            { name: 'email', type: 'string', required: false, description: 'Filter by customer email' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'stripe://payment/methods',
+                    name: 'Payment Methods',
+                    description: 'Available payment methods by region',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'payment_flow',
+                    description: 'Generate payment flow recommendations',
+                    arguments: [
+                        { name: 'amount', description: 'Payment amount', required: true },
+                        { name: 'currency', description: 'Currency code', required: true }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'sendgrid',
+        name: 'SendGrid API',
+        description: 'Email service integration',
+        icon: Zap,
+        color: 'bg-blue-600',
+        tags: ['Email', 'Bearer'],
+        config: {
+            name: 'SendGrid API',
+            description: 'Send transactional and marketing emails.',
+            apiConfig: {
+                name: 'SendGrid API v3',
+                baseUrl: 'https://api.sendgrid.com/v3',
+                description: 'SendGrid email service API',
+                authentication: { type: 'bearer', token: '' },
+                endpoints: [
+                    {
+                        id: 'sendgrid-send-email',
+                        name: 'Send Email',
+                        method: 'POST',
+                        path: '/mail/send',
+                        description: 'Send a transactional email',
+                        parameters: [
+                            { name: 'to', type: 'string', required: true, description: 'Recipient email address' },
+                            { name: 'subject', type: 'string', required: true, description: 'Email subject' },
+                            { name: 'content', type: 'string', required: true, description: 'Email content' }
+                        ],
+                    },
+                    {
+                        id: 'sendgrid-get-stats',
+                        name: 'Get Email Stats',
+                        method: 'GET',
+                        path: '/stats',
+                        description: 'Get email statistics',
+                        parameters: [
+                            { name: 'start_date', type: 'string', required: true, description: 'Start date in YYYY-MM-DD format' },
+                            { name: 'end_date', type: 'string', required: false, description: 'End date in YYYY-MM-DD format' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'sendgrid://templates',
+                    name: 'Email Templates',
+                    description: 'Available email templates',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'email_composer',
+                    description: 'Generate professional email content',
+                    arguments: [
+                        { name: 'purpose', description: 'Email purpose', required: true },
+                        { name: 'tone', description: 'Email tone (formal/casual)', required: false }
+                    ]
+                }
+            ]
+        }
+    },
+    {
         id: 'weather',
         name: 'Weather API',
         description: 'OpenWeatherMap real-time weather data',
@@ -338,6 +459,421 @@ export const apiTemplates: ApiTemplate[] = [
                     arguments: [
                         { name: 'purpose', description: 'Purpose of the message', required: true },
                         { name: 'tone', description: 'Tone (formal/casual/urgent)', required: false }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'jsonbin',
+        name: 'JSONBin.io API',
+        description: 'JSON storage and API mocking',
+        icon: Database,
+        color: 'bg-yellow-500',
+        tags: ['Storage', 'API Key'],
+        config: {
+            name: 'JSONBin.io API',
+            description: 'Store and access JSON data with a simple REST API.',
+            apiConfig: {
+                name: 'JSONBin.io API',
+                baseUrl: 'https://api.jsonbin.io/v3',
+                description: 'JSON storage service with API features',
+                authentication: { type: 'apikey', apiKey: '', headerName: 'X-Master-Key' },
+                endpoints: [
+                    {
+                        id: 'jsonbin-create',
+                        name: 'Create Bin',
+                        method: 'POST',
+                        path: '/b',
+                        description: 'Create a new JSON bin',
+                        parameters: [
+                            { name: 'name', type: 'string', required: false, description: 'Name of the bin' },
+                            { name: 'private', type: 'boolean', required: false, description: 'Make bin private' }
+                        ],
+                    },
+                    {
+                        id: 'jsonbin-read',
+                        name: 'Read Bin',
+                        method: 'GET',
+                        path: '/b/{id}',
+                        description: 'Read a JSON bin by ID',
+                        parameters: [
+                            { name: 'id', type: 'string', required: true, description: 'Bin ID' }
+                        ],
+                    },
+                    {
+                        id: 'jsonbin-update',
+                        name: 'Update Bin',
+                        method: 'PUT',
+                        path: '/b/{id}',
+                        description: 'Update a JSON bin',
+                        parameters: [
+                            { name: 'id', type: 'string', required: true, description: 'Bin ID' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'jsonbin://bins/list',
+                    name: 'Bins List',
+                    description: 'List of all JSON bins',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'json_validator',
+                    description: 'Validate JSON structure before storing',
+                    arguments: [
+                        { name: 'json', description: 'JSON data to validate', required: true }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'reqres',
+        name: 'ReqRes API',
+        description: 'REST API for testing',
+        icon: Database,
+        color: 'bg-indigo-500',
+        tags: ['Testing', 'No Auth'],
+        config: {
+            name: 'ReqRes API',
+            description: 'Free REST API for testing with realistic response data.',
+            apiConfig: {
+                name: 'ReqRes API',
+                baseUrl: 'https://reqres.in/api',
+                description: 'Mock REST API with realistic responses',
+                authentication: { type: 'none' },
+                endpoints: [
+                    {
+                        id: 'reqres-list-users',
+                        name: 'List Users',
+                        method: 'GET',
+                        path: '/users',
+                        description: 'Get list of users with pagination',
+                        parameters: [
+                            { name: 'page', type: 'number', required: false, description: 'Page number' },
+                            { name: 'per_page', type: 'number', required: false, description: 'Items per page' }
+                        ],
+                    },
+                    {
+                        id: 'reqres-single-user',
+                        name: 'Get Single User',
+                        method: 'GET',
+                        path: '/users/{id}',
+                        description: 'Get a single user by ID',
+                        parameters: [
+                            { name: 'id', type: 'number', required: true, description: 'User ID' }
+                        ],
+                    },
+                    {
+                        id: 'reqres-create-user',
+                        name: 'Create User',
+                        method: 'POST',
+                        path: '/users',
+                        description: 'Create a new user',
+                        parameters: [
+                            { name: 'name', type: 'string', required: true, description: 'User name' },
+                            { name: 'job', type: 'string', required: true, description: 'User job' }
+                        ],
+                    },
+                    {
+                        id: 'reqres-login',
+                        name: 'Login',
+                        method: 'POST',
+                        path: '/login',
+                        description: 'Login with email and password',
+                        parameters: [
+                            { name: 'email', type: 'string', required: true, description: 'User email' },
+                            { name: 'password', type: 'string', required: true, description: 'User password' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'reqres://users/schema',
+                    name: 'User Schema',
+                    description: 'User data structure documentation',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'reqres://examples',
+                    name: 'Example Responses',
+                    description: 'Sample API responses for each endpoint',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'test_scenario',
+                    description: 'Generate test scenarios for endpoints',
+                    arguments: [
+                        { name: 'endpoint', description: 'Target endpoint', required: true },
+                        { name: 'scenario_type', description: 'Type of test (success/error)', required: true }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'dog-api',
+        name: 'Dog API',
+        description: 'Dog images and facts',
+        icon: Globe,
+        color: 'bg-orange-400',
+        tags: ['Fun', 'No Auth'],
+        config: {
+            name: 'Dog API',
+            description: 'Get random dog images and breed information.',
+            apiConfig: {
+                name: 'Dog API',
+                baseUrl: 'https://dog.ceo/api',
+                description: 'Free API for dog images and breeds',
+                authentication: { type: 'none' },
+                endpoints: [
+                    {
+                        id: 'random-dog',
+                        name: 'Random Dog',
+                        method: 'GET',
+                        path: '/breeds/image/random',
+                        description: 'Get a random dog image',
+                        parameters: [],
+                    },
+                    {
+                        id: 'breed-list',
+                        name: 'List Breeds',
+                        method: 'GET',
+                        path: '/breeds/list/all',
+                        description: 'Get list of all dog breeds',
+                        parameters: [],
+                    },
+                    {
+                        id: 'breed-images',
+                        name: 'Breed Images',
+                        method: 'GET',
+                        path: '/breed/{breed}/images',
+                        description: 'Get images for a specific breed',
+                        parameters: [
+                            { name: 'breed', type: 'string', required: true, description: 'Dog breed name' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'dog://breeds/info',
+                    name: 'Breed Information',
+                    description: 'Detailed information about dog breeds',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'breed_finder',
+                    description: 'Find dog breeds based on characteristics',
+                    arguments: [
+                        { name: 'characteristics', description: 'Desired breed characteristics', required: true }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'jokes-api',
+        name: 'JokeAPI',
+        description: 'Programming and general jokes',
+        icon: Globe,
+        color: 'bg-pink-500',
+        tags: ['Fun', 'No Auth'],
+        config: {
+            name: 'JokeAPI',
+            description: 'Get random jokes of various categories.',
+            apiConfig: {
+                name: 'JokeAPI v2',
+                baseUrl: 'https://v2.jokeapi.dev',
+                description: 'Free API for jokes and humor',
+                authentication: { type: 'none' },
+                endpoints: [
+                    {
+                        id: 'random-joke',
+                        name: 'Random Joke',
+                        method: 'GET',
+                        path: '/joke/Any',
+                        description: 'Get a random joke',
+                        parameters: [
+                            { name: 'type', type: 'string', required: false, description: 'Type of joke (single/twopart)' },
+                            { name: 'contains', type: 'string', required: false, description: 'Search term in joke' }
+                        ],
+                    },
+                    {
+                        id: 'category-joke',
+                        name: 'Category Joke',
+                        method: 'GET',
+                        path: '/joke/{category}',
+                        description: 'Get a joke from specific category',
+                        parameters: [
+                            { name: 'category', type: 'string', required: true, description: 'Joke category (Programming/Misc/Dark/Pun/Spooky/Christmas)' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'jokes://categories',
+                    name: 'Joke Categories',
+                    description: 'Available joke categories',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'joke_finder',
+                    description: 'Find jokes based on mood and preferences',
+                    arguments: [
+                        { name: 'mood', description: 'Desired mood of joke', required: true },
+                        { name: 'category', description: 'Preferred category', required: false }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'pokemon',
+        name: 'PokéAPI',
+        description: 'Pokémon data and information',
+        icon: Globe,
+        color: 'bg-red-500',
+        tags: ['Fun', 'No Auth'],
+        config: {
+            name: 'PokéAPI',
+            description: 'Complete Pokémon information database.',
+            apiConfig: {
+                name: 'PokéAPI v2',
+                baseUrl: 'https://pokeapi.co/api/v2',
+                description: 'Free API for Pokémon data',
+                authentication: { type: 'none' },
+                endpoints: [
+                    {
+                        id: 'get-pokemon',
+                        name: 'Get Pokémon',
+                        method: 'GET',
+                        path: '/pokemon/{id}',
+                        description: 'Get information about a specific Pokémon',
+                        parameters: [
+                            { name: 'id', type: 'string', required: true, description: 'Pokémon ID or name' }
+                        ],
+                    },
+                    {
+                        id: 'list-types',
+                        name: 'List Types',
+                        method: 'GET',
+                        path: '/type',
+                        description: 'Get all Pokémon types',
+                        parameters: [],
+                    },
+                    {
+                        id: 'get-ability',
+                        name: 'Get Ability',
+                        method: 'GET',
+                        path: '/ability/{id}',
+                        description: 'Get information about a specific ability',
+                        parameters: [
+                            { name: 'id', type: 'string', required: true, description: 'Ability ID or name' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'pokemon://types/chart',
+                    name: 'Type Chart',
+                    description: 'Pokémon type effectiveness chart',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'pokemon://generations',
+                    name: 'Generations',
+                    description: 'List of Pokémon generations',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'team_builder',
+                    description: 'Build a balanced Pokémon team',
+                    arguments: [
+                        { name: 'generation', description: 'Pokémon generation', required: true },
+                        { name: 'style', description: 'Battle style preference', required: false }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'nasa',
+        name: 'NASA API',
+        description: 'Space and astronomy data',
+        icon: Globe,
+        color: 'bg-blue-800',
+        tags: ['Educational', 'API Key'],
+        config: {
+            name: 'NASA API',
+            description: 'Access NASA space data and imagery.',
+            apiConfig: {
+                name: 'NASA Open API',
+                baseUrl: 'https://api.nasa.gov',
+                description: 'NASA space and astronomy data',
+                authentication: { type: 'apikey', apiKey: 'DEMO_KEY', headerName: 'api_key' },
+                endpoints: [
+                    {
+                        id: 'apod',
+                        name: 'Astronomy Picture of the Day',
+                        method: 'GET',
+                        path: '/planetary/apod',
+                        description: 'Get astronomy picture of the day',
+                        parameters: [
+                            { name: 'date', type: 'string', required: false, description: 'Date (YYYY-MM-DD)' },
+                            { name: 'hd', type: 'boolean', required: false, description: 'HD image URL' }
+                        ],
+                    },
+                    {
+                        id: 'mars-photos',
+                        name: 'Mars Rover Photos',
+                        method: 'GET',
+                        path: '/mars-photos/api/v1/rovers/curiosity/photos',
+                        description: 'Get Mars rover photos',
+                        parameters: [
+                            { name: 'sol', type: 'number', required: true, description: 'Martian sol (day)' },
+                            { name: 'camera', type: 'string', required: false, description: 'Rover camera name' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'nasa://rovers/info',
+                    name: 'Mars Rovers',
+                    description: 'Information about Mars rovers',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'nasa://cameras',
+                    name: 'Rover Cameras',
+                    description: 'Available Mars rover cameras',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'space_facts',
+                    description: 'Generate space facts from NASA data',
+                    arguments: [
+                        { name: 'topic', description: 'Space topic of interest', required: true },
+                        { name: 'level', description: 'Complexity level', required: false }
                     ]
                 }
             ]
