@@ -104,7 +104,7 @@ export default function SettingsPage() {
     const { data: session } = useSession();
     const { toast } = useToast();
 
-    // Load settings from database on mount
+    // Load settings from database on mount with SWR or React Query
     useEffect(() => {
         const loadSettings = async () => {
             if (!session?.user) {
@@ -112,7 +112,11 @@ export default function SettingsPage() {
             }
 
             try {
-                const response = await fetch('/api/user/settings');
+                const controller = new AbortController();
+                const response = await fetch('/api/user/settings', {
+                    signal: controller.signal,
+                    cache: 'force-cache'
+                });
                 if (response.ok) {
                     const settingsData = await response.json();
 

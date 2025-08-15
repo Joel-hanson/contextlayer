@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
-import { generateStandardToolName } from './tool-name-generator';
 import { ApiConfig, McpPrompt, McpResource, McpTool } from './types';
 
 // Fallback for environments where crypto is not available
@@ -89,52 +88,34 @@ export interface ParsedOpenAPIResult {
 
 export class OpenAPIParser {
     /**
-     * Generate MCP tools based on API endpoints
-     */
-    public static generateMcpTools(endpoints: ApiConfig['endpoints']): McpTool[] {
-        console.log('Generating MCP tools from endpoints:', {
-            endpointCount: endpoints.length,
-            endpoints: endpoints.map(e => `${e.method} ${e.path}`)
-        });
-
-        const tools = endpoints.map(endpoint => {
-            const toolName = generateStandardToolName(endpoint.method, endpoint.path);
-            const params = this.buildToolParameters(endpoint);
-
-            const tool = {
-                name: toolName,
-                description: endpoint.description || `${endpoint.method} ${endpoint.path}`,
-                inputSchema: {
-                    type: 'object' as const,
-                    properties: params.properties,
-                    required: params.required
-                }
-            };
-
-            console.log('Generated MCP tool:', {
-                endpoint: `${endpoint.method} ${endpoint.path}`,
-                toolName,
-                parameterCount: Object.keys(params.properties).length,
-                requiredParams: params.required
-            });
-
-            return tool;
-        });
-
-        console.log('Completed MCP tool generation:', {
-            toolCount: tools.length,
-            toolNames: tools.map(t => t.name)
-        });
-
-        return tools;
-    }
-
-    /**
      * Generate a standardized tool name from method and path
      * Format: method_resource_action
      */
     private static generateStandardToolName(method: string, path: string): string {
-        return generateStandardToolName(method, path);
+        const cleanedMethod = method.toLowerCase();
+
+        // Remove URL parameters and split path
+        const pathParts = path
+            .replace(/\{[^}]+\}/g, '') // Remove URL parameters
+            .split('/')
+            .filter(Boolean) // Remove empty strings
+            .map(part => part.toLowerCase());
+
+        // Determine the action based on method and path
+        let action = '';
+        if (cleanedMethod === 'get') {
+            action = path.includes('{') ? 'read' : 'list';
+        } else if (cleanedMethod === 'post') {
+            action = 'create';
+        } else if (cleanedMethod === 'put' || cleanedMethod === 'patch') {
+            action = 'update';
+        } else if (cleanedMethod === 'delete') {
+            action = 'delete';
+        }
+
+        // Construct the name: method_resource_action
+        const resource = pathParts[pathParts.length - 1] || 'root';
+        return `${cleanedMethod}_${resource}_${action}`;
     }
 
     static parseSpec(spec: OpenAPISpec): ParsedOpenAPIResult {
@@ -229,7 +210,7 @@ export class OpenAPIParser {
         // Add path and query parameters
         endpoint.parameters?.forEach(param => {
             parameters.properties[param.name] = {
-                type: this.mapOpenAPITypeToSimpleType(typeof param.type === 'string' ? param.type : 'string'),
+                type: this.mapOpenAPITypeToSimpleType(param.schema?.type || 'string') as 'string' | 'number' | 'boolean' | 'object' | 'array',
                 description: param.description || `Parameter: ${param.name}`
             };
             if (param.required) {
@@ -290,42 +271,22 @@ export class OpenAPIParser {
 
     private static parseEndpoints(spec: OpenAPISpec): ApiConfig['endpoints'] {
         const endpoints: ApiConfig['endpoints'] = [];
-        console.log('Starting to parse OpenAPI endpoints');
 
         Object.entries(spec.paths).forEach(([path, pathItem]) => {
-            console.log(`Processing path: ${path}`);
             Object.entries(pathItem).forEach(([method, operation]) => {
                 const httpMethod = method.toUpperCase();
                 if (!['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].includes(httpMethod)) {
-                    console.log(`Skipping unsupported method: ${method} for path ${path}`);
                     return;
                 }
 
-                console.log(`Creating endpoint for ${httpMethod} ${path}:`, {
-                    operationId: operation.operationId,
-                    summary: operation.summary,
-                    description: operation.description,
-                    hasParameters: !!operation.parameters
-                });
-
-                const endpoint = {
+                endpoints.push({
                     id: generateId(),
                     name: operation.operationId || `${httpMethod} ${path}`,
                     method: httpMethod as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
                     path,
                     description: operation.summary || operation.description || '',
                     parameters: this.parseParameters(operation.parameters || [])
-                };
-
-                console.log('Created endpoint:', {
-                    id: endpoint.id,
-                    name: endpoint.name,
-                    method: endpoint.method,
-                    path: endpoint.path,
-                    parameterCount: endpoint.parameters.length
                 });
-
-                endpoints.push(endpoint);
             });
         });
 
@@ -334,13 +295,10 @@ export class OpenAPIParser {
 
     private static parseParameters(parameters: Array<{
         name: string;
-        in: 'path' | 'query' | 'header' | 'cookie';
-        description?: string;
+        in: string;
         required?: boolean;
-        schema?: {
-            type?: string;
-            default?: unknown;
-        };
+        description?: string;
+        schema?: { type?: string; default?: unknown };
     }>): Array<{
         name: string;
         type: 'string' | 'number' | 'boolean' | 'object' | 'array';
@@ -352,7 +310,7 @@ export class OpenAPIParser {
             .filter(param => param.in !== 'header')
             .map(param => ({
                 name: param.name,
-                type: this.mapOpenAPITypeToSimpleType(param.schema?.type || 'string'),
+                type: this.mapOpenAPITypeToSimpleType(param.schema?.type || 'string') as 'string' | 'number' | 'boolean' | 'object' | 'array',
                 required: param.required === true,
                 description: param.description || '',
                 defaultValue: param.schema?.default

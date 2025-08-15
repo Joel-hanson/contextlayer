@@ -14,12 +14,25 @@ export async function GET() {
             );
         }
 
-        // Get user with their settings
+        // Get user with their settings - selecting only actively used fields
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            include: {
-                settings: true,
-            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                settings: {
+                    select: {
+                        displayName: true,
+                        organization: true,
+                        timezone: true,
+                        defaultAuthType: true,
+                        defaultTimeout: true,
+                        defaultRetryAttempts: true,
+                        autoSaveBridges: true,
+                    }
+                }
+            }
         });
 
         if (!user) {
@@ -42,36 +55,39 @@ export async function GET() {
         // Transform database data to match the frontend interface
         const settings = {
             profile: {
-                displayName: userSettings.displayName || user.name || '',
+                displayName: userSettings?.displayName || user.name || '',
                 email: user.email || '',
-                organization: userSettings.organization || '',
-                timezone: userSettings.timezone,
+                organization: userSettings?.organization || '',
+                timezone: userSettings?.timezone || 'UTC',
             },
             bridgeDefaults: {
-                defaultTimeout: userSettings.defaultTimeout,
-                defaultRetryAttempts: userSettings.defaultRetryAttempts,
-                enableCaching: userSettings.enableCaching,
-                cacheDuration: userSettings.cacheDuration,
-                enableRateLimiting: userSettings.enableRateLimiting,
-                requestsPerMinute: userSettings.requestsPerMinute,
+                defaultTimeout: userSettings?.defaultTimeout || 30000,
+                defaultRetryAttempts: userSettings?.defaultRetryAttempts || 3,
+                // These fields are disabled in the UI
+                enableCaching: false,
+                cacheDuration: 300,
+                enableRateLimiting: false,
+                requestsPerMinute: 100,
             },
             notifications: {
-                emailNotifications: userSettings.emailNotifications,
-                bridgeFailureAlerts: userSettings.bridgeFailureAlerts,
-                weeklyReports: userSettings.weeklyReports,
-                maintenanceUpdates: userSettings.maintenanceUpdates,
-                webhookUrl: userSettings.webhookUrl || '',
-                slackWebhookUrl: userSettings.slackWebhookUrl || '',
+                // All notification features are disabled
+                emailNotifications: false,
+                bridgeFailureAlerts: false,
+                weeklyReports: false,
+                maintenanceUpdates: false,
+                webhookUrl: '',
+                slackWebhookUrl: '',
             },
             apiKeys: {
-                enableApiAccess: userSettings.enableApiAccess,
-                allowPublicAccess: userSettings.allowPublicAccess,
+                // API key features are not implemented yet
+                enableApiAccess: false,
+                allowPublicAccess: false,
             },
             preferences: {
-                theme: userSettings.theme as 'light' | 'dark' | 'system',
-                autoSaveBridges: userSettings.autoSaveBridges,
-                showAdvancedOptions: userSettings.showAdvancedOptions,
-                defaultAuthType: userSettings.defaultAuthType as 'none' | 'bearer' | 'apikey' | 'basic',
+                theme: 'light' as const,
+                autoSaveBridges: userSettings?.autoSaveBridges || false,
+                showAdvancedOptions: false,
+                defaultAuthType: (userSettings?.defaultAuthType || 'none') as 'none' | 'bearer' | 'apikey' | 'basic',
             },
         };
 

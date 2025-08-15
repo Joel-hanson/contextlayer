@@ -7,10 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { generateStandardToolName } from '@/lib/tool-name-generator';
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
 import { UseFieldArrayReturn, UseFormReturn, useFieldArray } from 'react-hook-form';
 import { type BridgeFormData } from './types';
 
+/**
+ * Generates a standardized tool name from method and path
+ */
+function generateToolName({ method, path }: { method: string; path: string }): string {
+    return generateStandardToolName(method, path);
+}
 interface EndpointsTabProps {
     form: UseFormReturn<BridgeFormData>;
     endpointFields: UseFieldArrayReturn<BridgeFormData, "apiConfig.endpoints", "id">;
@@ -256,11 +263,21 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <Label className="text-sm font-medium">Tool Name *</Label>
-                                        <Input
-                                            {...form.register(`apiConfig.endpoints.${index}.name`)}
-                                            placeholder="Get Repository"
-                                            className="h-9"
-                                        />
+                                        <div className="space-y-2">
+                                            <Input
+                                                {...form.register(`apiConfig.endpoints.${index}.name`)}
+                                                placeholder="Method and resource will determine the tool name"
+                                                className="h-9 font-mono"
+                                                readOnly
+                                                value={generateToolName({
+                                                    method: form.watch(`apiConfig.endpoints.${index}.method`),
+                                                    path: form.watch(`apiConfig.endpoints.${index}.path`),
+                                                })}
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Format: method_resource_action (e.g., get_users_list, post_users_create)
+                                            </p>
+                                        </div>
                                         {form.formState.errors.apiConfig?.endpoints?.[index]?.name && (
                                             <p className="text-xs text-red-600">
                                                 {form.formState.errors.apiConfig.endpoints[index]?.name?.message}

@@ -1,5 +1,5 @@
 import { McpAccessToken, TokenPermission } from '@/lib/security';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // UUID validation helper function
 function isValidUUID(uuid: string): boolean {
@@ -21,16 +21,33 @@ export function useTokens(bridgeId: string): UseTokensResult {
     const [tokens, setTokens] = useState<McpAccessToken[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const lastFetchRef = useRef<number>(0);
+    const isFetchingRef = useRef(false);
+    const FETCH_COOLDOWN = 2000; // 2 seconds cooldown between fetches
 
     const refreshTokens = useCallback(async () => {
         // Don't make API calls for invalid bridge IDs (like 'temp-bridge-id')
         if (!bridgeId || bridgeId === 'temp-bridge-id' || !isValidUUID(bridgeId)) return;
 
+        // Implement debouncing
+        const now = Date.now();
+        if (isFetchingRef.current || (now - lastFetchRef.current) < FETCH_COOLDOWN) {
+            return;
+        }
+
+        isFetchingRef.current = true;
+        lastFetchRef.current = now;
+
         try {
             setLoading(true);
             setError(null);
 
-            const response = await fetch(`/api/bridges/${bridgeId}/tokens`);
+            const response = await fetch(`/api/bridges/${bridgeId}/tokens`, {
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
             const result = await response.json();
 
             if (result.success) {
@@ -53,6 +70,7 @@ export function useTokens(bridgeId: string): UseTokensResult {
             setError(err instanceof Error ? err.message : 'Failed to fetch tokens');
         } finally {
             setLoading(false);
+            isFetchingRef.current = false;
         }
     }, [bridgeId]);
 

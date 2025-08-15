@@ -163,22 +163,18 @@ export const authOptions: NextAuthOptions = {
                 try {
                     // Format the UUID to ensure it's the correct length
                     const formattedUserId = user.id.padEnd(32, '0');
-                    
-                    // Check if user settings exist, create if not
-                    const existingSettings = await prisma.userSettings.findUnique({
-                        where: { userId: formattedUserId },
-                    });
 
-                    if (!existingSettings) {
-                        await prisma.userSettings.create({
-                            data: {
-                                userId: formattedUserId,
-                                displayName: user.name || user.email?.split("@")[0] || "User",
-                            },
-                        });
-                    }
+                    // Use upsert to atomically check and create settings in one query
+                    await prisma.userSettings.upsert({
+                        where: { userId: formattedUserId },
+                        create: {
+                            userId: formattedUserId,
+                            displayName: user.name || user.email?.split("@")[0] || "User",
+                        },
+                        update: {} // No update needed if exists
+                    });
                 } catch (error) {
-                    console.error("Error creating user settings:", error);
+                    console.error("Error handling user settings:", error);
                     // Don't block sign-in if settings creation fails
                 }
             }

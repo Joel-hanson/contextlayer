@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTokens } from "@/hooks/useTokens";
 import { McpAccessToken, TokenPermission } from "@/lib/security";
 import { AlertCircle, Check, Copy, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 interface TokenManagerProps {
     bridgeId: string;
@@ -39,6 +39,11 @@ export function TokenManager({
 }: TokenManagerProps) {
     const { tokens, loading, error, createToken, deleteToken } = useTokens(bridgeId);
     const { toast } = useToast();
+
+    // Memoize expensive computations
+    const sortedTokens = useMemo(() => [...tokens].sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ), [tokens]);
     const [showTokens, setShowTokens] = useState<Record<string, boolean>>({});
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
@@ -317,12 +322,12 @@ export function TokenManager({
                     )}
 
                     <div className="space-y-4">
-                        {tokens.length === 0 ? (
+                        {sortedTokens.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground">
                                 No access tokens created yet.
                             </div>
                         ) : (
-                            tokens.map((token) => {
+                            sortedTokens.map((token) => {
                                 const status = getTokenStatus(token);
                                 const isVisible = showTokens[token.id];
 

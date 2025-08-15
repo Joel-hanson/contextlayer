@@ -1,8 +1,143 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PrismaClient } from '@prisma/client';
+import { createMcpError, formatErrorMessage, logBridgeEvent } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
+import { generateStandardToolName } from '@/lib/tool-name-generator';
 import { NextRequest, NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
+// Type definitions
+interface AuthConfig {
+    type: 'none' | 'bearer' | 'apikey' | 'basic';
+    token?: string;
+    apiKey?: string;
+    username?: string;
+    password?: string;
+    headerName?: string;
+}
+
+interface EndpointConfig {
+    parameters?: Array<{
+        name: string;
+        type: string;
+        required: boolean;
+        description?: string;
+        defaultValue?: unknown;
+    }>;
+    requestBody?: {
+        contentType?: string;
+        schema?: unknown;
+        required?: boolean;
+        properties?: Record<string, {
+            type: string;
+            description?: string;
+            required?: boolean;
+            enum?: string[];
+            format?: string;
+            minimum?: number;
+            maximum?: number;
+            pattern?: string;
+            items?: unknown;
+            properties?: Record<string, unknown>;
+        }>;
+    };
+    responseSchema?: unknown;
+    timeout?: number;
+}
+
+interface Parameter {
+    name: string;
+    type: string;
+    required: boolean;
+    description?: string;
+    defaultValue?: unknown;
+}
+
+interface Endpoint {
+    id: string;
+    name: string;
+    method: string;
+    path: string;
+    description?: string;
+    config: EndpointConfig | null;
+    parameters?: Parameter[];
+    requestBody?: {
+        contentType?: string;
+        schema?: unknown;
+        required?: boolean;
+        properties?: Record<string, {
+            type: string;
+            description?: string;
+            required?: boolean;
+            enum?: string[];
+            format?: string;
+            minimum?: number;
+            maximum?: number;
+            pattern?: string;
+            items?: unknown;
+            properties?: Record<string, unknown>;
+        }>;
+    };
+    responseSchema?: unknown;
+}
+
+interface McpTool {
+    name: string;         // Must be in format: method_path_normalized (e.g. get_users_list)
+    description: string;
+    inputSchema: {
+        type: 'object';
+        properties: Record<string, unknown>;
+        required?: string[];
+    };
+    endpointId?: string;  // Reference to the actual endpoint
+}
+
+interface Bridge {
+    id: string;
+    name: string;
+    enabled: boolean;
+    baseUrl: string;
+    authConfig: AuthConfig;
+    endpoints: Endpoint[];
+    mcpTools?: McpTool[];
+    mcpResources?: any[];
+    mcpPrompts?: any[];
+    headers?: Record<string, string>;
+    accessConfig?: {
+        authRequired?: boolean;
+        apiKey?: string;
+    } | null;
+}
+
+interface JsonRpcRequest {
+    jsonrpc: string;
+    method: string;
+    params: Record<string, any>;
+    id: string | number;
+}
+
+interface JsonRpcResponse {
+    jsonrpc: string;
+    result?: any;
+    error?: {
+        code: number;
+        message: string;
+        data?: any;
+    };
+    id: string | number | null;
+}
+
+// Error codes for MCP protocol
+const MCP_ERROR_CODES = {
+    PARSE_ERROR: -32700,
+    INVALID_REQUEST: -32600,
+    METHOD_NOT_FOUND: -32601,
+    INVALID_PARAMS: -32602,
+    INTERNAL_ERROR: -32603,
+    BRIDGE_NOT_FOUND: -32604,
+    BRIDGE_DISABLED: -32605,
+    AUTH_ERROR: -32606,
+    TOOL_NOT_FOUND: -32607,
+    API_CALL_FAILED: -32608
+} as const;
 
 // Handle MCP JSON-RPC protocol requests
 export async function POST(
@@ -30,34 +165,82 @@ async function handleMcpJsonRpc(
     bridgeId: string
 ) {
     try {
+        // Log the MCP request with batch processing
+        await logBridgeEvent(bridgeId, 'info', 'MCP request received', {
+            method: request.method,
+            url: request.url,
+            timestamp: new Date().toISOString()
+        });
+
         let bridge = null;
 
         // First try to find in database if bridgeId looks like a UUID
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
         if (uuidRegex.test(bridgeId)) {
-            // Try database lookup for UUID
-            bridge = await prisma.bridge.findFirst({
+            // Try database lookup for UUID with optimized field selection and enabled check
+            const dbBridge = await prisma.bridge.findFirst({
                 where: {
-                    id: bridgeId
+                    id: bridgeId,
+                    enabled: true // Add this filter to avoid extra enabled check later
                 },
-                include: {
-                    endpoints: true
+                select: {
+                    id: true,
+                    name: true,
+                    baseUrl: true,
+                    authConfig: true,
+                    headers: true,
+                    accessConfig: true,
+                    mcpTools: true,
+                    endpoints: {
+                        select: {
+                            id: true,
+                            name: true,
+                            method: true,
+                            path: true,
+                            description: true,
+                            config: true
+                        }
+                    }
                 }
+            });
+            bridge = dbBridge ? convertDatabaseBridge(dbBridge) : null;
+
+            await logBridgeEvent(bridgeId, 'debug', 'Bridge lookup by UUID', {
+                found: !!bridge,
+                id: bridgeId
             });
         }
 
-        // If not found in database, try slug-based lookup
+        // If not found in database, try slug-based lookup with optimized fields
         if (!bridge) {
             try {
-                bridge = await prisma.bridge.findFirst({
+                const dbBridge = await prisma.bridge.findFirst({
                     where: {
-                        slug: bridgeId
+                        slug: bridgeId,
+                        enabled: true // Add this filter to avoid extra enabled check later
                     },
-                    include: {
-                        endpoints: true
+                    select: {
+                        id: true,
+                        name: true,
+                        baseUrl: true,
+                        authConfig: true,
+                        headers: true,
+                        accessConfig: true,
+                        mcpTools: true,
+                        endpoints: {
+                            select: {
+                                id: true,
+                                name: true,
+                                method: true,
+                                path: true,
+                                description: true,
+                                config: true
+                            }
+                        }
                     }
                 });
+                bridge = dbBridge ? convertDatabaseBridge(dbBridge) : null;
             } catch {
                 // If slug lookup fails, bridge doesn't exist in database
                 console.log('Bridge not found in database, this is expected for localStorage-based bridges');
@@ -70,33 +253,13 @@ async function handleMcpJsonRpc(
                 {
                     jsonrpc: '2.0',
                     error: {
-                        code: -32602,
+                        code: MCP_ERROR_CODES.INVALID_PARAMS,
                         message: 'Bridge not found. Please ensure the bridge is properly saved and enabled in the dashboard.'
                     },
                     id: null
                 },
                 {
                     status: 404,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*',
-                    }
-                }
-            );
-        }
-
-        if (!bridge.enabled) {
-            return NextResponse.json(
-                {
-                    jsonrpc: '2.0',
-                    error: {
-                        code: -32602,
-                        message: 'Bridge is disabled'
-                    },
-                    id: null
-                },
-                {
-                    status: 403,
                     headers: {
                         'Content-Type': 'application/json',
                         'Access-Control-Allow-Origin': '*',
@@ -117,7 +280,7 @@ async function handleMcpJsonRpc(
                     {
                         jsonrpc: '2.0',
                         error: {
-                            code: -32603,
+                            code: MCP_ERROR_CODES.INTERNAL_ERROR,
                             message: 'Bridge access control is enabled but no API key is configured'
                         },
                         id: null
@@ -183,7 +346,7 @@ async function handleMcpJsonRpc(
                 {
                     jsonrpc: '2.0',
                     error: {
-                        code: -32600,
+                        code: MCP_ERROR_CODES.PARSE_ERROR,
                         message: 'Invalid Request'
                     },
                     id: jsonRpcRequest.id || null
@@ -209,15 +372,19 @@ async function handleMcpJsonRpc(
                 return handleToolCall(jsonRpcRequest, bridge);
 
             case 'resources/list':
+                await logBridgeEvent(bridge.id, 'info', 'Listing resources', { bridgeId: bridge.id });
                 return handleResourcesList(jsonRpcRequest, bridge);
 
             case 'resources/read':
+                await logBridgeEvent(bridge.id, 'info', 'Reading resource', { bridgeId: bridge.id, uri: jsonRpcRequest.params?.uri });
                 return handleResourcesRead(jsonRpcRequest, bridge);
 
             case 'prompts/list':
+                await logBridgeEvent(bridge.id, 'info', 'Listing prompts', { bridgeId: bridge.id });
                 return handlePromptsList(jsonRpcRequest, bridge);
 
             case 'prompts/get':
+                await logBridgeEvent(bridge.id, 'info', 'Getting prompt', { bridgeId: bridge.id, name: jsonRpcRequest.params?.name });
                 return handlePromptsGet(jsonRpcRequest, bridge);
 
             default:
@@ -225,7 +392,7 @@ async function handleMcpJsonRpc(
                     {
                         jsonrpc: '2.0',
                         error: {
-                            code: -32601,
+                            code: MCP_ERROR_CODES.METHOD_NOT_FOUND,
                             message: 'Method not found'
                         },
                         id: jsonRpcRequest.id
@@ -240,17 +407,25 @@ async function handleMcpJsonRpc(
         }
 
     } catch (error) {
-        console.error('MCP JSON-RPC error:', error);
+        const errorMessage = formatErrorMessage(error);
+        await logBridgeEvent(bridgeId, 'error', 'MCP request failed', {
+            error: errorMessage,
+            request: {
+                method: request.method,
+                url: request.url
+            }
+        });
+
         return NextResponse.json(
-            {
-                jsonrpc: '2.0',
-                error: {
-                    code: -32603,
-                    message: 'Internal error',
-                    data: error instanceof Error ? error.message : 'Unknown error'
-                },
-                id: null
-            },
+            createMcpError(
+                MCP_ERROR_CODES.INTERNAL_ERROR,
+                'Internal server error',
+                {
+                    details: errorMessage,
+                    bridgeId,
+                    timestamp: new Date().toISOString()
+                }
+            ),
             {
                 status: 500,
                 headers: {
@@ -262,7 +437,7 @@ async function handleMcpJsonRpc(
     }
 }
 
-async function handleInitialize(jsonRpcRequest: any, bridge: any) {
+async function handleInitialize(jsonRpcRequest: JsonRpcRequest, bridge: Bridge): Promise<NextResponse<JsonRpcResponse>> {
     // Check what capabilities this bridge supports based on available MCP content
     const capabilities: any = {
         tools: {}
@@ -300,9 +475,9 @@ async function handleInitialize(jsonRpcRequest: any, bridge: any) {
     );
 }
 
-async function handleToolsList(jsonRpcRequest: any, bridge: any) {
+async function handleToolsList(jsonRpcRequest: JsonRpcRequest, bridge: Bridge) {
     console.log('Listing tools for bridge:', bridge.name);
-    const tools: any[] = [];
+    const tools: McpTool[] = [];
 
     // First, add tools from MCP JSON field if available
     if (bridge.mcpTools && Array.isArray(bridge.mcpTools)) {
@@ -310,8 +485,8 @@ async function handleToolsList(jsonRpcRequest: any, bridge: any) {
     }
 
     // Then, add tools generated from endpoints (if no MCP tools exist)
-    if (tools.length === 0 && bridge.endpoints) {
-        bridge.endpoints.forEach((endpoint: any) => {
+    if (tools.length === 0 && bridge.endpoints && bridge.endpoints.length > 0) {
+        bridge.endpoints.forEach((endpoint: Endpoint) => {
             // Parse endpoint config from the database JSON structure
             const endpointConfig = endpoint.config as {
                 parameters?: Array<{
@@ -339,6 +514,7 @@ async function handleToolsList(jsonRpcRequest: any, bridge: any) {
                     }>;
                 };
                 responseSchema?: unknown;
+                timeout?: number;
             } | null;
 
             // Create endpoint object with parsed config
@@ -347,17 +523,19 @@ async function handleToolsList(jsonRpcRequest: any, bridge: any) {
                 parameters: endpointConfig?.parameters || [],
                 requestBody: endpointConfig?.requestBody,
                 responseSchema: endpointConfig?.responseSchema,
+                timeout: endpointConfig?.timeout,
             };
 
             const inputSchema = buildInputSchema(endpointWithConfig);
             tools.push({
-                name: endpoint.name || `${endpoint.method.toLowerCase()}_${endpoint.path.replace(/[^a-zA-Z0-9]/g, '_')}`,
+                name: generateToolName(endpoint),
                 description: buildToolDescription(endpointWithConfig),
                 inputSchema: {
                     type: 'object',
                     properties: inputSchema.properties,
                     required: inputSchema.required
-                }
+                },
+                endpointId: endpoint.id
             });
         });
     }
@@ -382,26 +560,52 @@ async function handleToolsList(jsonRpcRequest: any, bridge: any) {
 async function handleToolCall(jsonRpcRequest: any, bridge: any) {
     const { name: toolName, arguments: toolArgs } = jsonRpcRequest.params;
 
-    // First check if this is an MCP tool from the JSON field
+    if (!toolName) {
+        return NextResponse.json(
+            {
+                jsonrpc: '2.0',
+                error: {
+                    code: MCP_ERROR_CODES.INVALID_PARAMS,
+                    message: 'Tool name is required'
+                },
+                id: jsonRpcRequest.id
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                }
+            }
+        );
+    }
+
+    // First check if this is an MCP tool
     const mcpTools = bridge.mcpTools || [];
-    const mcpTool = mcpTools.find((tool: any) => tool.name === toolName);
+    const mcpTool = mcpTools.find((tool: McpTool) => tool.name === toolName);
 
     if (mcpTool) {
-        // Handle MCP tool call - for now, we need to map it to an endpoint
-        // This is a simplified approach - in a full implementation, you'd have more sophisticated mapping
-        const endpoint = bridge.endpoints.find((ep: any) => {
-            const endpointName = ep.name || `${ep.method.toLowerCase()}_${ep.path.replace(/[^a-zA-Z0-9]/g, '_')}`;
-            return endpointName === toolName || ep.name === toolName;
-        });
+        // If the tool has a direct endpoint reference, use it
+        let endpoint;
+        if (mcpTool.endpointId) {
+            endpoint = bridge.endpoints.find((ep: Endpoint) => ep.id === mcpTool.endpointId);
+        } else {
+            // Try to find endpoint by matching tool name with generated name or endpoint name
+
+            endpoint = bridge.endpoints.find((ep: Endpoint) =>
+                generateToolName(ep) === mcpTool.name ||
+                ep.name === mcpTool.name
+            );
+        }
 
         if (endpoint) {
             // Parse endpoint config and execute
-            const endpointConfig = endpoint.config as any;
+            const endpointConfig = endpoint.config || {};
             const endpointWithConfig = {
                 ...endpoint,
-                parameters: endpointConfig?.parameters || [],
-                requestBody: endpointConfig?.requestBody,
-                responseSchema: endpointConfig?.responseSchema,
+                parameters: endpointConfig.parameters || [],
+                requestBody: endpointConfig.requestBody,
+                responseSchema: endpointConfig.responseSchema,
+                timeout: endpointConfig.timeout,
             };
 
             try {
@@ -427,13 +631,14 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
                     }
                 );
             } catch (error) {
+                // console.log(error);
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                 return NextResponse.json(
                     {
                         jsonrpc: '2.0',
                         error: {
-                            code: -32603,
-                            message: 'API call failed',
-                            data: error instanceof Error ? error.message : 'Unknown error'
+                            code: MCP_ERROR_CODES.INTERNAL_ERROR,
+                            message: `API call failed: ${errorMessage}`
                         },
                         id: jsonRpcRequest.id
                     },
@@ -449,9 +654,17 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
     }
 
     // Fallback to endpoint-based tool lookup
-    const endpoint = bridge.endpoints.find((ep: any) => {
-        const endpointName = ep.name || `${ep.method.toLowerCase()}_${ep.path.replace(/[^a-zA-Z0-9]/g, '_')}`;
-        return endpointName === toolName;
+    const endpoint = bridge.endpoints?.find((ep: any) => {
+        // Try matching by generated tool name first
+        const generatedToolName = generateToolName(ep);
+        if (generatedToolName === toolName) {
+            return true;
+        }
+
+        // Fallback to normalized name matching
+        const normalizedEndpointName = (ep.name || `${ep.method.toLowerCase()}_${ep.path}`).toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const normalizedToolName = toolName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        return normalizedEndpointName === normalizedToolName;
     });
 
     if (!endpoint) {
@@ -459,8 +672,27 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
             {
                 jsonrpc: '2.0',
                 error: {
-                    code: -32602,
-                    message: `Tool '${toolName}' not found`
+                    code: MCP_ERROR_CODES.INVALID_PARAMS,
+                    message: `Tool '${toolName}' not found in bridge '${bridge.name}'`
+                },
+                id: jsonRpcRequest.id
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                }
+            }
+        );
+    }
+
+    if (!endpoint.method || !endpoint.path) {
+        return NextResponse.json(
+            {
+                jsonrpc: '2.0',
+                error: {
+                    code: MCP_ERROR_CODES.INVALID_PARAMS,
+                    message: `Invalid endpoint configuration for tool '${toolName}'`
                 },
                 id: jsonRpcRequest.id
             },
@@ -535,13 +767,13 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
             }
         );
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json(
             {
                 jsonrpc: '2.0',
                 error: {
-                    code: -32603,
-                    message: 'API call failed',
-                    data: error instanceof Error ? error.message : 'Unknown error'
+                    code: MCP_ERROR_CODES.INTERNAL_ERROR,
+                    message: `API call failed: ${errorMessage}`
                 },
                 id: jsonRpcRequest.id
             },
@@ -555,8 +787,447 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
     }
 }
 
+async function executeApiCall(bridge: Bridge, endpoint: Endpoint, args: Record<string, any>) {
+    const startTime = Date.now();
+
+    if (!endpoint || !endpoint.path) {
+        await logBridgeEvent(bridge.id, 'error', 'Invalid endpoint configuration', {
+            endpoint: endpoint?.name,
+            args
+        });
+        throw new Error('Invalid endpoint configuration');
+    }
+
+    let url = endpoint.path;
+    const queryParams = new URLSearchParams();
+
+    // Handle path and query parameters
+    if (endpoint.parameters && Array.isArray(endpoint.parameters)) {
+        endpoint.parameters.forEach((param: any) => {
+            const value = args[param.name];
+            if (value !== undefined) {
+                // Path parameters
+                if (url.includes(`{${param.name} } `)) {
+                    url = url.replace(`{${param.name} } `, encodeURIComponent(String(value)));
+                } else {
+                    // Query parameters
+                    queryParams.append(param.name, String(value));
+                }
+            } else if (param.required) {
+                throw new Error(`Required parameter '${param.name}' is missing`);
+            }
+        });
+    }
+
+    // Add query parameters to URL
+    const queryString = queryParams.toString();
+    if (queryString) {
+        url += (url.includes('?') ? '&' : '?') + queryString;
+    }
+
+    const fullUrl = new URL(url, bridge.baseUrl).toString();
+
+    console.log(`Executing API call: ${endpoint.method} ${fullUrl}`);
+
+    // Prepare headers
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+
+    // Add custom headers from bridge configuration
+    if (bridge.headers && typeof bridge.headers === 'object') {
+        Object.entries(bridge.headers).forEach(([key, value]) => {
+            if (typeof value === 'string') {
+                headers[key] = value;
+            }
+        });
+    }
+
+    // Add authentication - Updated to work with new authConfig structure
+    if (bridge.authConfig) {
+        const authConfig = bridge.authConfig as AuthConfig;
+
+        if (authConfig.type && authConfig.type !== 'none') {
+            try {
+                switch (authConfig.type) {
+                    case 'bearer':
+                        if (!authConfig.token) {
+                            throw new Error('Bearer token is required but not provided');
+                        }
+                        headers['Authorization'] = `Bearer ${authConfig.token.trim()}`;
+                        break;
+                    case 'apikey':
+                        if (!authConfig.apiKey) {
+                            throw new Error('API key is required but not provided');
+                        }
+                        if (authConfig.headerName) {
+                            headers[authConfig.headerName] = authConfig.apiKey.trim();
+                        } else {
+                            headers['X-API-Key'] = authConfig.apiKey.trim();
+                        }
+                        break;
+                    case 'basic':
+                        if (!authConfig.username || !authConfig.password) {
+                            throw new Error('Username and password are required for basic auth');
+                        }
+                        const credentials = btoa(`${authConfig.username.trim()}:${authConfig.password.trim()}`);
+                        headers['Authorization'] = `Basic ${credentials}`;
+                        break;
+                }
+            } catch (error) {
+                throw createMcpError(MCP_ERROR_CODES.AUTH_ERROR, 'Authentication configuration error', error);
+            }
+        }
+    }
+
+    // Prepare request options
+    const requestOptions: RequestInit = {
+        method: endpoint.method,
+        headers,
+    };
+
+    // Build request body for POST/PUT/PATCH
+    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
+        const requestBody = buildRequestBody(endpoint, args);
+        if (requestBody) {
+            requestOptions.body = JSON.stringify(requestBody);
+        }
+    }
+
+    try {
+        // Make the API call
+        const response = await fetch(fullUrl, requestOptions);
+        const endTime = Date.now();
+        const responseTime = endTime - startTime;
+
+        // Log the API call
+        // Log API call completion with performance metrics
+        await logBridgeEvent(bridge.id, 'info', 'API call completed', {
+            endpoint: endpoint.name || endpoint.path,
+            method: endpoint.method,
+            responseTime,
+            statusCode: response.status,
+            statusText: response.statusText,
+            timestamp: new Date().toISOString(),
+            performance: {
+                totalTime: responseTime,
+                threshold: 5000 // 5 second threshold for slow requests
+            }
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text().catch(() => 'Could not read error response');
+            // Log API call failure with detailed error information
+            await logBridgeEvent(bridge.id, 'error', 'API call failed', {
+                endpoint: endpoint.name || endpoint.path,
+                statusCode: response.status,
+                statusText: response.statusText,
+                errorBody,
+                responseTime,
+                timestamp: new Date().toISOString(),
+                error: {
+                    type: 'HttpError',
+                    details: errorBody
+                }
+            });
+            throw new Error(`API request failed: ${response.status} ${response.statusText}\nResponse: ${errorBody}`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        let responseData;
+
+        try {
+            if (contentType?.includes('application/json')) {
+                responseData = await response.json();
+            } else {
+                responseData = await response.text();
+            }
+
+            // Log successful response
+            // Log API response with detailed metrics
+            await logBridgeEvent(bridge.id, 'debug', 'API response received', {
+                endpoint: endpoint.name || endpoint.path,
+                contentType,
+                responseTime,
+                responseSize: JSON.stringify(responseData).length,
+                timestamp: new Date().toISOString(),
+                metrics: {
+                    size: JSON.stringify(responseData).length,
+                    time: responseTime,
+                    type: contentType
+                }
+            });
+
+            return responseData;
+        } catch (parseError) {
+            await logBridgeEvent(bridge.id, 'error', 'Failed to parse API response', {
+                endpoint: endpoint.name || endpoint.path,
+                error: formatErrorMessage(parseError),
+                contentType
+            });
+            throw new Error(`Failed to parse API response: ${formatErrorMessage(parseError)}`);
+        }
+    } catch (error) {
+        await logBridgeEvent(bridge.id, 'error', 'API call error', {
+            endpoint: endpoint.name || endpoint.path,
+            error: formatErrorMessage(error),
+            url: fullUrl,
+            method: endpoint.method
+        });
+        throw error;
+    }
+}
+
+function buildRequestBody(endpoint: any, args: any): any {
+    if (!endpoint.requestBody) {
+        return null;
+    }
+
+    // If request body has defined properties, build from individual arguments
+    if (endpoint.requestBody.properties) {
+        const body: Record<string, any> = {};
+
+        Object.keys(endpoint.requestBody.properties).forEach(propName => {
+            if (args[propName] !== undefined) {
+                body[propName] = args[propName];
+            }
+        });
+
+        return Object.keys(body).length > 0 ? body : null;
+    }
+
+    // Fallback: look for a requestBody argument
+    return args.requestBody || null;
+}
+
+async function handleResourcesList(jsonRpcRequest: any, bridge: any) {
+    // Load resources only when listing them
+    const dbBridge = await prisma.bridge.findUnique({
+        where: { id: bridge.id },
+        select: { mcpResources: true }
+    });
+    const resources = dbBridge?.mcpResources || [];
+
+    return NextResponse.json(
+        {
+            jsonrpc: '2.0',
+            result: {
+                resources
+            },
+            id: jsonRpcRequest.id
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+        }
+    );
+}
+
+async function handleResourcesRead(jsonRpcRequest: any, bridge: any) {
+    const { uri } = jsonRpcRequest.params;
+    const resources = bridge.mcpResources || [];
+
+    // Find the resource by URI
+    const resource = resources.find((r: any) => r.uri === uri);
+
+    if (!resource) {
+        return NextResponse.json(
+            {
+                jsonrpc: '2.0',
+                error: {
+                    code: MCP_ERROR_CODES.INVALID_PARAMS,
+                    message: `Resource with URI '${uri}' not found`
+                },
+                id: jsonRpcRequest.id
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                }
+            }
+        );
+    }
+
+    // Generate appropriate content based on resource URI
+    let content = '';
+    let mimeType = resource.mimeType || 'text/plain';
+
+    if (uri === 'openapi://spec/full') {
+        // Return the OpenAPI spec (if we have it stored)
+        content = JSON.stringify({
+            openapi: '3.0.0',
+            info: {
+                title: bridge.name,
+                description: bridge.description || '',
+                version: '1.0.0'
+            },
+            servers: [{ url: bridge.baseUrl }],
+            paths: generatePathsFromEndpoints(bridge.endpoints)
+        }, null, 2);
+        mimeType = 'application/json';
+    } else if (uri === 'openapi://endpoints/summary') {
+        content = generateEndpointsSummary(bridge.endpoints);
+        mimeType = 'text/markdown';
+    } else if (uri.startsWith('openapi://schema/')) {
+        const schemaName = uri.replace('openapi://schema/', '');
+        content = `# ${schemaName} Schema\n\nSchema information would be available here.`;
+        mimeType = 'text/markdown';
+    } else {
+        content = resource.description || 'Resource content not available';
+    }
+
+    return NextResponse.json(
+        {
+            jsonrpc: '2.0',
+            result: {
+                contents: [
+                    {
+                        uri,
+                        mimeType,
+                        text: content
+                    }
+                ]
+            },
+            id: jsonRpcRequest.id
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+        }
+    );
+}
+
+async function handlePromptsList(jsonRpcRequest: any, bridge: any) {
+    // Load prompts only when listing them
+    const dbBridge = await prisma.bridge.findUnique({
+        where: { id: bridge.id },
+        select: { mcpPrompts: true }
+    });
+    const prompts = dbBridge?.mcpPrompts || [];
+
+    return NextResponse.json(
+        {
+            jsonrpc: '2.0',
+            result: {
+                prompts
+            },
+            id: jsonRpcRequest.id
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+        }
+    );
+}
+
+async function handlePromptsGet(jsonRpcRequest: any, bridge: any) {
+    const { name, arguments: promptArgs } = jsonRpcRequest.params;
+    const prompts = bridge.mcpPrompts || [];
+
+    // Find the prompt by name
+    const prompt = prompts.find((p: any) => p.name === name);
+
+    if (!prompt) {
+        return NextResponse.json(
+            {
+                jsonrpc: '2.0',
+                error: {
+                    code: MCP_ERROR_CODES.INVALID_PARAMS,
+                    message: `Prompt '${name}' not found`
+                },
+                id: jsonRpcRequest.id
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                }
+            }
+        );
+    }
+
+    // Generate prompt content based on the prompt and provided arguments
+    let promptText = prompt.description || `Execute ${name} workflow`;
+
+    if (promptArgs) {
+        // Add argument information to the prompt
+        Object.entries(promptArgs).forEach(([key, value]) => {
+            promptText += `\n - ${key}: ${value} `;
+        });
+    }
+
+    return NextResponse.json(
+        {
+            jsonrpc: '2.0',
+            result: {
+                description: prompt.description,
+                messages: [
+                    {
+                        role: 'user',
+                        content: {
+                            type: 'text',
+                            text: promptText
+                        }
+                    }
+                ]
+            },
+            id: jsonRpcRequest.id
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+        }
+    );
+}
+
+function generatePathsFromEndpoints(endpoints: any[]): any {
+    const paths: any = {};
+
+    endpoints.forEach(endpoint => {
+        if (!paths[endpoint.path]) {
+            paths[endpoint.path] = {};
+        }
+
+        paths[endpoint.path][endpoint.method.toLowerCase()] = {
+            summary: endpoint.description || `${endpoint.method} ${endpoint.path} `,
+            operationId: endpoint.name,
+            responses: {
+                '200': {
+                    description: 'Successful response'
+                }
+            }
+        };
+    });
+
+    return paths;
+}
+
+function generateEndpointsSummary(endpoints: any[]): string {
+    let summary = `# API Endpoints Summary\n\n`;
+
+    endpoints.forEach(endpoint => {
+        summary += `## ${endpoint.method} ${endpoint.path} \n`;
+        summary += `** Name:** ${endpoint.name} \n`;
+        if (endpoint.description) {
+            summary += `** Description:** ${endpoint.description} \n`;
+        }
+        summary += '\n';
+    });
+
+    return summary;
+}
+
 function buildToolDescription(endpoint: any): string {
-    let description = endpoint.description || `${endpoint.method} ${endpoint.path}`;
+    let description = endpoint.description || `${endpoint.method} ${endpoint.path} `;
 
     // Add parameter information for better context
     if (endpoint.parameters && endpoint.parameters.length > 0) {
@@ -564,11 +1235,11 @@ function buildToolDescription(endpoint: any): string {
         const optionalParams = endpoint.parameters.filter((p: any) => !p.required);
 
         if (requiredParams.length > 0) {
-            description += `\n\nRequired parameters: ${requiredParams.map((p: any) => `${p.name} (${p.type})`).join(', ')}`;
+            description += `\n\nRequired parameters: ${requiredParams.map((p: any) => `${p.name} (${p.type})`).join(', ')} `;
         }
 
         if (optionalParams.length > 0) {
-            description += `\n\nOptional parameters: ${optionalParams.map((p: any) => `${p.name} (${p.type})`).join(', ')}`;
+            description += `\n\nOptional parameters: ${optionalParams.map((p: any) => `${p.name} (${p.type})`).join(', ')} `;
         }
     }
 
@@ -584,11 +1255,11 @@ function buildToolDescription(endpoint: any): string {
                 .map(([name, prop]: [string, any]) => `${name} (${prop.type})`);
 
             if (requiredFields.length > 0) {
-                description += `\n\nRequired body fields: ${requiredFields.join(', ')}`;
+                description += `\n\nRequired body fields: ${requiredFields.join(', ')} `;
             }
 
             if (optionalFields.length > 0) {
-                description += `\n\nOptional body fields: ${optionalFields.join(', ')}`;
+                description += `\n\nOptional body fields: ${optionalFields.join(', ')} `;
             }
         } else {
             description += `\n\nAccepts JSON request body`;
@@ -679,346 +1350,44 @@ function mapTypeToJsonSchema(type: string): string {
     }
 }
 
-async function executeApiCall(bridge: any, endpoint: any, args: any) {
-    let url = endpoint.path;
-    const queryParams = new URLSearchParams();
-
-    // Handle path and query parameters
-    if (endpoint.parameters) {
-        endpoint.parameters.forEach((param: any) => {
-            const value = args[param.name];
-            if (value !== undefined) {
-                // Path parameters
-                if (url.includes(`{${param.name}}`)) {
-                    url = url.replace(`{${param.name}}`, encodeURIComponent(String(value)));
-                } else {
-                    // Query parameters
-                    queryParams.append(param.name, String(value));
-                }
-            }
-        });
-    }
-
-    // Add query parameters to URL
-    const queryString = queryParams.toString();
-    if (queryString) {
-        url += (url.includes('?') ? '&' : '?') + queryString;
-    }
-
-    const fullUrl = new URL(url, bridge.baseUrl).toString();
-
-    // Prepare headers
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+// Convert database bridge to our Bridge interface
+function convertDatabaseBridge(dbBridge: any): Bridge {
+    // We know the bridge is enabled since we filtered in the query
+    return {
+        id: dbBridge.id,
+        name: dbBridge.name,
+        enabled: true,
+        baseUrl: dbBridge.baseUrl,
+        authConfig: dbBridge.authConfig as AuthConfig,
+        endpoints: dbBridge.endpoints.map((endpoint: any) => ({
+            id: endpoint.id,
+            name: endpoint.name,
+            method: endpoint.method,
+            path: endpoint.path,
+            description: endpoint.description,
+            config: endpoint.config,
+            parameters: endpoint.config?.parameters || [],
+            requestBody: endpoint.config?.requestBody,
+            responseSchema: endpoint.config?.responseSchema
+        })),
+        mcpTools: dbBridge.mcpTools || [],
+        mcpResources: [],  // These will be loaded only when needed
+        mcpPrompts: [],    // These will be loaded only when needed
+        headers: dbBridge.headers as Record<string, string>,
+        accessConfig: dbBridge.accessConfig
     };
-
-    // Add custom headers from bridge configuration
-    if (bridge.headers && typeof bridge.headers === 'object') {
-        Object.entries(bridge.headers).forEach(([key, value]) => {
-            if (typeof value === 'string') {
-                headers[key] = value;
-            }
-        });
-    }
-
-    // Add authentication - Updated to work with new authConfig structure
-    if (bridge.authConfig) {
-        const authConfig = bridge.authConfig as {
-            type: 'none' | 'bearer' | 'apikey' | 'basic';
-            token?: string;
-            apiKey?: string;
-            username?: string;
-            password?: string;
-            headerName?: string;
-        };
-
-        if (authConfig.type && authConfig.type !== 'none') {
-            switch (authConfig.type) {
-                case 'bearer':
-                    if (authConfig.token) {
-                        headers['Authorization'] = `Bearer ${authConfig.token}`;
-                    }
-                    break;
-                case 'apikey':
-                    if (authConfig.apiKey && authConfig.headerName) {
-                        headers[authConfig.headerName] = authConfig.apiKey;
-                    } else if (authConfig.apiKey) {
-                        headers['X-API-Key'] = authConfig.apiKey;
-                    }
-                    break;
-                case 'basic':
-                    if (authConfig.username && authConfig.password) {
-                        const credentials = btoa(`${authConfig.username}:${authConfig.password}`);
-                        headers['Authorization'] = `Basic ${credentials}`;
-                    }
-                    break;
-            }
-        }
-    }
-
-    // Prepare request options
-    const requestOptions: RequestInit = {
-        method: endpoint.method,
-        headers,
-    };
-
-    // Build request body for POST/PUT/PATCH
-    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
-        const requestBody = buildRequestBody(endpoint, args);
-        if (requestBody) {
-            requestOptions.body = JSON.stringify(requestBody);
-        }
-    }
-
-    // Make the API call
-    const response = await fetch(fullUrl, requestOptions);
-
-    if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-    } else {
-        return await response.text();
-    }
 }
 
-function buildRequestBody(endpoint: any, args: any): any {
-    if (!endpoint.requestBody) {
-        return null;
-    }
-
-    // If request body has defined properties, build from individual arguments
-    if (endpoint.requestBody.properties) {
-        const body: Record<string, any> = {};
-
-        Object.keys(endpoint.requestBody.properties).forEach(propName => {
-            if (args[propName] !== undefined) {
-                body[propName] = args[propName];
-            }
-        });
-
-        return Object.keys(body).length > 0 ? body : null;
-    }
-
-    // Fallback: look for a requestBody argument
-    return args.requestBody || null;
-}
-
-async function handleResourcesList(jsonRpcRequest: any, bridge: any) {
-    const resources = bridge.mcpResources || [];
-
-    return NextResponse.json(
-        {
-            jsonrpc: '2.0',
-            result: {
-                resources
-            },
-            id: jsonRpcRequest.id
-        },
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            }
-        }
-    );
-}
-
-async function handleResourcesRead(jsonRpcRequest: any, bridge: any) {
-    const { uri } = jsonRpcRequest.params;
-    const resources = bridge.mcpResources || [];
-
-    // Find the resource by URI
-    const resource = resources.find((r: any) => r.uri === uri);
-
-    if (!resource) {
-        return NextResponse.json(
-            {
-                jsonrpc: '2.0',
-                error: {
-                    code: -32602,
-                    message: `Resource with URI '${uri}' not found`
-                },
-                id: jsonRpcRequest.id
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                }
-            }
-        );
-    }
-
-    // Generate appropriate content based on resource URI
-    let content = '';
-    let mimeType = resource.mimeType || 'text/plain';
-
-    if (uri === 'openapi://spec/full') {
-        // Return the OpenAPI spec (if we have it stored)
-        content = JSON.stringify({
-            openapi: '3.0.0',
-            info: {
-                title: bridge.name,
-                description: bridge.description || '',
-                version: '1.0.0'
-            },
-            servers: [{ url: bridge.baseUrl }],
-            paths: generatePathsFromEndpoints(bridge.endpoints)
-        }, null, 2);
-        mimeType = 'application/json';
-    } else if (uri === 'openapi://endpoints/summary') {
-        content = generateEndpointsSummary(bridge.endpoints);
-        mimeType = 'text/markdown';
-    } else if (uri.startsWith('openapi://schema/')) {
-        const schemaName = uri.replace('openapi://schema/', '');
-        content = `# ${schemaName} Schema\n\nSchema information would be available here.`;
-        mimeType = 'text/markdown';
-    } else {
-        content = resource.description || 'Resource content not available';
-    }
-
-    return NextResponse.json(
-        {
-            jsonrpc: '2.0',
-            result: {
-                contents: [
-                    {
-                        uri,
-                        mimeType,
-                        text: content
-                    }
-                ]
-            },
-            id: jsonRpcRequest.id
-        },
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            }
-        }
-    );
-}
-
-async function handlePromptsList(jsonRpcRequest: any, bridge: any) {
-    const prompts = bridge.mcpPrompts || [];
-
-    return NextResponse.json(
-        {
-            jsonrpc: '2.0',
-            result: {
-                prompts
-            },
-            id: jsonRpcRequest.id
-        },
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            }
-        }
-    );
-}
-
-async function handlePromptsGet(jsonRpcRequest: any, bridge: any) {
-    const { name, arguments: promptArgs } = jsonRpcRequest.params;
-    const prompts = bridge.mcpPrompts || [];
-
-    // Find the prompt by name
-    const prompt = prompts.find((p: any) => p.name === name);
-
-    if (!prompt) {
-        return NextResponse.json(
-            {
-                jsonrpc: '2.0',
-                error: {
-                    code: -32602,
-                    message: `Prompt '${name}' not found`
-                },
-                id: jsonRpcRequest.id
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                }
-            }
-        );
-    }
-
-    // Generate prompt content based on the prompt and provided arguments
-    let promptText = prompt.description || `Execute ${name} workflow`;
-
-    if (promptArgs) {
-        // Add argument information to the prompt
-        Object.entries(promptArgs).forEach(([key, value]) => {
-            promptText += `\n- ${key}: ${value}`;
-        });
-    }
-
-    return NextResponse.json(
-        {
-            jsonrpc: '2.0',
-            result: {
-                description: prompt.description,
-                messages: [
-                    {
-                        role: 'user',
-                        content: {
-                            type: 'text',
-                            text: promptText
-                        }
-                    }
-                ]
-            },
-            id: jsonRpcRequest.id
-        },
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            }
-        }
-    );
-}
-
-function generatePathsFromEndpoints(endpoints: any[]): any {
-    const paths: any = {};
-
-    endpoints.forEach(endpoint => {
-        if (!paths[endpoint.path]) {
-            paths[endpoint.path] = {};
-        }
-
-        paths[endpoint.path][endpoint.method.toLowerCase()] = {
-            summary: endpoint.description || `${endpoint.method} ${endpoint.path}`,
-            operationId: endpoint.name,
-            responses: {
-                '200': {
-                    description: 'Successful response'
-                }
-            }
-        };
-    });
-
-    return paths;
-}
-
-function generateEndpointsSummary(endpoints: any[]): string {
-    let summary = `# API Endpoints Summary\n\n`;
-
-    endpoints.forEach(endpoint => {
-        summary += `## ${endpoint.method} ${endpoint.path}\n`;
-        summary += `**Name:** ${endpoint.name}\n`;
-        if (endpoint.description) {
-            summary += `**Description:** ${endpoint.description}\n`;
-        }
-        summary += '\n';
-    });
-
-    return summary;
+/**
+ * Generates a standardized tool name from an endpoint
+ * Format: method_resource_action
+ * Examples: 
+ * - GET /users -> get_users_list
+ * - GET /users/{id} -> get_users_read
+ * - POST /users -> post_users_create
+ * - PUT /users/{id} -> put_users_update
+ * - DELETE /users/{id} -> delete_users_delete
+ */
+function generateToolName(endpoint: Endpoint): string {
+    return generateStandardToolName(endpoint.method, endpoint.path);
 }
