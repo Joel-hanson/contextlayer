@@ -31,13 +31,19 @@ export const bridgeFormSchema = z.object({
         })),
     }),
     mcpTools: z.array(z.object({
-        name: z.string().min(1, 'Tool name is required'),
+        name: z.string()
+            .min(1, 'Tool name is required')
+            .regex(
+                /^(get|post|put|patch|delete)_[a-z0-9]+_(list|read|create|update|delete)$/,
+                'Tool name must follow format: method_resource_action (e.g., get_users_list)'
+            ),
         description: z.string().min(1, 'Tool description is required'),
         inputSchema: z.object({
             type: z.literal('object'),
             properties: z.record(z.any()),
             required: z.array(z.string()).optional(),
         }),
+        endpointId: z.string().optional(),
     })).optional(),
     mcpResources: z.array(z.object({
         uri: z.string().min(1, 'URI is required'),

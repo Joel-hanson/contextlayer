@@ -17,7 +17,6 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
     // Parse access config from JSON
     const accessConfig = bridge.accessConfig as {
         public?: boolean;
-        allowedOrigins?: string[];
         authRequired?: boolean;
         apiKey?: string;
     } | null;
@@ -87,32 +86,31 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
         }>) || [],
         access: {
             public: accessConfig?.public ?? true,
-            allowedOrigins: accessConfig?.allowedOrigins,
             authRequired: accessConfig?.authRequired ?? false,
             apiKey: accessConfig?.apiKey,
-            tokens: [],
-            security: {
+            tokens: [], // Required by type but managed separately
+            security: {  // Using default security settings
                 tokenAuth: {
                     enabled: true,
                     requireToken: false,
-                    allowMultipleTokens: true,
+                    allowMultipleTokens: true
                 },
                 permissions: {
                     defaultPermissions: [],
                     requireExplicitGrants: false,
-                    allowSelfManagement: true,
+                    allowSelfManagement: true
                 },
                 audit: {
                     enabled: true,
                     logRequests: true,
-                    retentionDays: 30,
-                },
+                    retentionDays: 30
+                }
             }
         },
-        performance: {
+        performance: {  // Using default performance settings
             timeout: 30000,
-            rateLimiting: { requestsPerMinute: 100, burstLimit: 10 },
-            caching: { enabled: false, ttl: 300 },
+            rateLimiting: { requestsPerMinute: 60, burstLimit: 10 },
+            caching: { enabled: false, ttl: 300 }
         }
     }
 }
@@ -141,7 +139,6 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
         // Simplified access config
         accessConfig: {
             public: config.access?.public ?? true,
-            allowedOrigins: config.access?.allowedOrigins || [],
             authRequired: config.access?.authRequired ?? false,
             apiKey: config.access?.apiKey || null
         },
@@ -158,9 +155,10 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
 }
 
 export class BridgeService {
-    // Get all bridges for a specific user
-    static async getAllBridges(userId?: string): Promise<BridgeConfig[]> {
+    // Get all bridges for a specific user with pagination
+    static async getAllBridges(userId?: string, page: number = 1, limit: number = 50): Promise<BridgeConfig[]> {
         try {
+            // Get bridges with pagination and caching hints
             const bridges = await prisma.bridge.findMany({
                 where: userId ? { userId } : undefined,
                 include: {
@@ -169,7 +167,9 @@ export class BridgeService {
                 orderBy: {
                     createdAt: 'desc',
                 },
-            })
+                take: limit,
+                skip: (page - 1) * limit,
+            });
 
             return bridges.map(transformBridgeToBridgeConfig)
         } catch (error) {
@@ -253,21 +253,35 @@ export class BridgeService {
 
             const bridgeData = transformBridgeConfigToPrismaData(config)
 
-            // Delete existing endpoints and create new ones (for simplicity)
-            await prisma.apiEndpoint.deleteMany({
-                where: { bridgeId: id },
-            })
+            // Use transaction to update bridge and endpoints efficiently
+            const bridge = await prisma.$transaction(async (tx) => {
+                // Get existing endpoint IDs
+                const existingEndpoints = await tx.apiEndpoint.findMany({
+                    where: { bridgeId: id },
+                    select: { id: true }
+                });
+                const existingIds = new Set(existingEndpoints.map(e => e.id));
 
-            const bridge = await prisma.bridge.update({
-                where: {
-                    id,
-                    ...(userId && { userId })
-                },
-                data: {
-                    ...bridgeData,
-                    endpoints: {
-                        create: config.apiConfig.endpoints.map(endpoint => ({
-                            id: endpoint.id,
+                // Split endpoints into updates and creates
+                const endpointsToUpdate = config.apiConfig.endpoints.filter(e => existingIds.has(e.id));
+                const endpointsToCreate = config.apiConfig.endpoints.filter(e => !existingIds.has(e.id));
+                const endpointIdsToKeep = new Set(config.apiConfig.endpoints.map(e => e.id));
+
+                // Delete removed endpoints
+                if (existingEndpoints.length > 0) {
+                    await tx.apiEndpoint.deleteMany({
+                        where: {
+                            bridgeId: id,
+                            id: { notIn: Array.from(endpointIdsToKeep) }
+                        }
+                    });
+                }
+
+                // Update existing endpoints
+                await Promise.all(endpointsToUpdate.map(endpoint =>
+                    tx.apiEndpoint.update({
+                        where: { id: endpoint.id },
+                        data: {
                             name: endpoint.name,
                             method: endpoint.method as HttpMethod,
                             path: endpoint.path,
@@ -277,13 +291,41 @@ export class BridgeService {
                                 requestBody: endpoint.requestBody,
                                 responseSchema: endpoint.responseSchema,
                             }))
-                        })),
+                        }
+                    })
+                ));
+
+                // Create new endpoints
+                if (endpointsToCreate.length > 0) {
+                    await tx.apiEndpoint.createMany({
+                        data: endpointsToCreate.map(endpoint => ({
+                            id: endpoint.id,
+                            bridgeId: id,
+                            name: endpoint.name,
+                            method: endpoint.method as HttpMethod,
+                            path: endpoint.path,
+                            description: endpoint.description,
+                            config: JSON.parse(JSON.stringify({
+                                parameters: endpoint.parameters || [],
+                                requestBody: endpoint.requestBody,
+                                responseSchema: endpoint.responseSchema,
+                            }))
+                        }))
+                    });
+                }
+
+                // Update bridge
+                return tx.bridge.update({
+                    where: {
+                        id,
+                        ...(userId && { userId })
                     },
-                },
-                include: {
-                    endpoints: true,
-                },
-            })
+                    data: bridgeData,
+                    include: {
+                        endpoints: true,
+                    },
+                });
+            });
 
             return transformBridgeToBridgeConfig(bridge)
         } catch (error) {

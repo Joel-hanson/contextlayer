@@ -1,5 +1,5 @@
 import { BridgeConfig, ServerStatus } from '@/lib/types'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export interface UseBridgesReturn {
     bridges: BridgeConfig[]
@@ -21,14 +21,25 @@ export function useBridges(): UseBridgesReturn {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({})
+    const isFetchingRef = useRef(false)
 
-    // Fetch all bridges
+    // Fetch all bridges with debounce
     const fetchBridges = useCallback(async () => {
+        // Prevent multiple simultaneous calls
+        if (isFetchingRef.current) return;
+        isFetchingRef.current = true;
+
         try {
             setLoading(true)
             setError(null)
 
-            const response = await fetch('/api/bridges')
+            const response = await fetch('/api/bridges', {
+                // Add cache control headers
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            })
             if (!response.ok) {
                 throw new Error(`Failed to fetch bridges: ${response.statusText}`)
             }
@@ -51,6 +62,7 @@ export function useBridges(): UseBridgesReturn {
             setError(err instanceof Error ? err.message : 'Failed to fetch bridges')
         } finally {
             setLoading(false)
+            isFetchingRef.current = false;
         }
     }, [])
 
