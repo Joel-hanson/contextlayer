@@ -9,16 +9,16 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertTriangle, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import { UseFieldArrayReturn, UseFormReturn, useFieldArray } from 'react-hook-form';
-import { type BridgeFormData } from './types';
+import { type McpBridgeFormData } from './types';
 
 interface PromptsTabProps {
-    form: UseFormReturn<BridgeFormData>;
-    promptFields: UseFieldArrayReturn<BridgeFormData, "mcpPrompts", "id">;
+    form: UseFormReturn<McpBridgeFormData>;
+    promptFields: UseFieldArrayReturn<McpBridgeFormData, "mcpPrompts", "id">;
 }
 
 // Component for managing arguments within each prompt
 interface ArgumentsSectionProps {
-    form: UseFormReturn<BridgeFormData>;
+    form: UseFormReturn<McpBridgeFormData>;
     promptIndex: number;
 }
 

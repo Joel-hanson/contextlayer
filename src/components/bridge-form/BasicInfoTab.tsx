@@ -7,15 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { McpPrompt, McpResource, McpTool } from '@/lib/types';
+
 import { FileText, Info } from 'lucide-react';
 import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { OpenAPIImportDialog } from './OpenAPIImportDialog';
-import { type BridgeFormData } from './types';
+import { type McpBridgeFormData } from './types';
 
 interface BasicInfoTabProps {
-    form: UseFormReturn<BridgeFormData>;
+    form: UseFormReturn<McpBridgeFormData>;
 }
 
 export function BasicInfoTab({ form }: BasicInfoTabProps) {
@@ -30,12 +30,14 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
             name: string;
             method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
             path: string;
-            description?: string;
+            description: string;
             parameters?: Array<{
                 name: string;
                 type: 'string' | 'number' | 'boolean' | 'object' | 'array';
                 required: boolean;
-                description?: string;
+                description: string;
+                location: 'path' | 'query' | 'body';
+                style: 'parameter' | 'replacement';
             }>;
         }>;
         authentication?: {
@@ -45,12 +47,50 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
             username?: string;
             password?: string;
             headerName?: string;
+            keyLocation: 'header' | 'query';
+            paramName?: string;
         };
         headers?: Record<string, string>;
         // MCP content from OpenAPI
-        mcpTools?: McpTool[];
-        mcpPrompts?: McpPrompt[];
-        mcpResources?: McpResource[];
+        mcpTools?: Array<{
+            name: string;
+            description: string;
+            inputSchema: {
+                type: 'object';
+                required: string[];
+                properties: Record<string, {
+                    type: string;
+                    description?: string;
+                    format?: string;
+                    enum?: string[];
+                    minimum?: number;
+                    maximum?: number;
+                    pattern?: string;
+                    items?: {
+                        type: string;
+                        description?: string;
+                        format?: string;
+                        enum?: string[];
+                    };
+                }>;
+            };
+            endpointId?: string;
+        }>;
+        mcpPrompts?: Array<{
+            name: string;
+            description: string;
+            arguments: Array<{
+                name: string;
+                description: string;
+                required: boolean;
+            }>;
+        }>;
+        mcpResources?: Array<{
+            name: string;
+            description: string;
+            uri: string;
+            mimeType: string;
+        }>;
     }) => {
         // Populate form with imported data
         form.setValue('apiConfig.name', importData.name);
@@ -80,26 +120,58 @@ export function BasicInfoTab({ form }: BasicInfoTabProps) {
 
         // Set endpoints with proper parameters and IDs
         const endpointsWithDefaults = importData.endpoints.map((endpoint, index) => ({
-            ...endpoint,
             id: 'id' in endpoint ? endpoint.id as string : `endpoint-${Date.now()}-${index}`,
-            parameters: endpoint.parameters || []
+            name: endpoint.name,
+            path: endpoint.path,
+            method: endpoint.method,
+            description: endpoint.description || '',
+            parameters: (endpoint.parameters || []).map(param => ({
+                name: param.name,
+                type: param.type,
+                required: param.required,
+                description: param.description || '',
+                location: param.location || 'query',
+                style: param.style || 'parameter'
+            }))
         }));
         form.setValue('apiConfig.endpoints', endpointsWithDefaults);
 
         // Set MCP content if provided
         if (importData.mcpTools) {
-            form.setValue('mcpTools', importData.mcpTools);
+            const toolsWithDefaults = importData.mcpTools.map(tool => ({
+                name: tool.name,
+                description: tool.description,
+                inputSchema: {
+                    type: 'object' as const,
+                    required: tool.inputSchema.required || [],
+                    properties: tool.inputSchema.properties
+                },
+                endpointId: tool.endpointId
+            }));
+            form.setValue('mcpTools', toolsWithDefaults);
         }
+
         if (importData.mcpPrompts) {
-            // Ensure arguments field has default empty array if undefined
             const promptsWithDefaults = importData.mcpPrompts.map(prompt => ({
-                ...prompt,
-                arguments: prompt.arguments || []
+                name: prompt.name,
+                description: prompt.description,
+                arguments: prompt.arguments.map(arg => ({
+                    name: arg.name,
+                    description: arg.description,
+                    required: arg.required
+                }))
             }));
             form.setValue('mcpPrompts', promptsWithDefaults);
         }
+
         if (importData.mcpResources) {
-            form.setValue('mcpResources', importData.mcpResources);
+            const resourcesWithDefaults = importData.mcpResources.map(resource => ({
+                name: resource.name,
+                description: resource.description,
+                uri: resource.uri,
+                mimeType: resource.mimeType
+            }));
+            form.setValue('mcpResources', resourcesWithDefaults);
         }
 
         toast({

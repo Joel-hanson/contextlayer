@@ -4,6 +4,49 @@ import { prisma } from '@/lib/prisma';
 import { generateStandardToolName } from '@/lib/tool-name-generator';
 import { NextRequest, NextResponse } from 'next/server';
 
+/**
+ * Safely logs bridge events - avoids foreign key constraint errors
+ * by checking if the bridge exists in the database first
+ */
+async function safeLogBridgeEvent(
+    bridgeId: string,
+    level: 'info' | 'warn' | 'error' | 'debug',
+    message: string,
+    metadata?: any
+): Promise<void> {
+    // Check if we've already verified this bridge exists
+    if (!safeLogBridgeEvent.verifiedBridges) {
+        safeLogBridgeEvent.verifiedBridges = new Set<string>();
+    }
+
+    try {
+        // Only check database if we haven't verified this bridge before
+        if (!safeLogBridgeEvent.verifiedBridges.has(bridgeId)) {
+            const exists = await prisma.bridge.findUnique({
+                where: { id: bridgeId },
+                select: { id: true }
+            }).then(bridge => !!bridge).catch(() => false);
+
+            if (exists) {
+                safeLogBridgeEvent.verifiedBridges.add(bridgeId);
+            } else {
+                // Bridge doesn't exist in database, just log to console
+                console.log(`[${level.toUpperCase()}] ${bridgeId}: ${message}`, metadata);
+                return;
+            }
+        }
+
+        // Bridge exists in database, safe to log
+        await logBridgeEvent(bridgeId, level, message, metadata);
+    } catch (error) {
+        // Fallback to console logging if anything goes wrong
+        console.log(`[${level.toUpperCase()}] ${bridgeId}: ${message}`, metadata);
+        console.error('Error in safeLogBridgeEvent:', error);
+    }
+}
+// Add static property to function for verified bridges cache
+safeLogBridgeEvent.verifiedBridges = new Set<string>();
+
 // Type definitions
 interface AuthConfig {
     type: 'none' | 'bearer' | 'apikey' | 'basic';
@@ -12,6 +55,8 @@ interface AuthConfig {
     username?: string;
     password?: string;
     headerName?: string;
+    keyLocation?: 'header' | 'query';
+    paramName?: string;
 }
 
 interface EndpointConfig {
@@ -21,6 +66,8 @@ interface EndpointConfig {
         required: boolean;
         description?: string;
         defaultValue?: unknown;
+        location?: 'path' | 'query' | 'body';
+        style?: 'parameter' | 'replacement';
     }>;
     requestBody?: {
         contentType?: string;
@@ -165,8 +212,8 @@ async function handleMcpJsonRpc(
     bridgeId: string
 ) {
     try {
-        // Log the MCP request with batch processing
-        await logBridgeEvent(bridgeId, 'info', 'MCP request received', {
+        // Log the MCP request with safe logging
+        await safeLogBridgeEvent(bridgeId, 'info', 'MCP request received', {
             method: request.method,
             url: request.url,
             timestamp: new Date().toISOString()
@@ -192,6 +239,8 @@ async function handleMcpJsonRpc(
                     headers: true,
                     accessConfig: true,
                     mcpTools: true,
+                    mcpPrompts: true,
+                    mcpResources: true,
                     endpoints: {
                         select: {
                             id: true,
@@ -206,7 +255,8 @@ async function handleMcpJsonRpc(
             });
             bridge = dbBridge ? convertDatabaseBridge(dbBridge) : null;
 
-            await logBridgeEvent(bridgeId, 'debug', 'Bridge lookup by UUID', {
+            // Log with our safe method
+            await safeLogBridgeEvent(bridgeId, 'debug', 'Bridge lookup by UUID', {
                 found: !!bridge,
                 id: bridgeId
             });
@@ -228,6 +278,8 @@ async function handleMcpJsonRpc(
                         headers: true,
                         accessConfig: true,
                         mcpTools: true,
+                        mcpPrompts: true,
+                        mcpResources: true,
                         endpoints: {
                             select: {
                                 id: true,
@@ -372,19 +424,19 @@ async function handleMcpJsonRpc(
                 return handleToolCall(jsonRpcRequest, bridge);
 
             case 'resources/list':
-                await logBridgeEvent(bridge.id, 'info', 'Listing resources', { bridgeId: bridge.id });
+                await safeLogBridgeEvent(bridge.id, 'info', 'Listing resources', { bridgeId: bridge.id });
                 return handleResourcesList(jsonRpcRequest, bridge);
 
             case 'resources/read':
-                await logBridgeEvent(bridge.id, 'info', 'Reading resource', { bridgeId: bridge.id, uri: jsonRpcRequest.params?.uri });
+                await safeLogBridgeEvent(bridge.id, 'info', 'Reading resource', { bridgeId: bridge.id, uri: jsonRpcRequest.params?.uri });
                 return handleResourcesRead(jsonRpcRequest, bridge);
 
             case 'prompts/list':
-                await logBridgeEvent(bridge.id, 'info', 'Listing prompts', { bridgeId: bridge.id });
+                await safeLogBridgeEvent(bridge.id, 'info', 'Listing prompts', { bridgeId: bridge.id });
                 return handlePromptsList(jsonRpcRequest, bridge);
 
             case 'prompts/get':
-                await logBridgeEvent(bridge.id, 'info', 'Getting prompt', { bridgeId: bridge.id, name: jsonRpcRequest.params?.name });
+                await safeLogBridgeEvent(bridge.id, 'info', 'Getting prompt', { bridgeId: bridge.id, name: jsonRpcRequest.params?.name });
                 return handlePromptsGet(jsonRpcRequest, bridge);
 
             default:
@@ -408,7 +460,7 @@ async function handleMcpJsonRpc(
 
     } catch (error) {
         const errorMessage = formatErrorMessage(error);
-        await logBridgeEvent(bridgeId, 'error', 'MCP request failed', {
+        await safeLogBridgeEvent(bridgeId, 'error', 'MCP request failed', {
             error: errorMessage,
             request: {
                 method: request.method,
@@ -440,10 +492,11 @@ async function handleMcpJsonRpc(
 async function handleInitialize(jsonRpcRequest: JsonRpcRequest, bridge: Bridge): Promise<NextResponse<JsonRpcResponse>> {
     // Check what capabilities this bridge supports based on available MCP content
     const capabilities: any = {
-        tools: {}
+        tools: {},
     };
 
     // Add resources capability if bridge has resources
+    console.log('Checking resources capability for bridge:', bridge);
     if (bridge.mcpResources && Array.isArray(bridge.mcpResources) && bridge.mcpResources.length > 0) {
         capabilities.resources = {};
     }
@@ -631,7 +684,7 @@ async function handleToolCall(jsonRpcRequest: any, bridge: any) {
                     }
                 );
             } catch (error) {
-                // console.log(error);
+                console.error(error);
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                 return NextResponse.json(
                     {
@@ -806,12 +859,21 @@ async function executeApiCall(bridge: Bridge, endpoint: Endpoint, args: Record<s
         endpoint.parameters.forEach((param: any) => {
             const value = args[param.name];
             if (value !== undefined) {
-                // Path parameters
-                if (url.includes(`{${param.name} } `)) {
-                    url = url.replace(`{${param.name} } `, encodeURIComponent(String(value)));
-                } else {
+                // Check parameter location and style
+                if (param.location === 'path') {
+                    // Path parameters with different styles
+                    if (param.style === 'replacement') {
+                        // Direct replacement style: {param}
+                        url = url.replace(`{${param.name}}`, encodeURIComponent(String(value)));
+                    } else {
+                        // Parameter style: /:param
+                        url = url.replace(`:${param.name}`, encodeURIComponent(String(value)));
+                    }
+                } else if (param.location === 'query') {
                     // Query parameters
                     queryParams.append(param.name, String(value));
+                } else if (param.location === 'body') {
+                    // Body parameters are handled separately in buildRequestBody
                 }
             } else if (param.required) {
                 throw new Error(`Required parameter '${param.name}' is missing`);
@@ -819,33 +881,14 @@ async function executeApiCall(bridge: Bridge, endpoint: Endpoint, args: Record<s
         });
     }
 
-    // Add query parameters to URL
-    const queryString = queryParams.toString();
-    if (queryString) {
-        url += (url.includes('?') ? '&' : '?') + queryString;
-    }
-
-    const fullUrl = new URL(url, bridge.baseUrl).toString();
-
-    console.log(`Executing API call: ${endpoint.method} ${fullUrl}`);
-
     // Prepare headers
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
     };
 
-    // Add custom headers from bridge configuration
-    if (bridge.headers && typeof bridge.headers === 'object') {
-        Object.entries(bridge.headers).forEach(([key, value]) => {
-            if (typeof value === 'string') {
-                headers[key] = value;
-            }
-        });
-    }
-
-    // Add authentication - Updated to work with new authConfig structure
+    // Add authentication with support for header and query parameters
     if (bridge.authConfig) {
-        const authConfig = bridge.authConfig as AuthConfig;
+        const authConfig = bridge.authConfig as AuthConfig & { keyLocation?: 'header' | 'query'; paramName?: string };
 
         if (authConfig.type && authConfig.type !== 'none') {
             try {
@@ -857,13 +900,19 @@ async function executeApiCall(bridge: Bridge, endpoint: Endpoint, args: Record<s
                         headers['Authorization'] = `Bearer ${authConfig.token.trim()}`;
                         break;
                     case 'apikey':
+                        console.log(`Using API key authentication for bridge`, authConfig);
+
                         if (!authConfig.apiKey) {
                             throw new Error('API key is required but not provided');
                         }
-                        if (authConfig.headerName) {
-                            headers[authConfig.headerName] = authConfig.apiKey.trim();
+                        if (authConfig.keyLocation === 'query') {
+                            // Add API key as query parameter
+                            const paramName = authConfig.paramName || authConfig.headerName || 'api_key';
+                            queryParams.append(paramName, authConfig.apiKey.trim());
                         } else {
-                            headers['X-API-Key'] = authConfig.apiKey.trim();
+                            // Default to header if not specified or if keyLocation is 'header'
+                            const headerName = authConfig.headerName || 'X-API-Key';
+                            headers[headerName] = authConfig.apiKey.trim();
                         }
                         break;
                     case 'basic':
@@ -878,6 +927,29 @@ async function executeApiCall(bridge: Bridge, endpoint: Endpoint, args: Record<s
                 throw createMcpError(MCP_ERROR_CODES.AUTH_ERROR, 'Authentication configuration error', error);
             }
         }
+    }
+
+    // Add query parameters to URL
+    const queryString = queryParams.toString();
+    if (queryString) {
+        url += (url.includes('?') ? '&' : '?') + queryString;
+    }
+
+    // Ensure the baseUrl has a trailing slash for proper URL resolution
+    const normalizedBaseUrl = bridge.baseUrl.endsWith('/') ? bridge.baseUrl : bridge.baseUrl + '/';
+    // Remove leading slash from url to avoid double slashes
+    const normalizedPath = url.startsWith('/') ? url.substring(1) : url;
+    const fullUrl = new URL(normalizedPath, normalizedBaseUrl).toString();
+
+    console.log(`Executing API call: ${endpoint.method} ${fullUrl}`);
+
+    // Add custom headers from bridge configuration
+    if (bridge.headers && typeof bridge.headers === 'object') {
+        Object.entries(bridge.headers).forEach(([key, value]) => {
+            if (typeof value === 'string') {
+                headers[key] = value;
+            }
+        });
     }
 
     // Prepare request options
@@ -979,25 +1051,32 @@ async function executeApiCall(bridge: Bridge, endpoint: Endpoint, args: Record<s
 }
 
 function buildRequestBody(endpoint: any, args: any): any {
-    if (!endpoint.requestBody) {
-        return null;
-    }
+    const body: Record<string, any> = {};
 
-    // If request body has defined properties, build from individual arguments
-    if (endpoint.requestBody.properties) {
-        const body: Record<string, any> = {};
-
-        Object.keys(endpoint.requestBody.properties).forEach(propName => {
-            if (args[propName] !== undefined) {
-                body[propName] = args[propName];
+    // First, collect any parameters marked as body location
+    if (endpoint.parameters && Array.isArray(endpoint.parameters)) {
+        endpoint.parameters.forEach((param: any) => {
+            if (param.location === 'body' && args[param.name] !== undefined) {
+                body[param.name] = args[param.name];
             }
         });
-
-        return Object.keys(body).length > 0 ? body : null;
     }
 
-    // Fallback: look for a requestBody argument
-    return args.requestBody || null;
+    // Then handle any defined request body schema
+    if (endpoint.requestBody) {
+        if (endpoint.requestBody.properties) {
+            Object.keys(endpoint.requestBody.properties).forEach(propName => {
+                if (args[propName] !== undefined) {
+                    body[propName] = args[propName];
+                }
+            });
+        } else if (args.requestBody) {
+            // If no properties defined but requestBody provided, use it directly
+            return args.requestBody;
+        }
+    }
+
+    return Object.keys(body).length > 0 ? body : null;
 }
 
 async function handleResourcesList(jsonRpcRequest: any, bridge: any) {
@@ -1273,55 +1352,80 @@ function buildInputSchema(endpoint: any) {
     const properties: Record<string, any> = {};
     const required: string[] = [];
 
-    // Add path and query parameters
+    // Process all parameters regardless of location (path, query, body)
     if (endpoint.parameters) {
         endpoint.parameters.forEach((param: any) => {
-            properties[param.name] = {
-                type: mapTypeToJsonSchema(param.type),
-                description: param.description || `${param.name} parameter`,
-            };
+            // Only add non-body parameters here, body parameters will be handled separately
+            if (param.location !== 'body') {
+                properties[param.name] = {
+                    type: mapTypeToJsonSchema(param.type),
+                    description: param.description || `${param.name} parameter`,
+                };
 
-            if (param.required) {
-                required.push(param.name);
-            }
+                if (param.required) {
+                    required.push(param.name);
+                }
 
-            if (param.defaultValue !== undefined) {
-                properties[param.name].default = param.defaultValue;
+                if (param.defaultValue !== undefined) {
+                    properties[param.name].default = param.defaultValue;
+                }
             }
         });
     }
 
-    // Add request body schema for POST/PUT/PATCH operations
-    if (endpoint.requestBody && ['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
-        if (endpoint.requestBody.properties) {
-            // Add each property from request body as individual parameters
-            Object.entries(endpoint.requestBody.properties).forEach(([propName, propSchema]: [string, any]) => {
-                const baseProps: Record<string, any> = {
-                    type: propSchema.type,
-                    description: propSchema.description || `${propName} field`,
+    // Add request body parameters for POST/PUT/PATCH operations
+    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
+        // First, handle body parameters from the parameters array
+        if (endpoint.parameters) {
+            endpoint.parameters
+                .filter((param: any) => param.location === 'body')
+                .forEach((param: any) => {
+                    properties[param.name] = {
+                        type: mapTypeToJsonSchema(param.type),
+                        description: param.description || `${param.name} (body parameter)`,
+                    };
+                    if (param.required) {
+                        required.push(param.name);
+                    }
+                });
+        }
+
+        // Then handle request body schema if it exists
+        if (endpoint.requestBody) {
+            if (endpoint.requestBody.properties) {
+                // Add each property from request body schema
+                Object.entries(endpoint.requestBody.properties).forEach(([propName, propSchema]: [string, any]) => {
+                    // Skip if this property was already added as a body parameter
+                    if (properties[propName]) return;
+
+                    const baseProps: Record<string, any> = {
+                        type: propSchema.type,
+                        description: propSchema.description || `${propName} field`,
+                    };
+
+                    if (propSchema.enum) baseProps.enum = propSchema.enum;
+                    if (propSchema.format) baseProps.format = propSchema.format;
+                    if (propSchema.minimum !== undefined) baseProps.minimum = propSchema.minimum;
+                    if (propSchema.maximum !== undefined) baseProps.maximum = propSchema.maximum;
+                    if (propSchema.pattern) baseProps.pattern = propSchema.pattern;
+                    if (propSchema.items && typeof propSchema.items === 'object') baseProps.items = propSchema.items;
+
+                    properties[propName] = baseProps;
+
+                    if (propSchema.required) {
+                        required.push(propName);
+                    }
+                });
+            } else if (!Object.keys(properties).some(key =>
+                endpoint.parameters?.find((p: any) => p.location === 'body' && p.name === key))) {
+                // Only add generic requestBody if no specific body parameters were found
+                properties.requestBody = {
+                    type: 'object',
+                    description: 'Request body data',
                 };
-
-                if (propSchema.enum) baseProps.enum = propSchema.enum;
-                if (propSchema.format) baseProps.format = propSchema.format;
-                if (propSchema.minimum !== undefined) baseProps.minimum = propSchema.minimum;
-                if (propSchema.maximum !== undefined) baseProps.maximum = propSchema.maximum;
-                if (propSchema.pattern) baseProps.pattern = propSchema.pattern;
-                if (propSchema.items && typeof propSchema.items === 'object') baseProps.items = propSchema.items;
-
-                properties[propName] = baseProps;
-
-                if (propSchema.required) {
-                    required.push(propName);
+                if (endpoint.requestBody.required) {
+                    required.push('requestBody');
                 }
-            });
-        } else {
-            // Fallback: single request body parameter
-            properties.requestBody = {
-                type: 'object',
-                description: 'Request body data',
-            };
-            if (endpoint.requestBody.required) {
-                required.push('requestBody');
             }
         }
     }
@@ -1371,8 +1475,8 @@ function convertDatabaseBridge(dbBridge: any): Bridge {
             responseSchema: endpoint.config?.responseSchema
         })),
         mcpTools: dbBridge.mcpTools || [],
-        mcpResources: [],  // These will be loaded only when needed
-        mcpPrompts: [],    // These will be loaded only when needed
+        mcpResources: dbBridge.mcpResources || [],  // Use the actual data from database
+        mcpPrompts: dbBridge.mcpPrompts || [],      // Use the actual data from database
         headers: dbBridge.headers as Record<string, string>,
         accessConfig: dbBridge.accessConfig
     };

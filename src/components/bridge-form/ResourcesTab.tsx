@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertTriangle, Database, Plus, Trash2 } from 'lucide-react';
 import { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
-import { type BridgeFormData } from './types';
+import { type McpBridgeFormData } from './types';
 interface ResourcesTabProps {
-    form: UseFormReturn<BridgeFormData>;
-    resourceFields: UseFieldArrayReturn<BridgeFormData, "mcpResources", "id">;
+    form: UseFormReturn<McpBridgeFormData>;
+    resourceFields: UseFieldArrayReturn<McpBridgeFormData, "mcpResources", "id">;
 }
 
 export function ResourcesTab({ form, resourceFields }: ResourcesTabProps) {

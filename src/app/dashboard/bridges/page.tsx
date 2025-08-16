@@ -261,6 +261,11 @@ export default function BridgesPage() {
                                                         {template.description}
                                                     </div>
                                                 </div>
+                                                {["openai", "stripe", "sendgrid", "github", "slack"].includes(template.id) && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        Under Testing
+                                                    </Badge>
+                                                )}
                                             </DropdownMenuItem>
                                         );
                                     })}
@@ -372,6 +377,11 @@ export default function BridgesPage() {
                                                                 size="sm"
                                                                 onClick={() => {
                                                                     navigator.clipboard.writeText(`${baseUrl}/mcp/${bridge.slug || bridge.id}`);
+                                                                    toast({
+                                                                        title: "URL Copied",
+                                                                        description: `MCP endpoint URL copied to clipboard, url ${baseUrl}/mcp/${bridge.slug || bridge.id}`,
+                                                                        duration: 2000
+                                                                    });
                                                                 }}
                                                                 className="h-7 w-7 p-0"
                                                                 title="Copy URL"
