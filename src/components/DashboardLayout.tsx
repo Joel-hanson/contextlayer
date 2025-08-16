@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import {
     BookOpen,
     BrainCogIcon,
+    ChevronFirst,
+    ChevronLast,
     Database,
     FileText,
     Home,
@@ -36,6 +38,7 @@ interface SidebarProps {
 
 export function DashboardLayout({ children }: SidebarProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const pathname = usePathname();
     const { data: session } = useSession();
 
@@ -79,16 +82,41 @@ export function DashboardLayout({ children }: SidebarProps) {
             </div>
 
             {/* Desktop sidebar */}
-            <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+            <div className={cn(
+                "hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300 border-r",
+                sidebarCollapsed ? "lg:w-20" : "lg:w-72"
+            )}>
                 <SidebarContent
                     navigation={navigation}
                     session={session}
                     onSignOut={handleSignOut}
+                    collapsed={sidebarCollapsed}
                 />
             </div>
 
             {/* Main content */}
-            <div className="lg:pl-72">
+            <div className={cn(
+                "transition-all duration-300 relative",
+                sidebarCollapsed ? "lg:pl-20" : "lg:pl-72"
+            )}>
+                {/* Sidebar collapse button */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className={cn(
+                        "hidden lg:flex fixed z-50 h-8 w-8 rounded-full border bg-background shadow-md hover:bg-muted items-center justify-center",
+                        sidebarCollapsed
+                            ? "left-[68px] top-[22px]" // When sidebar is collapsed (80px - 12px)
+                            : "left-[264px] top-[22px]" // When sidebar is expanded (272px - 8px)
+                    )}
+                >
+                    {sidebarCollapsed ? (
+                        <ChevronLast className="h-5 w-5" />
+                    ) : (
+                        <ChevronFirst className="h-5 w-5" />
+                    )}
+                </Button>
                 {/* Mobile header */}
                 <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
                     <Button
@@ -211,17 +239,24 @@ interface SidebarContentProps {
         }
     } | null;
     onSignOut?: () => void;
+    collapsed?: boolean;
 }
 
-function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarContentProps) {
+function SidebarContent({ navigation, onClose, session, onSignOut, collapsed }: SidebarContentProps) {
     return (
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4">
-            <div className="flex h-16 shrink-0 items-center justify-between">
-                <Link href="/dashboard" className="flex items-center gap-x-2">
-                    <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+        <div className={cn(
+            "flex grow flex-col overflow-y-auto bg-background pb-4 relative",
+            collapsed ? "px-3" : "px-6"
+        )}>
+            <div className="flex h-16 shrink-0 items-center">
+                <Link href="/dashboard" className={cn(
+                    "flex items-center",
+                    collapsed ? "justify-center w-full" : "gap-x-2"
+                )}>
+                    <div className="h-9 w-9 bg-primary rounded-lg flex items-center justify-center">
                         <BrainCogIcon className="h-5 w-5 text-primary-foreground" />
                     </div>
-                    <span className="text-xl font-semibold">ContextLayer</span>
+                    {!collapsed && <span className="text-xl font-semibold">ContextLayer</span>}
                 </Link>
                 {onClose && (
                     <Button variant="ghost" size="sm" onClick={onClose} className="lg:hidden">
@@ -241,7 +276,8 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
                                             item.current
                                                 ? 'bg-muted text-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                                            'group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium transition-colors touch-manipulation'
+                                            'group flex rounded-md text-sm leading-6 font-medium transition-colors touch-manipulation',
+                                            collapsed ? 'h-10 w-10 mx-auto items-center justify-center' : 'gap-x-3 p-3'
                                         )}
                                         onClick={onClose}
                                     >
@@ -252,7 +288,7 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
                                             )}
                                             aria-hidden="true"
                                         />
-                                        {item.name}
+                                        {!collapsed && item.name}
                                     </Link>
                                 </li>
                             ))}
@@ -261,11 +297,17 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
 
                     {/* User Profile Section */}
                     {session?.user && (
-                        <li className="mt-auto">
+                        <li className="mt-auto pt-4 border-t">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="w-full -mx-2 justify-start h-auto p-2 font-normal">
-                                        <div className="flex items-center gap-x-3 min-w-0 flex-1">
+                                    <Button variant="ghost" className={cn(
+                                        "w-full h-auto font-normal transition-all",
+                                        collapsed ? "justify-center p-1" : "justify-start p-2 -mx-2"
+                                    )}>
+                                        <div className={cn(
+                                            "flex items-center min-w-0",
+                                            collapsed ? "justify-center" : "gap-x-3 flex-1"
+                                        )}>
                                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground overflow-hidden">
                                                 {session.user.image ? (
                                                     <Image
@@ -279,21 +321,23 @@ function SidebarContent({ navigation, onClose, session, onSignOut }: SidebarCont
                                                     <User className="h-4 w-4" />
                                                 )}
                                             </div>
-                                            <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
-                                                <div className="flex items-center gap-2 w-full min-w-0">
-                                                    <p className="text-sm font-medium truncate flex-1">
-                                                        {session.user.name || session.user.username || 'User'}
+                                            {!collapsed && (
+                                                <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
+                                                    <div className="flex items-center gap-2 w-full min-w-0">
+                                                        <p className="text-sm font-medium truncate flex-1">
+                                                            {session.user.name || session.user.username || 'User'}
+                                                        </p>
+                                                        {session.user.email === 'demo@contextlayer.app' && (
+                                                            <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 shrink-0">
+                                                                Demo
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground truncate w-full">
+                                                        {session.user.email}
                                                     </p>
-                                                    {session.user.email === 'demo@contextlayer.app' && (
-                                                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 shrink-0">
-                                                            Demo
-                                                        </Badge>
-                                                    )}
                                                 </div>
-                                                <p className="text-xs text-muted-foreground truncate w-full">
-                                                    {session.user.email}
-                                                </p>
-                                            </div>
+                                            )}
                                         </div>
                                     </Button>
                                 </DropdownMenuTrigger>

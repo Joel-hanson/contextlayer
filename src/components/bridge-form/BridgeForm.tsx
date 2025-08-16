@@ -7,10 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { OpenAPIParser } from '@/lib/openapi-parser';
 import { BridgeConfig } from '@/lib/types';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, BadgeAlert, CheckCircle, Lightbulb, Link, LockIcon, Save, Settings, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { Resolver, SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { ConfirmationDialog } from '../ConfirmationDialog';
 
 // Import modular components
@@ -20,7 +21,13 @@ import { EndpointsTab } from './EndpointsTab';
 import { PromptsTab } from './PromptsTab';
 import { ResourcesTab } from './ResourcesTab';
 import { RoutingAndAccessTab } from './RoutingAndAccessTab';
-import { bridgeFormSchema, type BridgeFormData } from './types';
+import {
+    mcpBridgeFormSchema,
+    McpPrompt,
+    McpResource,
+    type McpBridgeFormData,
+    type McpEndpoint
+} from './types';
 
 interface BridgeFormProps {
     bridge?: BridgeConfig;
@@ -41,12 +48,12 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
     // Confirmation dialog states
     const [showLoadDraftDialog, setShowLoadDraftDialog] = useState(false);
     const [showCloseDialog, setShowCloseDialog] = useState(false);
-    const [draftData, setDraftData] = useState<BridgeFormData & { timestamp: number; editingId: string } | null>(null);
+    const [draftData, setDraftData] = useState<McpBridgeFormData & { timestamp: number; editingId: string } | null>(null);
 
     const { toast } = useToast();
 
-    const form = useForm<BridgeFormData>({
-        resolver: zodResolver(bridgeFormSchema),
+    const form = useForm<McpBridgeFormData>({
+        resolver: zodResolver(mcpBridgeFormSchema) as Resolver<McpBridgeFormData>,
         mode: 'all', // Validate on all changes
         reValidateMode: 'onChange',
         defaultValues: {
@@ -57,7 +64,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 baseUrl: '',
                 description: '',
                 headers: {},
-                authentication: { type: 'none' },
+                authentication: { type: 'none', keyLocation: 'header' } as const,
                 endpoints: [],
             },
             mcpTools: [],
@@ -67,7 +74,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 public: true,
                 allowedOrigins: [],
                 authRequired: false,
-                apiKey: undefined,
             },
         },
     });
@@ -108,20 +114,60 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         baseUrl: bridge.apiConfig.baseUrl,
                         description: bridge.apiConfig.description || '',
                         headers: bridge.apiConfig.headers || {},
-                        authentication: bridge.apiConfig.authentication || { type: 'none' },
-                        endpoints: (bridge.apiConfig.endpoints || []).map(endpoint => ({
-                            ...endpoint,
-                            parameters: endpoint.parameters || []
-                        })),
+                        authentication: bridge.apiConfig.authentication || { type: 'none', keyLocation: 'header' },
+                        endpoints: (bridge.apiConfig.endpoints || []).map(endpoint => {
+                            // Convert request body properties into body parameters
+                            const bodyParameters = endpoint.requestBody?.properties
+                                ? Object.entries(endpoint.requestBody.properties).map(([name, schema]) => ({
+                                    name,
+                                    type: (schema.type || 'string') as 'string' | 'number' | 'boolean' | 'object' | 'array',
+                                    description: schema.description || '',
+                                    required: schema.required || false,
+                                    location: 'body' as const,
+                                    style: 'parameter' as const
+                                }))
+                                : [];
+
+                            // Ensure existing parameters have correct types
+                            const typedParameters = (endpoint.parameters || []).map(param => ({
+                                name: param.name || '',
+                                type: param.type || 'string',
+                                required: !!param.required,
+                                description: param.description || '',
+                                location: param.location || 'query',
+                                style: param.style || 'parameter'
+                            }));
+
+                            return {
+                                ...endpoint,
+                                parameters: [
+                                    ...typedParameters,
+                                    ...bodyParameters
+                                ]
+                            };
+                        }),
                     },
                     mcpTools: bridge.mcpTools || [],
-                    mcpResources: bridge.mcpResources || [],
-                    mcpPrompts: bridge.mcpPrompts || [],
+                    mcpResources: (bridge.mcpResources || []).map(resource => ({
+                        uri: resource.uri,
+                        name: resource.name,
+                        description: resource.description || '',
+                        mimeType: resource.mimeType || 'application/json'
+                    })),
+                    mcpPrompts: (bridge.mcpPrompts || []).map(prompt => ({
+                        name: prompt.name,
+                        description: prompt.description || '',
+                        arguments: prompt.arguments?.map(arg => ({
+                            name: arg.name,
+                            description: arg.description || '',
+                            required: arg.required
+                        })) || []
+                    })),
                     access: {
                         public: bridge.access?.public ?? true,
                         authRequired: bridge.access?.authRequired ?? false,
                         allowedOrigins: bridge.access?.allowedOrigins || [],
-                        apiKey: bridge.access?.apiKey || undefined, // Convert null to undefined
+                        apiKey: bridge.access?.apiKey || undefined,
                     },
                 });
 
@@ -143,8 +189,40 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 baseUrl: template.apiConfig?.baseUrl || '',
                                 description: template.apiConfig?.description || '',
                                 headers: template.apiConfig?.headers || {},
-                                authentication: template.apiConfig?.authentication || { type: 'none' },
-                                endpoints: template.apiConfig?.endpoints || [],
+                                authentication: template.apiConfig?.authentication || { type: 'none', keyLocation: template.apiConfig?.authentication?.keyLocation || 'header' },
+                                endpoints: (template.apiConfig?.endpoints || []).map((endpoint: {
+                                    id?: string;
+                                    name?: string;
+                                    path?: string;
+                                    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+                                    description?: string;
+                                    parameters?: Array<{
+                                        name?: string;
+                                        type?: 'string' | 'number' | 'boolean' | 'object' | 'array';
+                                        required?: boolean;
+                                        description?: string;
+                                        location?: 'path' | 'query' | 'body';
+                                        style?: 'parameter' | 'replacement';
+                                    }>;
+                                }) => ({
+                                    id: endpoint.id || `endpoint-${Date.now()}`,
+                                    name: endpoint.name || '',
+                                    path: endpoint.path || '',
+                                    method: endpoint.method || 'GET',
+                                    description: endpoint.description || '',
+                                    parameters: (endpoint.parameters || []).map(param => ({
+                                        name: param.name || '',
+                                        type: (param.type || 'string') as 'string' | 'number' | 'boolean' | 'object' | 'array',
+                                        required: Boolean(param.required),
+                                        description: param.description || '',
+                                        location: param.location || 'query',
+                                        style: param.style || 'parameter'
+                                    })),
+                                    // Safe access to requestBody - ensure it exists in the type
+                                    requestBody: 'requestBody' in endpoint ?
+                                        (endpoint as { requestBody?: { properties?: Record<string, { type: string; description?: string; required?: boolean }> } }).requestBody
+                                        : undefined
+                                })),
                             },
                             mcpTools: template.mcpTools || [],
                             mcpResources: template.mcpResources || [],
@@ -161,7 +239,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
                         // Fix endpoints to have IDs if they don't already
                         const currentEndpoints = form.getValues('apiConfig.endpoints');
-                        const endpointsWithIds = currentEndpoints.map((endpoint, index) => ({
+                        const endpointsWithIds = currentEndpoints.map((endpoint: McpEndpoint, index: number) => ({
                             ...endpoint,
                             id: endpoint.id || `endpoint-${Date.now()}-${index}`,
                             parameters: endpoint.parameters || []
@@ -217,7 +295,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             baseUrl: '',
                             description: '',
                             headers: {},
-                            authentication: { type: 'none' },
+                            authentication: { type: 'none', keyLocation: 'header' },
                             endpoints: [],
                         },
                         mcpResources: [],
@@ -243,10 +321,11 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
     useEffect(() => {
         const subscription = form.watch(() => {
             if (open) {
-                setHasUnsavedChanges(form.formState.isDirty);
+                const isDirty = form.formState.isDirty;
+                setHasUnsavedChanges(isDirty);
 
                 // Auto-save to localStorage to prevent data loss
-                if (form.formState.isDirty) {
+                if (isDirty) {
                     const formData = form.getValues();
                     localStorage.setItem('bridge-form-draft', JSON.stringify({
                         ...formData,
@@ -258,6 +337,150 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         });
         return () => subscription.unsubscribe();
     }, [form, open, bridge?.id]);
+
+    // Watch for endpoint changes to update MCP tools
+    useEffect(() => {
+        if (open) {
+            // We need to use a custom approach to avoid TypeScript errors with the watch function
+            const unsubscribe = form.watch((formData) => {
+                // Only process if we have endpoints
+                const endpoints = formData?.apiConfig?.endpoints;
+                if (!endpoints || endpoints.length === 0) return;
+
+                // Process endpoints to generate tools
+                type EndpointParameter = {
+                    name: string;
+                    type: string;
+                    description?: string;
+                    required?: boolean;
+                    location?: 'path' | 'query' | 'body';
+                    style?: 'parameter' | 'replacement';
+                };
+
+                type Endpoint = {
+                    id?: string;
+                    name: string;
+                    method: string;
+                    path: string;
+                    description?: string;
+                    parameters?: EndpointParameter[];
+                    requestBody?: {
+                        properties?: Record<string, {
+                            type: string;
+                            description?: string;
+                            required?: boolean;
+                        }>;
+                    };
+                };
+
+                const processedEndpoints = endpoints.map((endpoint) => {
+                    if (!endpoint) return null;
+
+                    const bodyParameters = endpoint.parameters?.filter(
+                        (p) => p?.location === 'body'
+                    ) || [];
+
+                    const requestBody = bodyParameters.length > 0 ? {
+                        properties: bodyParameters.reduce<Record<string, {
+                            type: string;
+                            description?: string;
+                            required?: boolean;
+                        }>>((acc, param) => {
+                            if (!param || !param.name) return acc;
+                            return {
+                                ...acc,
+                                [param.name]: {
+                                    type: param.type || 'string',
+                                    description: param.description,
+                                    required: param.required
+                                }
+                            };
+                        }, {})
+                    } : undefined;
+
+                    return {
+                        ...endpoint,
+                        id: endpoint.id || `endpoint-${Date.now()}`, // Ensure ID exists
+                        parameters: endpoint.parameters?.filter(p => p?.location !== 'body') || [],
+                        requestBody
+                    } as Endpoint;
+                }).filter(Boolean) as Endpoint[];
+
+                // Only regenerate if there are no existing tools
+                const currentTools = formData?.mcpTools;
+                if (!currentTools || currentTools.length === 0) {
+                    try {
+                        // Generate tools and set them safely
+                        const safeEndpoints = processedEndpoints.map(endpoint => {
+                            // Ensure parameters have the correct type
+                            const parameters = endpoint.parameters?.map(param => ({
+                                ...param,
+                                name: param.name,
+                                type: (param.type as 'string' | 'number' | 'boolean' | 'object' | 'array'),
+                                required: !!param.required,
+                                description: param.description,
+                                location: param.location,
+                                style: param.style
+                            }));
+
+                            return {
+                                ...endpoint,
+                                id: endpoint.id || `endpoint-${Date.now()}`, // Ensure ID exists
+                                method: endpoint.method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH', // Cast method to expected type
+                                parameters
+                            };
+                        });
+
+                        // Define the expected interface for the generateMcpTools function
+                        interface McpEndpointFormat {
+                            id: string;
+                            name: string;
+                            path: string;
+                            method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+                            description?: string;
+                            parameters?: Array<{
+                                name: string;
+                                type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+                                required: boolean;
+                                description?: string;
+                                location?: 'path' | 'query' | 'body';
+                                style?: 'parameter' | 'replacement';
+                                defaultValue?: unknown;
+                            }>;
+                            requestBody?: {
+                                properties?: Record<string, {
+                                    type: string;
+                                    description?: string;
+                                    required?: boolean;
+                                }>;
+                            };
+                        }
+
+                        // Cast to expected type to avoid TypeScript errors
+                        const tools = OpenAPIParser.generateMcpTools(safeEndpoints as McpEndpointFormat[]);
+
+                        // Ensure tools have required properties to satisfy TypeScript
+                        const safeTools = tools.map(tool => ({
+                            ...tool,
+                            inputSchema: {
+                                ...tool.inputSchema,
+                                required: tool.inputSchema.required || []
+                            }
+                        }));
+
+                        form.setValue('mcpTools', safeTools);
+                    } catch (error) {
+                        console.error('Error generating MCP tools:', error);
+                    }
+                }
+            });
+
+            // Return cleanup function
+            return () => {
+                unsubscribe.unsubscribe();
+            };
+        }
+    }, [form, open]);
 
     // Load draft data when opening form
     useEffect(() => {
@@ -294,7 +517,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
     // Delete functionality moved to parent component
 
-    const onSubmit = async (data: BridgeFormData) => {
+    const onSubmit: SubmitHandler<McpBridgeFormData> = async (data) => {
         setIsSubmitting(true);
         setSubmitError(null);
 
@@ -313,24 +536,70 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     baseUrl: data.apiConfig.baseUrl,
                     description: data.apiConfig.description || '',
                     headers: data.apiConfig.headers || {},
-                    authentication: data.apiConfig.authentication || { type: 'none' },
-                    endpoints: data.apiConfig.endpoints.map((endpoint, index) => {
+                    authentication: data.apiConfig.authentication,
+                    endpoints: data.apiConfig.endpoints.map((endpoint: McpEndpoint, index: number) => {
                         // Preserve existing endpoint IDs when editing
                         const existingEndpoint = bridge?.apiConfig.endpoints?.[index];
+
+                        // Build request body from parameters marked as 'body'
+                        const bodyParameters = endpoint.parameters?.filter(param => param.location === 'body') || [];
+                        const requestBody = bodyParameters.length > 0 ? {
+                            properties: bodyParameters.reduce((acc, param) => ({
+                                ...acc,
+                                [param.name]: {
+                                    type: param.type,
+                                    description: param.description,
+                                    required: param.required
+                                }
+                            }), {})
+                        } : undefined;
+
                         return {
                             ...endpoint,
                             id: existingEndpoint?.id || crypto.randomUUID(),
-                            parameters: endpoint.parameters || [],
-                            requestBody: undefined,
+                            parameters: endpoint.parameters?.filter(param => param.location !== 'body') || [],
+                            requestBody: requestBody,
                             responseSchema: undefined,
                         };
                     }),
                 },
-                mcpTools: data.mcpTools && data.mcpTools.length > 0
-                    ? data.mcpTools
-                    : OpenAPIParser.generateMcpTools(data.apiConfig.endpoints),
-                mcpResources: data.mcpResources || [],
-                mcpPrompts: data.mcpPrompts || [],
+                mcpTools: OpenAPIParser.generateMcpTools(
+                    // Add request body information to endpoints before generating tools
+                    data.apiConfig.endpoints.map(endpoint => {
+                        const bodyParameters = endpoint.parameters?.filter(p => p.location === 'body') || [];
+                        const requestBody = bodyParameters.length > 0 ? {
+                            properties: bodyParameters.reduce((acc, param) => ({
+                                ...acc,
+                                [param.name]: {
+                                    type: param.type,
+                                    description: param.description,
+                                    required: param.required
+                                }
+                            }), {})
+                        } : undefined;
+
+                        return {
+                            ...endpoint,
+                            parameters: endpoint.parameters?.filter(p => p.location !== 'body') || [],
+                            requestBody
+                        };
+                    })
+                ),
+                mcpResources: data.mcpResources?.map((resource: McpResource) => ({
+                    uri: resource.uri,
+                    name: resource.name,
+                    description: resource.description || '',
+                    mimeType: resource.mimeType || 'application/json'
+                })) || [],
+                mcpPrompts: data.mcpPrompts?.map((prompt: McpPrompt) => ({
+                    name: prompt.name,
+                    description: prompt.description || '',
+                    arguments: prompt.arguments?.map((arg: { name: string; description: string; required: boolean }) => ({
+                        name: arg.name,
+                        description: arg.description || '',
+                        required: arg.required
+                    })) || []
+                })) || [],
                 enabled: bridge?.enabled ?? true, // Default to enabled for new bridges
 
                 // Access control - simplified
@@ -383,7 +652,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         }
     };
 
-    const testEndpoint = async (endpoint: BridgeFormData['apiConfig']['endpoints'][0]) => {
+    const testEndpoint = async (endpoint: McpEndpoint) => {
         // Validate required fields
         if (!endpoint.name || !endpoint.path) {
             toast({

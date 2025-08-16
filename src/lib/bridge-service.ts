@@ -12,6 +12,8 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
         username?: string;
         password?: string;
         headerName?: string;
+        keyLocation?: 'header' | 'query';
+        paramName?: string;
     } | null;
 
     // Parse access config from JSON
@@ -35,7 +37,11 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
             baseUrl: bridge.baseUrl,
             description: bridge.description || '',
             headers: bridge.headers as Record<string, string> || undefined,
-            authentication: authConfig || { type: 'none' },
+            authentication: authConfig ? {
+                ...authConfig,
+                keyLocation: authConfig.keyLocation || 'header',
+                paramName: authConfig.paramName || authConfig.headerName || undefined
+            } : { type: 'none', keyLocation: 'header', paramName: undefined },
             endpoints: bridge.endpoints.map(endpoint => {
                 const config = endpoint.config as {
                     parameters?: unknown[];
@@ -125,13 +131,15 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
         baseUrl: config.apiConfig.baseUrl,
 
         // Consolidate auth config - handle null properly for Prisma
-        authConfig: config.apiConfig.authentication && config.apiConfig.authentication.type !== 'none' ? {
+        authConfig: config.apiConfig.authentication ? {
             type: config.apiConfig.authentication.type,
             token: config.apiConfig.authentication.token,
             apiKey: config.apiConfig.authentication.apiKey,
             username: config.apiConfig.authentication.username,
             password: config.apiConfig.authentication.password,
             headerName: config.apiConfig.authentication.headerName,
+            keyLocation: config.apiConfig.authentication.keyLocation || 'header',
+            paramName: config.apiConfig.authentication.paramName,
         } : undefined,
 
         headers: config.apiConfig.headers || undefined,

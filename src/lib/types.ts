@@ -14,6 +14,8 @@ export const ApiConfigSchema = z.object({
         username: z.string().optional(),
         password: z.string().optional(),
         headerName: z.string().optional(),
+        keyLocation: z.enum(['header', 'query']).default('header'),
+        paramName: z.string().optional(),
     }).optional(),
     endpoints: z.array(z.object({
         id: z.string(),
@@ -27,6 +29,8 @@ export const ApiConfigSchema = z.object({
             required: z.boolean(),
             description: z.string().optional(),
             defaultValue: z.any().optional(),
+            location: z.enum(['path', 'query', 'body']).optional(),
+            style: z.enum(['parameter', 'replacement']).optional(),
         })).optional(),
         requestBody: z.object({
             contentType: z.string().optional(),
