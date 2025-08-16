@@ -11,10 +11,10 @@ import { BridgeConfig } from '@/lib/types';
 import { ArrowRight, CheckCircle2, Lock, Unlock } from 'lucide-react';
 import { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { type BridgeFormData } from './types';
+import { type McpBridgeFormData } from './types';
 
 interface RoutingAndAccessTabProps {
-    form: UseFormReturn<BridgeFormData>;
+    form: UseFormReturn<McpBridgeFormData>;
     bridge?: BridgeConfig;
 }
 

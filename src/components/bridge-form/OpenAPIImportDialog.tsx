@@ -9,9 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { OpenAPIParser, ParsedOpenAPIResult } from '@/lib/openapi-parser';
-import { McpPrompt, McpResource, McpTool } from '@/lib/types';
 import { AlertTriangle, CheckCircle, FileText, Globe, Upload } from 'lucide-react';
 import { useState } from 'react';
+import { type McpPrompt, type McpResource, type McpTool } from './types';
 
 interface OpenAPIImportDialogProps {
     open: boolean;
@@ -24,12 +24,14 @@ interface OpenAPIImportDialogProps {
             name: string;
             method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
             path: string;
-            description?: string;
+            description: string;
             parameters?: Array<{
                 name: string;
                 type: 'string' | 'number' | 'boolean' | 'object' | 'array';
                 required: boolean;
-                description?: string;
+                description: string;
+                location: 'path' | 'query' | 'body';
+                style: 'parameter' | 'replacement';
             }>;
         }>;
         authentication?: {
@@ -39,6 +41,8 @@ interface OpenAPIImportDialogProps {
             username?: string;
             password?: string;
             headerName?: string;
+            keyLocation: 'header' | 'query';
+            paramName?: string;
         };
         headers?: Record<string, string>;
         // MCP-specific content
@@ -243,16 +247,45 @@ export function OpenAPIImportDialog({ open, onOpenChange, onImport }: OpenAPIImp
                         name: endpoint.name,
                         method: endpoint.method,
                         path: endpoint.path,
-                        description: endpoint.description,
-                        parameters,
+                        description: endpoint.description || '',
+                        parameters: parameters.map(param => ({
+                            ...param,
+                            description: param.description || '',
+                            location: 'query' as const,
+                            style: 'parameter' as const
+                        })),
                     };
                 }),
-                authentication: result.data.authentication,
+                authentication: result.data.authentication ? {
+                    ...result.data.authentication,
+                    keyLocation: result.data.authentication.keyLocation || 'header',
+                    paramName: result.data.authentication.paramName
+                } : undefined,
                 headers: result.data.headers,
                 // Include generated MCP content
-                mcpTools: result.data.mcpTools,
-                mcpPrompts: result.data.mcpPrompts,
-                mcpResources: result.data.mcpResources,
+                mcpTools: result.data.mcpTools.map(tool => ({
+                    ...tool,
+                    inputSchema: {
+                        ...tool.inputSchema,
+                        required: tool.inputSchema.required || []
+                    },
+                    endpointId: undefined
+                })),
+                mcpPrompts: result.data.mcpPrompts.map(prompt => ({
+                    name: prompt.name,
+                    description: prompt.description || '',
+                    arguments: (prompt.arguments || []).map(arg => ({
+                        name: arg.name,
+                        description: arg.description || '',
+                        required: arg.required
+                    }))
+                })),
+                mcpResources: result.data.mcpResources?.map(resource => ({
+                    name: resource.name,
+                    description: resource.description || '',
+                    uri: resource.uri,
+                    mimeType: resource.mimeType || 'application/json'
+                })),
             };
 
             onImport(transformedData);
@@ -505,7 +538,7 @@ export function OpenAPIImportDialog({ open, onOpenChange, onImport }: OpenAPIImp
                             </Button>
                         </TabsContent>
 
-                        <TabsContent value="json" className="space-y-4">
+                        <TabsContent value="text" className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="spec-json">OpenAPI Specification JSON</Label>
                                 <Textarea

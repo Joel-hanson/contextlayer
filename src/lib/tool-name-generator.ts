@@ -42,12 +42,5 @@ export function generateStandardToolName(method: string, path: string): string {
     const resource = pathParts[pathParts.length - 1] || 'root';
     const toolName = `${cleanedMethod}_${resource}_${action}`;
 
-    console.log('Generated tool name:', {
-        method: cleanedMethod,
-        resource,
-        action,
-        toolName
-    });
-
     return toolName;
 }

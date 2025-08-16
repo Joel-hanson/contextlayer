@@ -98,6 +98,12 @@ export class OpenAPIParser {
         });
 
         const tools = endpoints.map(endpoint => {
+            // Skip invalid endpoints
+            if (!endpoint || !endpoint.method || !endpoint.path) {
+                console.warn('Skipping invalid endpoint:', endpoint);
+                return null;
+            }
+
             const toolName = generateStandardToolName(endpoint.method, endpoint.path);
             const params = this.buildToolParameters(endpoint);
 
@@ -107,7 +113,7 @@ export class OpenAPIParser {
                 inputSchema: {
                     type: 'object' as const,
                     properties: params.properties,
-                    required: params.required
+                    required: params.required || []
                 }
             };
 
@@ -119,7 +125,7 @@ export class OpenAPIParser {
             });
 
             return tool;
-        });
+        }).filter(Boolean) as McpTool[];
 
         console.log('Completed MCP tool generation:', {
             toolCount: tools.length,
@@ -226,28 +232,75 @@ export class OpenAPIParser {
             required: []
         };
 
-        // Add path and query parameters
+        // First add path and query parameters
         endpoint.parameters?.forEach(param => {
-            parameters.properties[param.name] = {
-                type: this.mapOpenAPITypeToSimpleType(typeof param.type === 'string' ? param.type : 'string'),
-                description: param.description || `Parameter: ${param.name}`
-            };
-            if (param.required) {
-                parameters.required.push(param.name);
+            // Skip parameters with missing names
+            if (!param || !param.name) {
+                return;
+            }
+
+            // Only process non-body parameters here
+            if (!param.location || param.location !== 'body') {
+                parameters.properties[param.name] = {
+                    type: this.mapOpenAPITypeToSimpleType(typeof param.type === 'string' ? param.type : 'string'),
+                    description: param.description || `Parameter: ${param.name}`
+                };
+                if (param.required) {
+                    parameters.required.push(param.name);
+                }
             }
         });
 
-        // Add request body fields
-        if (endpoint.requestBody?.properties) {
-            Object.entries(endpoint.requestBody.properties).forEach(([name, schema]) => {
-                parameters.properties[name] = {
-                    type: this.mapOpenAPITypeToSimpleType(schema.type) as 'string' | 'number' | 'boolean' | 'object' | 'array',
-                    description: schema.description || `Request body field: ${name}`
-                };
-                if (schema.required) {
-                    parameters.required.push(name);
+        // Then handle body parameters
+        if (['POST', 'PUT', 'PATCH'].includes(endpoint.method)) {
+            // First, process body parameters from the parameters array
+            endpoint.parameters?.forEach(param => {
+                // Skip parameters with missing names
+                if (!param || !param.name) {
+                    return;
+                }
+
+                if (param.location === 'body') {
+                    parameters.properties[param.name] = {
+                        type: this.mapOpenAPITypeToSimpleType(typeof param.type === 'string' ? param.type : 'string'),
+                        description: param.description || `Body parameter: ${param.name}`
+                    };
+                    if (param.required) {
+                        parameters.required.push(param.name);
+                    }
                 }
             });
+
+            // Then process request body schema if it exists
+            if (endpoint.requestBody?.properties) {
+                Object.entries(endpoint.requestBody.properties).forEach(([name, schema]) => {
+                    // Skip entries with missing names
+                    if (!name) {
+                        return;
+                    }
+
+                    // Special handling for generic "body" property
+                    if (name === 'body' && schema.type === 'object') {
+                        parameters.properties['body'] = {
+                            type: 'object',
+                            description: schema.description || 'Request body data'
+                        };
+                        if (schema.required) {
+                            parameters.required.push('body');
+                        }
+                    }
+                    // Don't override if already added as a body parameter
+                    else if (!parameters.properties[name]) {
+                        parameters.properties[name] = {
+                            type: this.mapOpenAPITypeToSimpleType(schema.type) as 'string' | 'number' | 'boolean' | 'object' | 'array',
+                            description: schema.description || `Request body field: ${name}`
+                        };
+                        if (schema.required) {
+                            parameters.required.push(name);
+                        }
+                    }
+                });
+            }
         }
 
         return {
@@ -259,33 +312,34 @@ export class OpenAPIParser {
     private static parseAuthentication(spec: OpenAPISpec): ApiConfig['authentication'] {
         const globalSecurity = spec.security?.[0];
         if (!globalSecurity || Object.keys(globalSecurity).length === 0) {
-            return { type: 'none' };
+            return { type: 'none', keyLocation: 'header' };
         }
 
         const securitySchemeName = Object.keys(globalSecurity)[0];
         const securityScheme = spec.components?.securitySchemes?.[securitySchemeName];
 
         if (!securityScheme) {
-            return { type: 'none' };
+            return { type: 'none', keyLocation: 'header' };
         }
 
         switch (securityScheme.type) {
             case 'http':
                 if (securityScheme.scheme === 'bearer') {
-                    return { type: 'bearer', token: '' };
+                    return { type: 'bearer', token: '', keyLocation: 'header' };
                 } else if (securityScheme.scheme === 'basic') {
-                    return { type: 'basic', username: '', password: '' };
+                    return { type: 'basic', username: '', password: '', keyLocation: 'header' };
                 }
                 break;
             case 'apiKey':
                 return {
                     type: 'apikey',
                     apiKey: '',
-                    headerName: securityScheme.name || 'X-API-Key'
+                    headerName: securityScheme.name || 'X-API-Key',
+                    keyLocation: securityScheme.in === 'query' ? 'query' : 'header'
                 };
         }
 
-        return { type: 'none' };
+        return { type: 'none', keyLocation: 'header' };
     }
 
     private static parseEndpoints(spec: OpenAPISpec): ApiConfig['endpoints'] {
@@ -349,7 +403,7 @@ export class OpenAPIParser {
         defaultValue?: unknown;
     }> {
         return parameters
-            .filter(param => param.in !== 'header')
+            .filter(param => param && param.name && param.in !== 'header')
             .map(param => ({
                 name: param.name,
                 type: this.mapOpenAPITypeToSimpleType(param.schema?.type || 'string'),
@@ -463,6 +517,14 @@ export class OpenAPIParser {
 
     static parseFromObject(spec: unknown): ParsedOpenAPIResult {
         try {
+            // Make sure we have a valid object
+            if (!spec || typeof spec !== 'object') {
+                return {
+                    success: false,
+                    error: 'Invalid OpenAPI specification: Must be an object'
+                };
+            }
+
             const validatedSpec = OpenAPISpecSchema.parse(spec);
             return this.parseSpec(validatedSpec);
         } catch (error) {

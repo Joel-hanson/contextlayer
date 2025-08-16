@@ -30,127 +30,6 @@ export interface ApiTemplate {
 
 export const apiTemplates: ApiTemplate[] = [
     {
-        id: 'stripe',
-        name: 'Stripe API',
-        description: 'Payment processing and subscriptions',
-        icon: Zap,
-        color: 'bg-emerald-500',
-        tags: ['Payments', 'Bearer'],
-        config: {
-            name: 'Stripe API',
-            description: 'Process payments and manage subscriptions with Stripe.',
-            apiConfig: {
-                name: 'Stripe API v1',
-                baseUrl: 'https://api.stripe.com/v1',
-                description: 'Stripe payment processing API',
-                authentication: { type: 'bearer', token: '' },
-                endpoints: [
-                    {
-                        id: 'stripe-create-payment',
-                        name: 'Create Payment Intent',
-                        method: 'POST',
-                        path: '/payment_intents',
-                        description: 'Create a PaymentIntent for processing payments',
-                        parameters: [
-                            { name: 'amount', type: 'number', required: true, description: 'Amount in smallest currency unit' },
-                            { name: 'currency', type: 'string', required: true, description: 'Three-letter ISO currency code' }
-                        ],
-                    },
-                    {
-                        id: 'stripe-list-customers',
-                        name: 'List Customers',
-                        method: 'GET',
-                        path: '/customers',
-                        description: 'List all customers',
-                        parameters: [
-                            { name: 'limit', type: 'number', required: false, description: 'Number of customers to return' },
-                            { name: 'email', type: 'string', required: false, description: 'Filter by customer email' }
-                        ],
-                    }
-                ]
-            },
-            mcpResources: [
-                {
-                    uri: 'stripe://payment/methods',
-                    name: 'Payment Methods',
-                    description: 'Available payment methods by region',
-                    mimeType: 'application/json'
-                }
-            ],
-            mcpPrompts: [
-                {
-                    name: 'payment_flow',
-                    description: 'Generate payment flow recommendations',
-                    arguments: [
-                        { name: 'amount', description: 'Payment amount', required: true },
-                        { name: 'currency', description: 'Currency code', required: true }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        id: 'sendgrid',
-        name: 'SendGrid API',
-        description: 'Email service integration',
-        icon: Zap,
-        color: 'bg-blue-600',
-        tags: ['Email', 'Bearer'],
-        config: {
-            name: 'SendGrid API',
-            description: 'Send transactional and marketing emails.',
-            apiConfig: {
-                name: 'SendGrid API v3',
-                baseUrl: 'https://api.sendgrid.com/v3',
-                description: 'SendGrid email service API',
-                authentication: { type: 'bearer', token: '' },
-                endpoints: [
-                    {
-                        id: 'sendgrid-send-email',
-                        name: 'Send Email',
-                        method: 'POST',
-                        path: '/mail/send',
-                        description: 'Send a transactional email',
-                        parameters: [
-                            { name: 'to', type: 'string', required: true, description: 'Recipient email address' },
-                            { name: 'subject', type: 'string', required: true, description: 'Email subject' },
-                            { name: 'content', type: 'string', required: true, description: 'Email content' }
-                        ],
-                    },
-                    {
-                        id: 'sendgrid-get-stats',
-                        name: 'Get Email Stats',
-                        method: 'GET',
-                        path: '/stats',
-                        description: 'Get email statistics',
-                        parameters: [
-                            { name: 'start_date', type: 'string', required: true, description: 'Start date in YYYY-MM-DD format' },
-                            { name: 'end_date', type: 'string', required: false, description: 'End date in YYYY-MM-DD format' }
-                        ],
-                    }
-                ]
-            },
-            mcpResources: [
-                {
-                    uri: 'sendgrid://templates',
-                    name: 'Email Templates',
-                    description: 'Available email templates',
-                    mimeType: 'application/json'
-                }
-            ],
-            mcpPrompts: [
-                {
-                    name: 'email_composer',
-                    description: 'Generate professional email content',
-                    arguments: [
-                        { name: 'purpose', description: 'Email purpose', required: true },
-                        { name: 'tone', description: 'Email tone (formal/casual)', required: false }
-                    ]
-                }
-            ]
-        }
-    },
-    {
         id: 'weather',
         name: 'Weather API',
         description: 'OpenWeatherMap real-time weather data',
@@ -164,10 +43,10 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'OpenWeatherMap API',
                 baseUrl: 'https://api.openweathermap.org/data/2.5',
                 description: 'Real-time weather data and forecasts',
-                authentication: { type: 'apikey', apiKey: '', headerName: 'appid' },
+                authentication: { type: 'apikey', apiKey: '', headerName: 'appid', keyLocation: 'query' },
                 endpoints: [
                     {
-                        id: 'weather-current',
+                        id: 'get_weather_read',
                         name: 'Get Current Weather',
                         method: 'GET',
                         path: '/weather',
@@ -178,7 +57,7 @@ export const apiTemplates: ApiTemplate[] = [
                         ],
                     },
                     {
-                        id: 'weather-forecast',
+                        id: 'get_forecast_read',
                         name: 'Get Weather Forecast',
                         method: 'GET',
                         path: '/forecast',
@@ -223,89 +102,8 @@ export const apiTemplates: ApiTemplate[] = [
         }
     },
     {
-        id: 'github',
-        name: 'GitHub API',
-        description: 'Repository management and issues',
-        icon: Zap,
-        color: 'bg-gray-800',
-        tags: ['Repos', 'Bearer'],
-        config: {
-            name: 'GitHub API',
-            description: 'Access repositories, issues, and pull requests from GitHub.',
-            apiConfig: {
-                name: 'GitHub REST API',
-                baseUrl: 'https://api.github.com',
-                description: 'GitHub REST API for repository management',
-                authentication: { type: 'bearer', token: '' },
-                endpoints: [
-                    {
-                        id: 'github-list-repos',
-                        name: 'List User Repositories',
-                        method: 'GET',
-                        path: '/user/repos',
-                        description: 'List repositories for the authenticated user',
-                        parameters: [
-                            { name: 'sort', type: 'string', required: false, description: 'Sort by created, updated, pushed, full_name' },
-                            { name: 'per_page', type: 'number', required: false, description: 'Results per page (max 100)' }
-                        ],
-                    },
-                    {
-                        id: 'github-get-issues',
-                        name: 'Get Repository Issues',
-                        method: 'GET',
-                        path: '/repos/{owner}/{repo}/issues',
-                        description: 'Get issues for a repository',
-                        parameters: [
-                            { name: 'owner', type: 'string', required: true, description: 'Repository owner' },
-                            { name: 'repo', type: 'string', required: true, description: 'Repository name' }
-                        ],
-                    }
-                ]
-            },
-            mcpResources: [
-                {
-                    uri: 'github://profile',
-                    name: 'User Profile',
-                    description: 'GitHub user profile information',
-                    mimeType: 'application/json'
-                },
-                {
-                    uri: 'github://organizations',
-                    name: 'User Organizations',
-                    description: 'Organizations the user belongs to',
-                    mimeType: 'application/json'
-                },
-                {
-                    uri: 'github://limits',
-                    name: 'Rate Limits',
-                    description: 'Current API rate limit status',
-                    mimeType: 'application/json'
-                }
-            ],
-            mcpPrompts: [
-                {
-                    name: 'repo_analysis',
-                    description: 'Analyze a GitHub repository structure and activity',
-                    arguments: [
-                        { name: 'owner', description: 'Repository owner', required: true },
-                        { name: 'repo', description: 'Repository name', required: true }
-                    ]
-                },
-                {
-                    name: 'issue_summary',
-                    description: 'Summarize issues and pull requests for a repository',
-                    arguments: [
-                        { name: 'owner', description: 'Repository owner', required: true },
-                        { name: 'repo', description: 'Repository name', required: true },
-                        { name: 'state', description: 'Issue state (open/closed/all)', required: false }
-                    ]
-                }
-            ]
-        }
-    },
-    {
         id: 'demo',
-        name: 'Demo API',
+        name: 'JSONPlaceholder API',
         description: 'JSONPlaceholder for testing',
         icon: Database,
         color: 'bg-orange-500',
@@ -317,10 +115,10 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'JSONPlaceholder API',
                 baseUrl: 'https://jsonplaceholder.typicode.com',
                 description: 'Free fake REST API for testing and prototyping',
-                authentication: { type: 'none' },
+                authentication: { type: 'none', keyLocation: 'header' },
                 endpoints: [
                     {
-                        id: 'demo-get-posts',
+                        id: 'get_posts_list',
                         name: 'Get All Posts',
                         method: 'GET',
                         path: '/posts',
@@ -328,17 +126,17 @@ export const apiTemplates: ApiTemplate[] = [
                         parameters: [],
                     },
                     {
-                        id: 'demo-get-post',
+                        id: 'get_posts_read',
                         name: 'Get Post by ID',
                         method: 'GET',
                         path: '/posts/{id}',
                         description: 'Retrieve a specific post by ID',
                         parameters: [
-                            { name: 'id', type: 'number', required: true, description: 'Post ID' }
+                            { name: 'id', type: 'number', required: true, description: 'Post ID', location: 'path', style: 'replacement' }
                         ],
                     },
                     {
-                        id: 'demo-get-users',
+                        id: 'get_users_list',
                         name: 'Get All Users',
                         method: 'GET',
                         path: '/users',
@@ -386,85 +184,6 @@ export const apiTemplates: ApiTemplate[] = [
         }
     },
     {
-        id: 'slack',
-        name: 'Slack API',
-        description: 'Team communication and messaging',
-        icon: Zap,
-        color: 'bg-purple-600',
-        tags: ['Chat', 'OAuth'],
-        config: {
-            name: 'Slack API',
-            description: 'Send messages and manage Slack workspaces.',
-            apiConfig: {
-                name: 'Slack Web API',
-                baseUrl: 'https://slack.com/api',
-                description: 'Slack Web API for team communication',
-                authentication: { type: 'bearer', token: '' },
-                endpoints: [
-                    {
-                        id: 'slack-send-message',
-                        name: 'Send Message',
-                        method: 'POST',
-                        path: '/chat.postMessage',
-                        description: 'Send a message to a channel',
-                        parameters: [
-                            { name: 'channel', type: 'string', required: true, description: 'Channel ID or name' },
-                            { name: 'text', type: 'string', required: true, description: 'Message text' }
-                        ],
-                    },
-                    {
-                        id: 'slack-list-channels',
-                        name: 'List Channels',
-                        method: 'GET',
-                        path: '/conversations.list',
-                        description: 'Get list of channels',
-                        parameters: [
-                            { name: 'types', type: 'string', required: false, description: 'Channel types (public_channel,private_channel)' }
-                        ],
-                    }
-                ]
-            },
-            mcpResources: [
-                {
-                    uri: 'slack://workspace/info',
-                    name: 'Workspace Info',
-                    description: 'Current Slack workspace information',
-                    mimeType: 'application/json'
-                },
-                {
-                    uri: 'slack://channels/guidelines',
-                    name: 'Channel Guidelines',
-                    description: 'Best practices for channel management',
-                    mimeType: 'text/markdown'
-                },
-                {
-                    uri: 'slack://messaging/templates',
-                    name: 'Message Templates',
-                    description: 'Common message templates for team communication',
-                    mimeType: 'application/json'
-                }
-            ],
-            mcpPrompts: [
-                {
-                    name: 'channel_summary',
-                    description: 'Summarize channel activity and key discussions',
-                    arguments: [
-                        { name: 'channel', description: 'Channel ID or name', required: true },
-                        { name: 'days', description: 'Number of days to analyze', required: false }
-                    ]
-                },
-                {
-                    name: 'message_composer',
-                    description: 'Compose professional messages for team communication',
-                    arguments: [
-                        { name: 'purpose', description: 'Purpose of the message', required: true },
-                        { name: 'tone', description: 'Tone (formal/casual/urgent)', required: false }
-                    ]
-                }
-            ]
-        }
-    },
-    {
         id: 'jsonbin',
         name: 'JSONBin.io API',
         description: 'JSON storage and API mocking',
@@ -478,7 +197,7 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'JSONBin.io API',
                 baseUrl: 'https://api.jsonbin.io/v3',
                 description: 'JSON storage service with API features',
-                authentication: { type: 'apikey', apiKey: '', headerName: 'X-Master-Key' },
+                authentication: { type: 'apikey', apiKey: '', headerName: 'X-Master-Key', keyLocation: 'header' },
                 endpoints: [
                     {
                         id: 'jsonbin-create',
@@ -487,8 +206,9 @@ export const apiTemplates: ApiTemplate[] = [
                         path: '/b',
                         description: 'Create a new JSON bin',
                         parameters: [
-                            { name: 'name', type: 'string', required: false, description: 'Name of the bin' },
-                            { name: 'private', type: 'boolean', required: false, description: 'Make bin private' }
+                            { name: 'name', type: 'string', required: true, description: 'Name of the bin' },
+                            { name: 'private', type: 'boolean', required: false, description: 'Make bin private' },
+                            { name: 'body', type: 'object', required: true, description: 'JSON data to store', location: 'body' }
                         ],
                     },
                     {
@@ -498,17 +218,7 @@ export const apiTemplates: ApiTemplate[] = [
                         path: '/b/{id}',
                         description: 'Read a JSON bin by ID',
                         parameters: [
-                            { name: 'id', type: 'string', required: true, description: 'Bin ID' }
-                        ],
-                    },
-                    {
-                        id: 'jsonbin-update',
-                        name: 'Update Bin',
-                        method: 'PUT',
-                        path: '/b/{id}',
-                        description: 'Update a JSON bin',
-                        parameters: [
-                            { name: 'id', type: 'string', required: true, description: 'Bin ID' }
+                            { name: 'id', type: 'string', required: true, description: 'Bin ID', location: 'path', style: 'replacement' }
                         ],
                     }
                 ]
@@ -546,7 +256,7 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'ReqRes API',
                 baseUrl: 'https://reqres.in/api',
                 description: 'Mock REST API with realistic responses',
-                authentication: { type: 'none' },
+                authentication: { type: 'apikey', apiKey: 'reqres-free-v1', headerName: 'x-api-key', keyLocation: 'header' },
                 endpoints: [
                     {
                         id: 'reqres-list-users',
@@ -566,7 +276,7 @@ export const apiTemplates: ApiTemplate[] = [
                         path: '/users/{id}',
                         description: 'Get a single user by ID',
                         parameters: [
-                            { name: 'id', type: 'number', required: true, description: 'User ID' }
+                            { name: 'id', type: 'number', required: true, description: 'User ID', location: 'path', style: 'replacement' }
                         ],
                     },
                     {
@@ -578,17 +288,6 @@ export const apiTemplates: ApiTemplate[] = [
                         parameters: [
                             { name: 'name', type: 'string', required: true, description: 'User name' },
                             { name: 'job', type: 'string', required: true, description: 'User job' }
-                        ],
-                    },
-                    {
-                        id: 'reqres-login',
-                        name: 'Login',
-                        method: 'POST',
-                        path: '/login',
-                        description: 'Login with email and password',
-                        parameters: [
-                            { name: 'email', type: 'string', required: true, description: 'User email' },
-                            { name: 'password', type: 'string', required: true, description: 'User password' }
                         ],
                     }
                 ]
@@ -633,10 +332,10 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'Dog API',
                 baseUrl: 'https://dog.ceo/api',
                 description: 'Free API for dog images and breeds',
-                authentication: { type: 'none' },
+                authentication: { type: 'none', keyLocation: 'header' },
                 endpoints: [
                     {
-                        id: 'random-dog',
+                        id: 'get_breeds_random',
                         name: 'Random Dog',
                         method: 'GET',
                         path: '/breeds/image/random',
@@ -644,7 +343,7 @@ export const apiTemplates: ApiTemplate[] = [
                         parameters: [],
                     },
                     {
-                        id: 'breed-list',
+                        id: 'get_breeds_list',
                         name: 'List Breeds',
                         method: 'GET',
                         path: '/breeds/list/all',
@@ -652,13 +351,20 @@ export const apiTemplates: ApiTemplate[] = [
                         parameters: [],
                     },
                     {
-                        id: 'breed-images',
+                        id: 'get_breed_list',
                         name: 'Breed Images',
                         method: 'GET',
-                        path: '/breed/{breed}/images',
+                        path: '/breed/{breed}/images/random',
                         description: 'Get images for a specific breed',
                         parameters: [
-                            { name: 'breed', type: 'string', required: true, description: 'Dog breed name' }
+                            {
+                                name: 'breed',
+                                type: 'string',
+                                required: true,
+                                description: 'Dog breed name',
+                                location: 'path',
+                                style: 'replacement'
+                            }
                         ],
                     }
                 ]
@@ -696,27 +402,48 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'JokeAPI v2',
                 baseUrl: 'https://v2.jokeapi.dev',
                 description: 'Free API for jokes and humor',
-                authentication: { type: 'none' },
+                authentication: { type: 'none', keyLocation: 'header' },
                 endpoints: [
                     {
-                        id: 'random-joke',
+                        id: 'get_joke_random',
                         name: 'Random Joke',
                         method: 'GET',
                         path: '/joke/Any',
                         description: 'Get a random joke',
                         parameters: [
-                            { name: 'type', type: 'string', required: false, description: 'Type of joke (single/twopart)' },
-                            { name: 'contains', type: 'string', required: false, description: 'Search term in joke' }
+                            {
+                                name: 'type',
+                                type: 'string',
+                                required: false,
+                                description: 'Type of joke (single/twopart)',
+                                location: 'query',
+                                style: 'parameter'
+                            },
+                            {
+                                name: 'contains',
+                                type: 'string',
+                                required: false,
+                                description: 'Search term in joke',
+                                location: 'query',
+                                style: 'parameter'
+                            }
                         ],
                     },
                     {
-                        id: 'category-joke',
+                        id: 'get_joke_read',
                         name: 'Category Joke',
                         method: 'GET',
                         path: '/joke/{category}',
                         description: 'Get a joke from specific category',
                         parameters: [
-                            { name: 'category', type: 'string', required: true, description: 'Joke category (Programming/Misc/Dark/Pun/Spooky/Christmas)' }
+                            {
+                                name: 'category',
+                                type: 'string',
+                                required: true,
+                                description: 'Joke category (Programming/Misc/Dark/Pun/Spooky/Christmas)',
+                                location: 'path',
+                                style: 'replacement'
+                            }
                         ],
                     }
                 ]
@@ -755,20 +482,23 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'PokéAPI v2',
                 baseUrl: 'https://pokeapi.co/api/v2',
                 description: 'Free API for Pokémon data',
-                authentication: { type: 'none' },
+                authentication: { type: 'none', keyLocation: 'header' },
                 endpoints: [
                     {
-                        id: 'get-pokemon',
+                        id: 'get_pokemon_read',
                         name: 'Get Pokémon',
                         method: 'GET',
                         path: '/pokemon/{id}',
                         description: 'Get information about a specific Pokémon',
                         parameters: [
-                            { name: 'id', type: 'string', required: true, description: 'Pokémon ID or name' }
+                            {
+                                name: 'id', type: 'string', required: true, description: 'Pokémon ID or name', location: 'path',
+                                style: 'replacement'
+                            }
                         ],
                     },
                     {
-                        id: 'list-types',
+                        id: 'get_type_list',
                         name: 'List Types',
                         method: 'GET',
                         path: '/type',
@@ -776,13 +506,13 @@ export const apiTemplates: ApiTemplate[] = [
                         parameters: [],
                     },
                     {
-                        id: 'get-ability',
+                        id: 'get_ability_read',
                         name: 'Get Ability',
                         method: 'GET',
                         path: '/ability/{id}',
                         description: 'Get information about a specific ability',
                         parameters: [
-                            { name: 'id', type: 'string', required: true, description: 'Ability ID or name' }
+                            { name: 'id', type: 'string', required: true, description: 'Ability ID or name', location: 'path', style: 'replacement' }
                         ],
                     }
                 ]
@@ -827,7 +557,7 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'NASA Open API',
                 baseUrl: 'https://api.nasa.gov',
                 description: 'NASA space and astronomy data',
-                authentication: { type: 'apikey', apiKey: 'DEMO_KEY', headerName: 'api_key' },
+                authentication: { type: 'apikey', apiKey: '', headerName: 'api_key', keyLocation: 'query' },
                 endpoints: [
                     {
                         id: 'apod',
@@ -893,10 +623,10 @@ export const apiTemplates: ApiTemplate[] = [
                 name: 'OpenAI API',
                 baseUrl: 'https://api.openai.com/v1',
                 description: 'OpenAI API for AI models',
-                authentication: { type: 'bearer', token: '' },
+                authentication: { type: 'bearer', token: '', keyLocation: 'header' },
                 endpoints: [
                     {
-                        id: 'openai-completion',
+                        id: 'post_chat_create',
                         name: 'Create Completion',
                         method: 'POST',
                         path: '/chat/completions',
@@ -907,7 +637,7 @@ export const apiTemplates: ApiTemplate[] = [
                         ],
                     },
                     {
-                        id: 'openai-models',
+                        id: 'get_models_list',
                         name: 'List Models',
                         method: 'GET',
                         path: '/models',
@@ -963,5 +693,285 @@ export const apiTemplates: ApiTemplate[] = [
                 }
             ]
         }
-    }
+    },
+    {
+        id: 'stripe',
+        name: 'Stripe API',
+        description: 'Payment processing and subscriptions',
+        icon: Zap,
+        color: 'bg-emerald-500',
+        tags: ['Payments', 'Bearer'],
+        config: {
+            name: 'Stripe API',
+            description: 'Process payments and manage subscriptions with Stripe.',
+            apiConfig: {
+                name: 'Stripe API v1',
+                baseUrl: 'https://api.stripe.com/v1',
+                description: 'Stripe payment processing API',
+                authentication: { type: 'bearer', token: '', keyLocation: 'header' },
+                endpoints: [
+                    {
+                        id: 'post_payments_create',
+                        name: 'Create Payment Intent',
+                        method: 'POST',
+                        path: '/payment_intents',
+                        description: 'Create a PaymentIntent for processing payments',
+                        parameters: [
+                            { name: 'amount', type: 'number', required: true, description: 'Amount in smallest currency unit' },
+                            { name: 'currency', type: 'string', required: true, description: 'Three-letter ISO currency code' }
+                        ],
+                    },
+                    {
+                        id: 'get_customers_list',
+                        name: 'List Customers',
+                        method: 'GET',
+                        path: '/customers',
+                        description: 'List all customers',
+                        parameters: [
+                            { name: 'limit', type: 'number', required: false, description: 'Number of customers to return' },
+                            { name: 'email', type: 'string', required: false, description: 'Filter by customer email' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'stripe://payment/methods',
+                    name: 'Payment Methods',
+                    description: 'Available payment methods by region',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'payment_flow',
+                    description: 'Generate payment flow recommendations',
+                    arguments: [
+                        { name: 'amount', description: 'Payment amount', required: true },
+                        { name: 'currency', description: 'Currency code', required: true }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'sendgrid',
+        name: 'SendGrid API',
+        description: 'Email service integration',
+        icon: Zap,
+        color: 'bg-blue-600',
+        tags: ['Email', 'Bearer'],
+        config: {
+            name: 'SendGrid API',
+            description: 'Send transactional and marketing emails.',
+            apiConfig: {
+                name: 'SendGrid API v3',
+                baseUrl: 'https://api.sendgrid.com/v3',
+                description: 'SendGrid email service API',
+                authentication: { type: 'bearer', token: '', keyLocation: 'header' },
+                endpoints: [
+                    {
+                        id: 'post_mail_send',
+                        name: 'Send Email',
+                        method: 'POST',
+                        path: '/mail/send',
+                        description: 'Send a transactional email',
+                        parameters: [
+                            { name: 'to', type: 'string', required: true, description: 'Recipient email address' },
+                            { name: 'subject', type: 'string', required: true, description: 'Email subject' },
+                            { name: 'content', type: 'string', required: true, description: 'Email content' }
+                        ],
+                    },
+                    {
+                        id: 'get_stats_read',
+                        name: 'Get Email Stats',
+                        method: 'GET',
+                        path: '/stats',
+                        description: 'Get email statistics',
+                        parameters: [
+                            { name: 'start_date', type: 'string', required: true, description: 'Start date in YYYY-MM-DD format' },
+                            { name: 'end_date', type: 'string', required: false, description: 'End date in YYYY-MM-DD format' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'sendgrid://templates',
+                    name: 'Email Templates',
+                    description: 'Available email templates',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'email_composer',
+                    description: 'Generate professional email content',
+                    arguments: [
+                        { name: 'purpose', description: 'Email purpose', required: true },
+                        { name: 'tone', description: 'Email tone (formal/casual)', required: false }
+                    ]
+                }
+            ]
+        }
+    }, {
+        id: 'github',
+        name: 'GitHub API',
+        description: 'Repository management and issues',
+        icon: Zap,
+        color: 'bg-gray-800',
+        tags: ['Repos', 'Bearer'],
+        config: {
+            name: 'GitHub API',
+            description: 'Access repositories, issues, and pull requests from GitHub.',
+            apiConfig: {
+                name: 'GitHub REST API',
+                baseUrl: 'https://api.github.com',
+                description: 'GitHub REST API for repository management',
+                authentication: { type: 'bearer', token: '', keyLocation: 'header' },
+                endpoints: [
+                    {
+                        id: 'get_repos_list',
+                        name: 'List User Repositories',
+                        method: 'GET',
+                        path: '/user/repos',
+                        description: 'List repositories for the authenticated user',
+                        parameters: [
+                            { name: 'sort', type: 'string', required: false, description: 'Sort by created, updated, pushed, full_name' },
+                            { name: 'per_page', type: 'number', required: false, description: 'Results per page (max 100)' }
+                        ],
+                    },
+                    {
+                        id: 'get_issues_list',
+                        name: 'Get Repository Issues',
+                        method: 'GET',
+                        path: '/repos/{owner}/{repo}/issues',
+                        description: 'Get issues for a repository',
+                        parameters: [
+                            { name: 'owner', type: 'string', required: true, description: 'Repository owner' },
+                            { name: 'repo', type: 'string', required: true, description: 'Repository name' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'github://profile',
+                    name: 'User Profile',
+                    description: 'GitHub user profile information',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'github://organizations',
+                    name: 'User Organizations',
+                    description: 'Organizations the user belongs to',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'github://limits',
+                    name: 'Rate Limits',
+                    description: 'Current API rate limit status',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'repo_analysis',
+                    description: 'Analyze a GitHub repository structure and activity',
+                    arguments: [
+                        { name: 'owner', description: 'Repository owner', required: true },
+                        { name: 'repo', description: 'Repository name', required: true }
+                    ]
+                },
+                {
+                    name: 'issue_summary',
+                    description: 'Summarize issues and pull requests for a repository',
+                    arguments: [
+                        { name: 'owner', description: 'Repository owner', required: true },
+                        { name: 'repo', description: 'Repository name', required: true },
+                        { name: 'state', description: 'Issue state (open/closed/all)', required: false }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        id: 'slack',
+        name: 'Slack API',
+        description: 'Team communication and messaging',
+        icon: Zap,
+        color: 'bg-purple-600',
+        tags: ['Chat', 'OAuth'],
+        config: {
+            name: 'Slack API',
+            description: 'Send messages and manage Slack workspaces.',
+            apiConfig: {
+                name: 'Slack Web API',
+                baseUrl: 'https://slack.com/api',
+                description: 'Slack Web API for team communication',
+                authentication: { type: 'bearer', token: '', keyLocation: 'header' },
+                endpoints: [
+                    {
+                        id: 'slack-send-message',
+                        name: 'Send Message',
+                        method: 'POST',
+                        path: '/chat.postMessage',
+                        description: 'Send a message to a channel',
+                        parameters: [
+                            { name: 'channel', type: 'string', required: true, description: 'Channel ID or name' },
+                            { name: 'text', type: 'string', required: true, description: 'Message text' }
+                        ],
+                    },
+                    {
+                        id: 'slack-list-channels',
+                        name: 'List Channels',
+                        method: 'GET',
+                        path: '/conversations.list',
+                        description: 'Get list of channels',
+                        parameters: [
+                            { name: 'types', type: 'string', required: false, description: 'Channel types (public_channel,private_channel)' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'slack://workspace/info',
+                    name: 'Workspace Info',
+                    description: 'Current Slack workspace information',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'slack://channels/guidelines',
+                    name: 'Channel Guidelines',
+                    description: 'Best practices for channel management',
+                    mimeType: 'text/markdown'
+                },
+                {
+                    uri: 'slack://messaging/templates',
+                    name: 'Message Templates',
+                    description: 'Common message templates for team communication',
+                    mimeType: 'application/json'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'channel_summary',
+                    description: 'Summarize channel activity and key discussions',
+                    arguments: [
+                        { name: 'channel', description: 'Channel ID or name', required: true },
+                        { name: 'days', description: 'Number of days to analyze', required: false }
+                    ]
+                },
+                {
+                    name: 'message_composer',
+                    description: 'Compose professional messages for team communication',
+                    arguments: [
+                        { name: 'purpose', description: 'Purpose of the message', required: true },
+                        { name: 'tone', description: 'Tone (formal/casual/urgent)', required: false }
+                    ]
+                }
+            ]
+        }
+    },
 ];
