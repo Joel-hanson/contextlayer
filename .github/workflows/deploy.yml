@@ -36,6 +36,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_contextlayer
 
       - name: Generate Prisma Client
         run: npx prisma generate

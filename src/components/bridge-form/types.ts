@@ -90,7 +90,6 @@ export const mcpAuthSchema = z.object({
 
 // Access Control Schema
 export const mcpAccessSchema = z.object({
-    public: z.boolean().default(true),
     allowedOrigins: z.array(z.string()).default([]),
     authRequired: z.boolean().default(false),
     apiKey: z.string().optional(),
@@ -131,7 +130,6 @@ export const mcpBridgeFormSchema = z.object({
     mcpResources: z.array(mcpResourceSchema).default([]),
     mcpPrompts: z.array(mcpPromptSchema).default([]),
     access: z.object({
-        public: z.boolean(),
         allowedOrigins: z.array(z.string()),
         authRequired: z.boolean(),
         apiKey: z.string().optional(),

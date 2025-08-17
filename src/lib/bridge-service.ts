@@ -18,7 +18,6 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
 
     // Parse access config from JSON
     const accessConfig = bridge.accessConfig as {
-        public?: boolean;
         authRequired?: boolean;
         apiKey?: string;
     } | null;
@@ -91,7 +90,6 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
             }>;
         }>) || [],
         access: {
-            public: accessConfig?.public ?? true,
             authRequired: accessConfig?.authRequired ?? false,
             apiKey: accessConfig?.apiKey,
             tokens: [], // Required by type but managed separately
@@ -146,7 +144,6 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
 
         // Simplified access config
         accessConfig: {
-            public: config.access?.public ?? true,
             authRequired: config.access?.authRequired ?? false,
             apiKey: config.access?.apiKey || null
         },

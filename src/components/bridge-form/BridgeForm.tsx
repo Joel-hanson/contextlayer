@@ -71,7 +71,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
             mcpResources: [],
             mcpPrompts: [],
             access: {
-                public: true,
                 allowedOrigins: [],
                 authRequired: false,
             },
@@ -164,7 +163,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         })) || []
                     })),
                     access: {
-                        public: bridge.access?.public ?? true,
                         authRequired: bridge.access?.authRequired ?? false,
                         allowedOrigins: bridge.access?.allowedOrigins || [],
                         apiKey: bridge.access?.apiKey || undefined,
@@ -228,7 +226,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             mcpResources: template.mcpResources || [],
                             mcpPrompts: template.mcpPrompts || [],
                             access: {
-                                public: true,
                                 authRequired: false,
                                 allowedOrigins: [],
                                 apiKey: undefined,
@@ -277,7 +274,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                             },
                             mcpResources: [],
                             mcpPrompts: [],
-                            access: { public: true, authRequired: false },
+                            access: { authRequired: false },
                         });
 
                         // Trigger validation after reset
@@ -301,7 +298,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                         mcpResources: [],
                         mcpPrompts: [],
                         access: {
-                            public: true,
                             authRequired: false,
                             allowedOrigins: [],
                             apiKey: undefined,
@@ -604,7 +600,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
 
                 // Access control - simplified
                 access: {
-                    public: data.access?.public ?? true,
                     authRequired: data.access?.authRequired ?? false,
                     apiKey: data.access?.apiKey,
                     allowedOrigins: data.access?.allowedOrigins,
@@ -612,7 +607,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                     security: {
                         tokenAuth: {
                             enabled: true,
-                            requireToken: false,
+                            requireToken: data.access?.authRequired ?? false,
                             allowMultipleTokens: true,
                         },
                         permissions: {
@@ -639,7 +634,45 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                 updatedAt: new Date().toISOString(),
             };
 
+            console.log(bridgeConfig);
+
             await onSave(bridgeConfig);
+
+            // For new bridges with authentication enabled, create a default token
+            if (!bridge && data.access?.authRequired) {
+                try {
+                    // Create a default access token
+                    const response = await fetch(`/api/bridges/${bridgeId}/tokens`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: `${data.name} Access Token`,
+                            description: 'Auto-generated access token for authentication',
+                            expiresInDays: undefined, // Never expires
+                            permissions: [],
+                        }),
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        toast({
+                            title: "Bridge Created with Authentication",
+                            description: "Your bridge has been created with a default access token. You can manage tokens by editing the bridge.",
+                        });
+                    }
+                } catch (tokenError) {
+                    console.error('Failed to create default token:', tokenError);
+                    // Don't fail the bridge creation if token creation fails
+                    toast({
+                        title: "Bridge Created",
+                        description: "Bridge created successfully, but failed to create access token. You can add tokens by editing the bridge.",
+                        variant: "default",
+                    });
+                }
+            }
+
             setHasUnsavedChanges(false);
             clearDraft();
             onOpenChange(false);
