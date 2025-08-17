@@ -1,8 +1,19 @@
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
-import { randomUUID } from 'crypto'
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+    datasources: {
+        db: {
+            url: process.env.DATABASE_URL,
+        },
+    },
+})
+
+// Log the database URL being used (with sensitive parts masked)
+const dbUrl = process.env.DATABASE_URL || 'Not set';
+const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':****@');
+console.log(`🔌 Using database: ${maskedUrl}`);
 
 async function main() {
     // Clean existing data
