@@ -15,7 +15,7 @@
     "db:reset": "dotenv -e .env.local -- prisma migrate reset",
     "db:studio": "dotenv -e .env.local -- prisma studio",
     "db:seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
-    "db:seed-admin": "dotenv -e .env.local -- tsx prisma/seed-admin.ts",
+    "preview:seed": "dotenv -e .env.preview -- tsx prisma/seed.ts",
     "prod:migrate": "vercel env pull .env.production --environment=production && dotenv -e .env.production -- db:migrate:deploy && dotenv -e .env.production -- next build",
     "prod:seed": "vercel env pull .env.production --environment=production && dotenv -e .env.production -- tsx prisma/seed.ts",
     "vercel:setup": "./scripts/setup-production.sh",
@@ -25,7 +25,8 @@
     "@auth/prisma-adapter": "^2.10.0",
     "@hookform/resolvers": "^5.2.1",
     "@modelcontextprotocol/sdk": "^1.17.1",
-    "@prisma/client": "^6.13.0",
+    "@next/third-parties": "^15.4.6",
+    "@prisma/client": "^6.14.0",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-checkbox": "^1.3.2",
     "@radix-ui/react-collapsible": "^1.1.12",
@@ -70,7 +71,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "postcss": "^8.5.6",
-    "prisma": "^6.13.0",
+    "prisma": "^6.14.0",
     "typescript": "^5",
     "vitest": "^3.2.4"
   }
