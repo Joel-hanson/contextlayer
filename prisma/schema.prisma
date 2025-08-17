@@ -140,7 +140,7 @@ model Bridge {
     baseUrl     String
 
     // Simplified authentication config for external API calls
-    authConfig Json? // { type: 'none|bearer|apikey|basic', token?, apiKey?, username?, password?, headerName? }
+    authConfig Json? // { type: 'none|bearer|apikey|basic', token?, apiKey?, username?, password?, headerName?, keyLocation: 'header|query', paramName? }
 
     // Request headers
     headers Json? // Custom headers as JSONB
@@ -148,8 +148,8 @@ model Bridge {
     // Status - simplified to just enabled/disabled
     enabled Boolean @default(true) // Default to enabled for easier use
 
-    // Simplified access control - removed complex routing config
-    accessConfig Json? // { public: boolean, allowedOrigins?: string[], authRequired: boolean }
+    // Simplified access control
+    accessConfig Json? // { allowedOrigins?: string[], authRequired: boolean }
 
     // MCP Content - Store as JSON for flexibility
     mcpTools     Json? // Array of McpTool objects: [{ name: string, description: string, inputSchema: {...} }]

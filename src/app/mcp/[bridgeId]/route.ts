@@ -320,25 +320,22 @@ async function handleMcpJsonRpc(
             );
         }
 
-        // Check bridge access control authentication
-        const accessConfig = bridge.accessConfig as {
-            authRequired?: boolean;
-            apiKey?: string;
-        } | null;
+        // Parse JSON-RPC request - moved here to have it available for error responses
+        let jsonRpcRequest;
+        try {
+            jsonRpcRequest = await request.json();
 
-        if (accessConfig?.authRequired) {
-            if (!accessConfig.apiKey) {
+            if (!jsonRpcRequest.jsonrpc || jsonRpcRequest.jsonrpc !== '2.0') {
                 return NextResponse.json(
                     {
                         jsonrpc: '2.0',
                         error: {
-                            code: MCP_ERROR_CODES.INTERNAL_ERROR,
-                            message: 'Bridge access control is enabled but no API key is configured'
+                            code: MCP_ERROR_CODES.PARSE_ERROR,
+                            message: 'Invalid Request'
                         },
-                        id: null
+                        id: jsonRpcRequest.id || null
                     },
                     {
-                        status: 500,
                         headers: {
                             'Content-Type': 'application/json',
                             'Access-Control-Allow-Origin': '*',
@@ -346,34 +343,61 @@ async function handleMcpJsonRpc(
                     }
                 );
             }
+        } catch {
+            // JSON parsing failed
+            return NextResponse.json(
+                {
+                    jsonrpc: '2.0',
+                    error: {
+                        code: MCP_ERROR_CODES.PARSE_ERROR,
+                        message: 'Invalid JSON'
+                    },
+                    id: null
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*',
+                    }
+                }
+            );
+        }
 
-            // Check for API key in Authorization header (Bearer token format)
+        // Check bridge access control authentication
+        const accessConfig = bridge.accessConfig as {
+            authRequired?: boolean;
+            apiKey?: string;
+        } | null;
+
+        console.log(accessConfig, 'Access config for bridge:', bridgeId);
+
+        if (accessConfig?.authRequired) {
+            // Extract token from request headers
             const authHeader = request.headers.get('authorization');
-            let providedApiKey: string | null = null;
+            let providedToken: string | null = null;
 
             if (authHeader) {
                 if (authHeader.startsWith('Bearer ')) {
-                    providedApiKey = authHeader.substring(7);
+                    providedToken = authHeader.substring(7);
                 } else if (authHeader.startsWith('ApiKey ')) {
-                    providedApiKey = authHeader.substring(7);
+                    providedToken = authHeader.substring(7);
                 }
             }
 
-            // Also check for API key in X-API-Key header
-            if (!providedApiKey) {
-                providedApiKey = request.headers.get('x-api-key');
+            // Also check for token in X-API-Key header
+            if (!providedToken) {
+                providedToken = request.headers.get('x-api-key');
             }
 
-            // Validate the API key
-            if (!providedApiKey || providedApiKey !== accessConfig.apiKey) {
+            if (!providedToken) {
                 return NextResponse.json(
                     {
                         jsonrpc: '2.0',
                         error: {
                             code: -32401,
-                            message: 'Unauthorized: Invalid or missing API key',
+                            message: 'Unauthorized: Missing access token',
                             data: {
-                                help: 'Include your API key in the Authorization header as "Bearer <api-key>" or in the X-API-Key header'
+                                help: 'Include your token in the Authorization header as "Bearer <token>" or in the X-API-Key header'
                             }
                         },
                         id: null
@@ -388,28 +412,121 @@ async function handleMcpJsonRpc(
                     }
                 );
             }
-        }
 
-        // Parse JSON-RPC request
-        const jsonRpcRequest = await request.json();
+            // First check the legacy apiKey for backward compatibility
+            const isLegacyApiKey = accessConfig.apiKey && providedToken === accessConfig.apiKey;
+            let isAuthenticated = isLegacyApiKey;
 
-        if (!jsonRpcRequest.jsonrpc || jsonRpcRequest.jsonrpc !== '2.0') {
-            return NextResponse.json(
-                {
-                    jsonrpc: '2.0',
-                    error: {
-                        code: MCP_ERROR_CODES.PARSE_ERROR,
-                        message: 'Invalid Request'
-                    },
-                    id: jsonRpcRequest.id || null
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*',
+            try {
+                // Look up token in database
+                const accessToken = await prisma.accessToken.findFirst({
+                    where: {
+                        bridgeId: bridge.id,
+                        token: providedToken,
+                        isActive: true,
+                        // Check if token hasn't expired (if it has an expiration date)
+                        OR: [
+                            { expiresAt: null },
+                            { expiresAt: { gt: new Date() } }
+                        ]
                     }
+                });
+
+                if (!accessToken) {
+                    // Log failed authentication attempt
+                    await safeLogBridgeEvent(bridge.id, 'warn', 'Authentication failed', {
+                        tokenProvided: true,
+                        reason: 'Invalid or expired token'
+                    });
+
+                    return NextResponse.json(
+                        {
+                            jsonrpc: '2.0',
+                            error: {
+                                code: -32401,
+                                message: 'Unauthorized: Invalid or expired access token',
+                                data: {
+                                    help: 'Use a valid access token generated from the bridge dashboard'
+                                }
+                            },
+                            id: jsonRpcRequest?.id || null
+                        },
+                        {
+                            status: 401,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*',
+                                'WWW-Authenticate': 'Bearer realm="ContextLayer"'
+                            }
+                        }
+                    );
                 }
-            );
+
+                // Update lastUsedAt timestamp
+                await prisma.accessToken.update({
+                    where: { id: accessToken.id },
+                    data: { lastUsedAt: new Date() }
+                });
+
+                // Log successful authentication
+                await safeLogBridgeEvent(bridge.id, 'info', 'Authentication successful', {
+                    tokenId: accessToken.id,
+                    tokenName: accessToken.name
+                });
+
+                isAuthenticated = true;
+
+            } catch (error) {
+                console.error('Error verifying access token:', error);
+                return NextResponse.json(
+                    {
+                        jsonrpc: '2.0',
+                        error: {
+                            code: MCP_ERROR_CODES.INTERNAL_ERROR,
+                            message: 'Error verifying access token'
+                        },
+                        id: jsonRpcRequest?.id || null
+                    },
+                    {
+                        status: 500,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        }
+                    }
+                );
+            }
+
+            // Double-check authentication status before proceeding
+            if (!isAuthenticated) {
+                // Log unauthorized access attempt
+                await safeLogBridgeEvent(bridge.id, 'warn', 'Authentication failed', {
+                    tokenProvided: true,
+                    reason: 'Invalid token format or type'
+                });
+
+                return NextResponse.json(
+                    {
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32401,
+                            message: 'Unauthorized: Invalid authentication',
+                            data: {
+                                help: 'Provide a valid access token via Bearer auth or X-API-Key header'
+                            }
+                        },
+                        id: jsonRpcRequest?.id || null
+                    },
+                    {
+                        status: 401,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*',
+                            'WWW-Authenticate': 'Bearer realm="ContextLayer"'
+                        }
+                    }
+                );
+            }
         }
 
         // Handle MCP protocol methods

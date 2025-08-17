@@ -105,7 +105,6 @@ export const BridgeConfigSchema = z.object({
 
     // Access control - simplified
     access: z.object({
-        public: z.boolean().default(true),
         allowedOrigins: z.array(z.string()).optional(),
         authRequired: z.boolean().default(false),
         apiKey: z.string().optional(),
