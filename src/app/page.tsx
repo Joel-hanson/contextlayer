@@ -122,7 +122,7 @@ export default function LandingPage() {
         <div className="flex items-center space-x-2 mb-4">
           <Badge variant="secondary" className="px-3 py-1">
             <Star className="mr-1 h-3 w-3" />
-            Transform Any API
+            Transform Your API
           </Badge>
         </div>
         <div className="mx-auto max-w-[980px] text-center px-4">
@@ -133,7 +133,7 @@ export default function LandingPage() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-[750px] text-base sm:text-lg text-muted-foreground md:text-xl">
-            Transform any REST API into an MCP server that AI assistants like Claude Desktop can use.
+            Transform your REST API into an MCP server that AI assistants like Claude Desktop can use.
             Configure your APIs through our web interface and connect via HTTP.
           </p>
         </div>
