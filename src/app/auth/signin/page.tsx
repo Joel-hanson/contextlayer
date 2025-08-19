@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { getSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function SignInPage() {
     const [email, setEmail] = useState('');
@@ -17,28 +17,40 @@ export default function SignInPage() {
     const [loading, setLoading] = useState(false);
     const [redirecting, setRedirecting] = useState(false);
     const [error, setError] = useState('');
+    const [demoLoading, setDemoLoading] = useState(false); // Separate state for demo button
     const router = useRouter();
+
+    // Immediate UI update helper - forces React to flush updates
+    const forceUIUpdate = useCallback(async () => {
+        // Multiple techniques to ensure immediate UI update
+        await new Promise(resolve => {
+            // Use both setTimeout and requestAnimationFrame for maximum compatibility
+            setTimeout(() => {
+                requestAnimationFrame(() => {
+                    resolve(undefined);
+                });
+            }, 0);
+        });
+    }, []);
 
     // Cleanup loading state on component unmount and add timeout protection
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
 
         if (loading && !redirecting) {
-            // Set a timeout to prevent infinite loading state
-            // Only for the initial loading state, not when redirecting
             timeoutId = setTimeout(() => {
                 setLoading(false);
                 setRedirecting(false);
+                setDemoLoading(false);
                 setError('Request timed out. Please try again.');
-            }, 30000); // 30 seconds timeout
+            }, 30000);
         }
 
         return () => {
             if (timeoutId) clearTimeout(timeoutId);
-            // Don't reset loading state on unmount if we're redirecting
-            // as we want to keep the loading indicator until the new page loads
             if (!redirecting) {
                 setLoading(false);
+                setDemoLoading(false);
             }
         };
     }, [loading, redirecting]);
@@ -48,30 +60,30 @@ export default function SignInPage() {
         const persistedError = sessionStorage.getItem('signin_error');
         if (persistedError) {
             setError(persistedError);
-            sessionStorage.removeItem('signin_error'); // Clear it immediately
+            sessionStorage.removeItem('signin_error');
         }
     }, []);
 
-    // Reset error when user starts typing in either field (only clear after actual changes)
+    // Reset error when user starts typing in either field
     const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setEmail(newValue);
-        // Only clear error if the user has made a meaningful change (not just focus/blur)
         if (error && newValue !== email) {
-            setError(''); // Clear error when user modifies the field
-            sessionStorage.removeItem('signin_error'); // Also clear persisted error
+            setError('');
+            sessionStorage.removeItem('signin_error');
         }
     };
 
     const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setPassword(newValue);
-        // Only clear error if the user has made a meaningful change (not just focus/blur)
         if (error && newValue !== password) {
-            setError(''); // Clear error when user modifies the field
-            sessionStorage.removeItem('signin_error'); // Also clear persisted error
+            setError('');
+            sessionStorage.removeItem('signin_error');
         }
-    };    // Helper function to get user-friendly error messages
+    };
+
+    // Helper function to get user-friendly error messages
     const getErrorMessage = (error: string | undefined) => {
         if (!error) return 'An unexpected error occurred';
 
@@ -102,7 +114,6 @@ export default function SignInPage() {
             case 'SessionRequired':
                 return 'You must be signed in to access this page.';
             default:
-                // If the error message is already user-friendly, return it as-is
                 if (error.includes('User already exists') ||
                     error.includes('Username and password are required') ||
                     error.includes('Email is required') ||
@@ -113,9 +124,66 @@ export default function SignInPage() {
         }
     };
 
+    const performSignIn = async (emailValue: string, passwordValue: string) => {
+        try {
+            console.log('Attempting sign in...');
+            const result = await signIn('credentials', {
+                email: emailValue.trim(),
+                password: passwordValue,
+                isSignUp: 'false',
+                redirect: false,
+            });
+
+            console.log('Sign in result:', result);
+
+            if (result?.error) {
+                const friendlyError = getErrorMessage(result.error);
+                console.log('Sign in error:', result.error, '-> friendly:', friendlyError);
+                setError(friendlyError);
+                sessionStorage.setItem('signin_error', friendlyError);
+                setTimeout(() => sessionStorage.removeItem('signin_error'), 10000);
+                setLoading(false);
+                setDemoLoading(false);
+                return;
+            }
+
+            if (result?.ok) {
+                const session = await getSession();
+                if (session) {
+                    console.log('Sign in successful, redirecting...');
+                    setRedirecting(true);
+                    router.push('/dashboard');
+
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 3000);
+                    return;
+                } else {
+                    setError('Authentication succeeded but failed to create session. Please try again.');
+                    setLoading(false);
+                    setDemoLoading(false);
+                    return;
+                }
+            }
+
+            setError('Sign-in failed for an unknown reason. Please try again.');
+            setLoading(false);
+            setDemoLoading(false);
+        } catch (error) {
+            console.error('Sign in error:', error);
+            if (error instanceof Error) {
+                setError(getErrorMessage(error.message));
+            } else {
+                setError('A network error occurred. Please check your connection and try again.');
+            }
+            setLoading(false);
+            setDemoLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        e.stopPropagation(); // Prevent event bubbling
+        e.stopPropagation();
 
         // Basic validation
         if (!email.trim()) {
@@ -128,103 +196,52 @@ export default function SignInPage() {
             return;
         }
 
+        // Set loading state IMMEDIATELY with synchronous operations only
         setLoading(true);
         setError('');
 
-        try {
-            console.log('Attempting sign in...'); // Debug log
-            const result = await signIn('credentials', {
-                email: email.trim(),
-                password,
-                isSignUp: 'false',
-                redirect: false, // This is crucial - prevents automatic redirect
-            });
+        // Force immediate UI update
+        await forceUIUpdate();
 
-            console.log('Sign in result:', result); // Debug log
-
-            if (result?.error) {
-                const friendlyError = getErrorMessage(result.error);
-                console.log('Sign in error:', result.error, '-> friendly:', friendlyError); // Debug log
-                setError(friendlyError);
-                // Persist error briefly in case of page reload
-                sessionStorage.setItem('signin_error', friendlyError);
-                setTimeout(() => sessionStorage.removeItem('signin_error'), 10000); // Clear after 10 seconds
-                setLoading(false);
-                return;
-            }
-
-            if (result?.ok) {
-                // Double check authentication status
-                const session = await getSession();
-                if (session) {
-                    console.log('Sign in successful, redirecting...'); // Debug log
-                    setRedirecting(true);
-                    // Keep loading state active but change the message via redirecting state
-                    // Use router.push but also set a fallback timeout to ensure user is not stuck
-                    router.push('/dashboard');
-
-                    // Safety timeout in case the router.push doesn't trigger a page change
-                    setTimeout(() => {
-                        window.location.href = '/dashboard';
-                    }, 3000); // Fallback after 3 seconds
-                    return;
-                } else {
-                    setError('Authentication succeeded but failed to create session. Please try again.');
-                    setLoading(false);
-                    return;
-                }
-            }
-
-            // If we get here, something unexpected happened
-            setError('Sign-in failed for an unknown reason. Please try again.');
-            setLoading(false);
-        } catch (error) {
-            console.error('Sign in error:', error);
-            if (error instanceof Error) {
-                setError(getErrorMessage(error.message));
-            } else {
-                setError('A network error occurred. Please check your connection and try again.');
-            }
-            setLoading(false);
-        }
+        // Now perform the async operation
+        await performSignIn(email, password);
     };
 
     const handleGoogleSignIn = async () => {
+        // Set loading states IMMEDIATELY
         setLoading(true);
         setError('');
+        setRedirecting(true);
+
+        // Force immediate UI update
+        await forceUIUpdate();
+
+        // Force UI update before proceeding
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         try {
-            // Set redirecting state immediately for Google sign-in
-            // This prevents the "failed to initialize" error from showing
-            setRedirecting(true);
-
             const result = await signIn('google', {
                 callbackUrl: '/dashboard',
                 redirect: false
             });
 
             if (result?.error) {
-                setRedirecting(false); // Reset redirecting state on error
+                setRedirecting(false);
                 const friendlyError = getErrorMessage(result.error);
                 setError(friendlyError);
                 setLoading(false);
             } else if (result?.url) {
-                // Already in redirecting state, just navigate
                 window.location.href = result.url;
 
-                // Safety timeout to reset UI if redirect fails
                 setTimeout(() => {
                     if (document.visibilityState !== 'hidden') {
                         setLoading(false);
                         setRedirecting(false);
                         setError('Redirect timeout. Please try again.');
                     }
-                }, 10000); // 10 seconds timeout
+                }, 10000);
             } else {
-                // If no URL and no error, still don't show initialization error
-                // since we're already showing redirecting state
                 setTimeout(() => {
-                    // Only show this error if we're still on the page after a delay
                     if (document.visibilityState !== 'hidden') {
                         setRedirecting(false);
                         setError('Google sign-in process interrupted. Please try again.');
@@ -242,6 +259,25 @@ export default function SignInPage() {
             }
             setLoading(false);
         }
+    };
+
+    const handleDemoLogin = async () => {
+        // Set loading states IMMEDIATELY with synchronous operations only
+        setDemoLoading(true);
+        setLoading(true);
+        setError('');
+
+        // Set the demo credentials immediately (synchronous)
+        setEmail('demo@contextlayer.app');
+        setPassword('demo123');
+
+        // Force immediate UI update
+        await forceUIUpdate();
+
+        // Small delay to show the loading state, then perform sign in
+        setTimeout(async () => {
+            await performSignIn('demo@contextlayer.app', 'demo123');
+        }, 300); // Reduced delay but still visible
     };
 
     return (
@@ -283,15 +319,14 @@ export default function SignInPage() {
                         </Alert>
                     )}
 
-                    {loading && !redirecting && !error && email === 'demo@contextlayer.app' && (
-                        <Alert variant="default" className="bg-amber-500/10 border-amber-500/20">
-                            <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                    {loading && !redirecting && !error && email.trim() !== '' && (
+                        <Alert variant="default" className="bg-primary/10 border-primary/20">
+                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
                             <AlertDescription className="ml-2">
-                                Logging in with demo account...
+                                {demoLoading ? 'Signing in with demo account...' : 'Verifying credentials...'}
                             </AlertDescription>
                         </Alert>
                     )}
-
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email or Username</Label>
@@ -303,7 +338,7 @@ export default function SignInPage() {
                                 onChange={handleEmailChange}
                                 disabled={loading}
                                 required
-                                className={`${error && error.includes('email') ? 'border-destructive' : ''} ${email === 'demo@contextlayer.app' && loading ? 'bg-muted/50 border-primary/50' : ''}`}
+                                className={`${error && error.includes('email') ? 'border-destructive' : ''} ${email === 'demo@contextlayer.app' && (loading || demoLoading) ? 'bg-muted/50 border-primary/50' : ''}`}
                             />
                         </div>
 
@@ -317,7 +352,7 @@ export default function SignInPage() {
                                 onChange={handlePasswordChange}
                                 disabled={loading}
                                 required
-                                className={`${error && error.includes('password') ? 'border-destructive' : ''} ${password === 'demo123' && loading ? 'bg-muted/50 border-primary/50' : ''}`}
+                                className={`${error && error.includes('password') ? 'border-destructive' : ''} ${password === 'demo123' && (loading || demoLoading) ? 'bg-muted/50 border-primary/50' : ''}`}
                             />
                         </div>
 
@@ -325,15 +360,13 @@ export default function SignInPage() {
                             type="submit"
                             className="w-full"
                             disabled={loading || !email.trim() || !password.trim()}
-                            variant={email === 'demo@contextlayer.app' && loading ? 'outline' : 'default'}
+                            variant={email === 'demo@contextlayer.app' && (loading || demoLoading) ? 'outline' : 'default'}
                         >
-                            {loading && email !== 'demo@contextlayer.app' ? (
+                            {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    {redirecting ? 'Redirecting to dashboard...' : 'Signing in...'}
+                                    {redirecting ? 'Redirecting to dashboard...' : (demoLoading ? 'Signing in with demo...' : 'Signing in...')}
                                 </>
-                            ) : email === 'demo@contextlayer.app' && loading ? (
-                                'Using demo account...'
                             ) : (
                                 'Sign in'
                             )}
@@ -353,9 +386,9 @@ export default function SignInPage() {
 
                     <Button
                         variant="outline"
-                        className={`w-full ${email === 'demo@contextlayer.app' && loading ? 'opacity-50' : ''}`}
+                        className={`w-full ${email === 'demo@contextlayer.app' && (loading || demoLoading) ? 'opacity-50' : ''}`}
                         onClick={handleGoogleSignIn}
-                        disabled={loading}
+                        disabled={loading || demoLoading}
                     >
                         {loading && !redirecting ? (
                             <>
@@ -416,24 +449,10 @@ export default function SignInPage() {
                                 <Button
                                     type="button"
                                     size="sm"
-                                    onClick={async () => {
-                                        // Set loading state immediately to show visual feedback
-                                        setLoading(true);
-                                        setEmail('demo@contextlayer.app');
-                                        setPassword('demo123');
-                                        setError('');
-
-                                        // Add a slight delay to show the loading state
-                                        setTimeout(async () => {
-                                            const form = document.querySelector('form') as HTMLFormElement;
-                                            if (form) {
-                                                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                                            }
-                                        }, 500); // Increased delay to make loading state visible
-                                    }}
-                                    disabled={loading}
+                                    onClick={handleDemoLogin}
+                                    disabled={loading || demoLoading}
                                 >
-                                    {loading ? (
+                                    {(loading || demoLoading) ? (
                                         <>
                                             <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                                             {redirecting ? 'Redirecting...' : 'Signing in...'}
