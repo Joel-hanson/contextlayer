@@ -128,8 +128,12 @@ export default function SignInPage() {
             return;
         }
 
+        // Set loading state immediately
         setLoading(true);
         setError('');
+
+        // Force a small delay to ensure UI updates before the async operation
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         try {
             console.log('Attempting sign in...'); // Debug log
@@ -190,13 +194,20 @@ export default function SignInPage() {
     };
 
     const handleGoogleSignIn = async () => {
+        // Set loading state immediately
         setLoading(true);
         setError('');
+
+        // Force UI update before proceeding
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         try {
             // Set redirecting state immediately for Google sign-in
             // This prevents the "failed to initialize" error from showing
             setRedirecting(true);
+
+            // Force UI update before proceeding
+            await new Promise(resolve => setTimeout(resolve, 50));
 
             const result = await signIn('google', {
                 callbackUrl: '/dashboard',
@@ -283,15 +294,14 @@ export default function SignInPage() {
                         </Alert>
                     )}
 
-                    {loading && !redirecting && !error && email === 'demo@contextlayer.app' && (
-                        <Alert variant="default" className="bg-amber-500/10 border-amber-500/20">
-                            <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                    {loading && !redirecting && !error && email.trim() !== '' && (
+                        <Alert variant="default" className="bg-primary/10 border-primary/20">
+                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
                             <AlertDescription className="ml-2">
-                                Logging in with demo account...
+                                Verifying credentials...
                             </AlertDescription>
                         </Alert>
                     )}
-
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email or Username</Label>
@@ -327,13 +337,11 @@ export default function SignInPage() {
                             disabled={loading || !email.trim() || !password.trim()}
                             variant={email === 'demo@contextlayer.app' && loading ? 'outline' : 'default'}
                         >
-                            {loading && email !== 'demo@contextlayer.app' ? (
+                            {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     {redirecting ? 'Redirecting to dashboard...' : 'Signing in...'}
                                 </>
-                            ) : email === 'demo@contextlayer.app' && loading ? (
-                                'Using demo account...'
                             ) : (
                                 'Sign in'
                             )}
@@ -422,6 +430,9 @@ export default function SignInPage() {
                                         setEmail('demo@contextlayer.app');
                                         setPassword('demo123');
                                         setError('');
+
+                                        // Force UI update before proceeding
+                                        await new Promise(resolve => setTimeout(resolve, 50));
 
                                         // Add a slight delay to show the loading state
                                         setTimeout(async () => {
