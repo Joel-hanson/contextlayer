@@ -2,6 +2,9 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production",
+  },
   images: {
     remotePatterns: [new URL('https://lh3.googleusercontent.com/**')],
   },
