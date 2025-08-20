@@ -74,11 +74,11 @@ export const SECURITY_CONFIG = {
     // Content Security Policy
     CSP_DIRECTIVES: {
         'default-src': ["'self'"],
-        'script-src': ["'self'", "'unsafe-eval'", "'unsafe-inline'", 'https://accounts.google.com', 'https://js.sentry-cdn.com'],
+        'script-src': ["'self'", "'unsafe-eval'", "'unsafe-inline'", 'https://accounts.google.com', 'https://js.sentry-cdn.com', "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://vercel.live"],
         'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         'font-src': ["'self'", 'https://fonts.gstatic.com'],
         'img-src': ["'self'", 'data:', 'https:', 'blob:'],
-        'connect-src': ["'self'", 'https://api.github.com', 'https://accounts.google.com', 'https://*.googleapis.com', 'https://*.ingest.sentry.io', 'https://*.ingest.de.sentry.io'],
+        'connect-src': ["'self'", 'https://api.github.com', 'https://accounts.google.com', 'https://*.googleapis.com', 'https://*.ingest.sentry.io', 'https://*.ingest.de.sentry.io', "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://vercel.live"],
         'frame-src': ["'self'", 'https://accounts.google.com'],
         'object-src': ["'none'"],
         'base-uri': ["'self'"],
