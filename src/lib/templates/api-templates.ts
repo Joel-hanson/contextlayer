@@ -30,6 +30,160 @@ export interface ApiTemplate {
 
 export const apiTemplates: ApiTemplate[] = [
     {
+        id: 'slack',
+        name: 'Slack API',
+        description: 'Team communication and messaging',
+        icon: Zap,
+        color: 'bg-purple-600',
+        tags: ['Chat', 'OAuth'],
+        config: {
+            name: 'Slack API',
+            description: 'Send messages and manage Slack workspaces.',
+            apiConfig: {
+                name: 'Slack Web API',
+                baseUrl: 'https://slack.com/api',
+                description: 'Slack Web API for team communication',
+                authentication: { type: 'bearer', token: '', keyLocation: 'header' },
+                endpoints: [
+                    {
+                        id: 'post_chat_create',
+                        name: 'Send Message',
+                        method: 'POST',
+                        path: '/chat.postMessage',
+                        description: 'Send a message to a channel',
+                        parameters: [
+                            { name: 'channel', type: 'string', required: true, description: 'Channel ID where the message will be posted', location: 'body' },
+                            { name: 'text', type: 'string', required: false, description: 'Text of the message to send (used as fallback when using blocks)', location: 'body' },
+                            { name: 'blocks', type: 'object', required: false, description: 'JSON string of Block Kit layout for rich messages', location: 'body' },
+                            { name: 'thread_ts', type: 'string', required: false, description: 'Timestamp of the parent message to reply in a thread', location: 'body' },
+                            { name: 'mrkdwn', type: 'boolean', required: false, description: 'Whether to use markdown formatting for text', location: 'body' }
+                        ],
+                    },
+                    {
+                        id: 'post_files_upload',
+                        name: 'Upload File',
+                        method: 'POST',
+                        path: '/files.upload',
+                        description: 'Upload a file to Slack (Note: This endpoint is being deprecated March 2025)',
+                        parameters: [
+                            { name: 'channels', type: 'string', required: false, description: 'Comma-separated list of channel IDs to share the file', location: 'body' },
+                            { name: 'content', type: 'string', required: false, description: 'Text content to create as a file (use for editable text files)', location: 'body' },
+                            { name: 'filename', type: 'string', required: false, description: 'Filename of file', location: 'body' },
+                            { name: 'title', type: 'string', required: false, description: 'Title of file', location: 'body' },
+                            { name: 'initial_comment', type: 'string', required: false, description: 'Initial comment to add to the file', location: 'body' },
+                            { name: 'thread_ts', type: 'string', required: false, description: 'Timestamp of the parent message to share file in thread', location: 'body' },
+                            { name: 'filetype', type: 'string', required: false, description: 'File type (e.g., text, csv, pdf, etc.)', location: 'body' }
+                        ],
+                    },
+                    {
+                        id: 'get_upload_url',
+                        name: 'Get Upload URL',
+                        method: 'GET',
+                        path: '/files.getUploadURLExternal',
+                        description: 'Get URL for uploading files (Recommended method for file uploads)',
+                        parameters: [
+                            { name: 'filename', type: 'string', required: true, description: 'Filename including extension', location: 'query' },
+                            { name: 'length', type: 'number', required: true, description: 'File size in bytes', location: 'query' },
+                            { name: 'alt_text', type: 'string', required: false, description: 'Alternative text for image files', location: 'query' }
+                        ],
+                    },
+                    {
+                        id: 'get_conversations_list',
+                        name: 'List Channels',
+                        method: 'GET',
+                        path: '/conversations.list',
+                        description: 'Get list of channels',
+                        parameters: [
+                            { name: 'types', type: 'string', required: false, description: 'Channel types (public_channel,private_channel)' },
+                            { name: 'exclude_archived', type: 'boolean', required: false, description: 'Exclude archived channels' },
+                            { name: 'limit', type: 'number', required: false, description: 'Maximum number of items to return' }
+                        ],
+                    }
+                ]
+            },
+            mcpResources: [
+                {
+                    uri: 'slack://workspace/info',
+                    name: 'Workspace Info',
+                    description: 'Current Slack workspace information',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'slack://channels/guidelines',
+                    name: 'Channel Guidelines',
+                    description: 'Best practices for channel management',
+                    mimeType: 'text/markdown'
+                },
+                {
+                    uri: 'slack://messaging/templates',
+                    name: 'Message Templates',
+                    description: 'Common message templates for team communication',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'slack://block-kit/examples',
+                    name: 'Block Kit Examples',
+                    description: 'Example Block Kit layouts for rich messages',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'slack://api/rate-limits',
+                    name: 'API Rate Limits',
+                    description: 'Current rate limits for Slack API methods',
+                    mimeType: 'application/json'
+                },
+                {
+                    uri: 'slack://app/installation-guide',
+                    name: 'App Installation Guide',
+                    description: 'Step-by-step guide for installing Slack apps',
+                    mimeType: 'text/markdown'
+                }
+            ],
+            mcpPrompts: [
+                {
+                    name: 'channel_summary',
+                    description: 'Summarize channel activity and key discussions',
+                    arguments: [
+                        { name: 'channel', description: 'Channel ID or name', required: true },
+                        { name: 'days', description: 'Number of days to analyze', required: false }
+                    ]
+                },
+                {
+                    name: 'message_composer',
+                    description: 'Compose professional messages for team communication',
+                    arguments: [
+                        { name: 'purpose', description: 'Purpose of the message', required: true },
+                        { name: 'tone', description: 'Tone (formal/casual/urgent)', required: false }
+                    ]
+                },
+                {
+                    name: 'block_kit_builder',
+                    description: 'Generate Block Kit JSON for interactive messages',
+                    arguments: [
+                        { name: 'components', description: 'Desired components (buttons,menus,datepicker,etc)', required: true },
+                        { name: 'purpose', description: 'Purpose of the interactive message', required: true }
+                    ]
+                },
+                {
+                    name: 'channel_organizer',
+                    description: 'Recommend channel organization strategies',
+                    arguments: [
+                        { name: 'team_size', description: 'Size of the team', required: true },
+                        { name: 'department_structure', description: 'Key departments or teams', required: true }
+                    ]
+                },
+                {
+                    name: 'workflow_designer',
+                    description: 'Design Slack workflows for common business processes',
+                    arguments: [
+                        { name: 'process', description: 'Business process to automate', required: true },
+                        { name: 'complexity', description: 'Desired complexity level (simple/advanced)', required: false }
+                    ]
+                }
+            ]
+        }
+    },
+    {
         id: 'weather',
         name: 'Weather API',
         description: 'OpenWeatherMap real-time weather data',
@@ -571,7 +725,7 @@ export const apiTemplates: ApiTemplate[] = [
                         ],
                     },
                     {
-                        id: 'mars-photos',
+                        id: 'mars_photos',
                         name: 'Mars Rover Photos',
                         method: 'GET',
                         path: '/mars-photos/api/v1/rovers/curiosity/photos',
@@ -633,7 +787,7 @@ export const apiTemplates: ApiTemplate[] = [
                         description: 'Generate AI completions',
                         parameters: [
                             { name: 'model', type: 'string', required: true, description: 'Model ID (e.g., gpt-4)' },
-                            { name: 'messages', type: 'array', required: true, description: 'Array of message objects' }
+                            { name: 'messages', type: 'object', required: true, description: 'Array of message objects as JSON string' }
                         ],
                     },
                     {
@@ -890,85 +1044,6 @@ export const apiTemplates: ApiTemplate[] = [
                         { name: 'owner', description: 'Repository owner', required: true },
                         { name: 'repo', description: 'Repository name', required: true },
                         { name: 'state', description: 'Issue state (open/closed/all)', required: false }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        id: 'slack',
-        name: 'Slack API',
-        description: 'Team communication and messaging',
-        icon: Zap,
-        color: 'bg-purple-600',
-        tags: ['Chat', 'OAuth'],
-        config: {
-            name: 'Slack API',
-            description: 'Send messages and manage Slack workspaces.',
-            apiConfig: {
-                name: 'Slack Web API',
-                baseUrl: 'https://slack.com/api',
-                description: 'Slack Web API for team communication',
-                authentication: { type: 'bearer', token: '', keyLocation: 'header' },
-                endpoints: [
-                    {
-                        id: 'slack-send-message',
-                        name: 'Send Message',
-                        method: 'POST',
-                        path: '/chat.postMessage',
-                        description: 'Send a message to a channel',
-                        parameters: [
-                            { name: 'channel', type: 'string', required: true, description: 'Channel ID or name' },
-                            { name: 'text', type: 'string', required: true, description: 'Message text' }
-                        ],
-                    },
-                    {
-                        id: 'slack-list-channels',
-                        name: 'List Channels',
-                        method: 'GET',
-                        path: '/conversations.list',
-                        description: 'Get list of channels',
-                        parameters: [
-                            { name: 'types', type: 'string', required: false, description: 'Channel types (public_channel,private_channel)' }
-                        ],
-                    }
-                ]
-            },
-            mcpResources: [
-                {
-                    uri: 'slack://workspace/info',
-                    name: 'Workspace Info',
-                    description: 'Current Slack workspace information',
-                    mimeType: 'application/json'
-                },
-                {
-                    uri: 'slack://channels/guidelines',
-                    name: 'Channel Guidelines',
-                    description: 'Best practices for channel management',
-                    mimeType: 'text/markdown'
-                },
-                {
-                    uri: 'slack://messaging/templates',
-                    name: 'Message Templates',
-                    description: 'Common message templates for team communication',
-                    mimeType: 'application/json'
-                }
-            ],
-            mcpPrompts: [
-                {
-                    name: 'channel_summary',
-                    description: 'Summarize channel activity and key discussions',
-                    arguments: [
-                        { name: 'channel', description: 'Channel ID or name', required: true },
-                        { name: 'days', description: 'Number of days to analyze', required: false }
-                    ]
-                },
-                {
-                    name: 'message_composer',
-                    description: 'Compose professional messages for team communication',
-                    arguments: [
-                        { name: 'purpose', description: 'Purpose of the message', required: true },
-                        { name: 'tone', description: 'Tone (formal/casual/urgent)', required: false }
                     ]
                 }
             ]

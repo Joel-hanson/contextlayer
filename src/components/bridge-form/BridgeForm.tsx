@@ -18,6 +18,7 @@ import { ConfirmationDialog } from '../ConfirmationDialog';
 import { AuthenticationTab } from './AuthenticationTab';
 import { BasicInfoTab } from './BasicInfoTab';
 import { EndpointsTab } from './EndpointsTab';
+import { FormValidationErrors } from './FormValidationErrors';
 import { PromptsTab } from './PromptsTab';
 import { ResourcesTab } from './ResourcesTab';
 import { RoutingAndAccessTab } from './RoutingAndAccessTab';
@@ -463,6 +464,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 required: tool.inputSchema.required || []
                             }
                         }));
+                        console.log('Generated MCP tools:', safeTools);
 
                         form.setValue('mcpTools', safeTools);
                     } catch (error) {
@@ -976,6 +978,9 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 </div>
                             </div>
                         )}
+
+                        {/* Form Validation Errors Display */}
+                        <FormValidationErrors errors={form.formState.errors} getValues={form.getValues} />
 
                         <DialogFooter className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4">
                             <div className="flex items-center text-sm text-muted-foreground order-2 sm:order-1">

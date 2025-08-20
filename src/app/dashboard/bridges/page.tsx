@@ -261,7 +261,7 @@ export default function BridgesPage() {
                                                         {template.description}
                                                     </div>
                                                 </div>
-                                                {["openai", "stripe", "sendgrid", "github", "slack"].includes(template.id) && (
+                                                {["openai", "stripe", "sendgrid", "github"].includes(template.id) && (
                                                     <Badge variant="outline" className="text-xs">
                                                         Under Testing
                                                     </Badge>
@@ -462,10 +462,8 @@ export default function BridgesPage() {
                                                                                     <pre className="whitespace-pre-wrap break-words">{`{
   "servers": {
     "${bridge.name.toLowerCase().replace(/\s+/g, '-')}": {
-      "transport": {
         "type": "http",
         "url": "${baseUrl}/mcp/${bridge.slug || bridge.id}"
-      }
     }
   }
 }`}</pre>

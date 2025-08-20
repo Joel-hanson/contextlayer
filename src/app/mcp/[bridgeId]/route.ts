@@ -1094,6 +1094,7 @@ async function executeApiCall(bridge: Bridge, endpoint: Endpoint, args: Record<s
         await logBridgeEvent(bridge.id, 'info', 'API call completed', {
             endpoint: endpoint.name || endpoint.path,
             method: endpoint.method,
+            fullUrl: fullUrl, // Add the full URL to the log
             responseTime,
             statusCode: response.status,
             statusText: response.statusText,
