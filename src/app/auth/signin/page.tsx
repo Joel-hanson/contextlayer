@@ -449,6 +449,7 @@ export default function SignInPage() {
                                 <Button
                                     type="button"
                                     size="sm"
+                                    className='cursor-pointer'
                                     onClick={handleDemoLogin}
                                     disabled={loading || demoLoading}
                                 >

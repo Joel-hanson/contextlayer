@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -9,12 +10,21 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -30,6 +40,11 @@ interface Feedback {
     updatedAt: string;
     adminResponse?: string;
     resolvedAt?: string;
+    userId: string;
+    user?: {
+        name?: string | null;
+        email?: string | null;
+    };
 }
 
 interface PaginationInfo {
@@ -39,7 +54,7 @@ interface PaginationInfo {
     totalPages: number;
 }
 
-export default function MyFeedbackPage() {
+export default function AdminFeedbackPage() {
     const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
     const [pagination, setPagination] = useState<PaginationInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -48,24 +63,36 @@ export default function MyFeedbackPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
+    // Response dialog state
+    const [responseDialogOpen, setResponseDialogOpen] = useState(false);
+    const [currentFeedbackId, setCurrentFeedbackId] = useState<string | null>(null);
+    const [adminResponse, setAdminResponse] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Check if user is admin
+    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
+    const isAdmin = session?.user?.email && adminEmails.includes(session.user.email);
+
     useEffect(() => {
         if (status === 'loading') return;
-        if (!session) {
-            router.push('/auth/signin?callbackUrl=/dashboard/feedback');
+
+        // Redirect non-admin users
+        if (!session || !isAdmin) {
+            router.push('/dashboard');
             return;
         }
 
-        const fetchFeedback = async () => {
+        const fetchAllFeedback = async () => {
             try {
                 setIsLoading(true);
                 const params = new URLSearchParams({
                     page: '1',
-                    limit: '20',
+                    limit: '50',
                     ...(filterType !== 'all' && { type: filterType }),
                     ...(filterStatus !== 'all' && { status: filterStatus }),
                 });
 
-                const response = await fetch(`/api/feedback?${params}`);
+                const response = await fetch(`/api/admin/feedback?${params}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch feedback');
                 }
@@ -80,8 +107,84 @@ export default function MyFeedbackPage() {
             }
         };
 
-        fetchFeedback();
-    }, [session, status, router, filterType, filterStatus]);
+        fetchAllFeedback();
+    }, [session, status, router, filterType, filterStatus, isAdmin]);
+
+    // Function to update feedback status
+    const updateFeedbackStatus = async (feedbackId: string, newStatus: string) => {
+        try {
+            const response = await fetch(`/api/admin/feedback/${feedbackId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update status');
+            }
+
+            // Update local state
+            setFeedbackList(prevList =>
+                prevList.map(item =>
+                    item.id === feedbackId
+                        ? { ...item, status: newStatus, updatedAt: new Date().toISOString() }
+                        : item
+                )
+            );
+        } catch (error) {
+            console.error('Error updating feedback status:', error);
+        }
+    };
+
+    // Function to open response dialog
+    const openResponseDialog = (feedbackId: string) => {
+        const feedback = feedbackList.find(f => f.id === feedbackId);
+        if (feedback) {
+            setCurrentFeedbackId(feedbackId);
+            setAdminResponse(feedback.adminResponse || '');
+            setResponseDialogOpen(true);
+        }
+    };
+
+    // Function to submit admin response
+    const submitAdminResponse = async () => {
+        if (!currentFeedbackId) return;
+
+        try {
+            setIsSubmitting(true);
+            const response = await fetch(`/api/admin/feedback/${currentFeedbackId}/response`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ response: adminResponse }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit response');
+            }
+
+            // Update local state
+            setFeedbackList(prevList =>
+                prevList.map(item =>
+                    item.id === currentFeedbackId
+                        ? { ...item, adminResponse, updatedAt: new Date().toISOString() }
+                        : item
+                )
+            );
+
+            // Close dialog
+            setResponseDialogOpen(false);
+            setCurrentFeedbackId(null);
+            setAdminResponse('');
+        } catch (error) {
+            console.error('Error submitting admin response:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const getStatusBadgeVariant = (status: string) => {
         switch (status) {
@@ -136,11 +239,44 @@ export default function MyFeedbackPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Admin Response Dialog */}
+                <Dialog open={responseDialogOpen} onOpenChange={setResponseDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Admin Response</DialogTitle>
+                            <DialogDescription>
+                                Your response will be visible to the user who submitted this feedback.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <Textarea
+                                placeholder="Enter your response to this feedback..."
+                                value={adminResponse}
+                                onChange={(e) => setAdminResponse(e.target.value)}
+                                rows={6}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setResponseDialogOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={submitAdminResponse}
+                                disabled={!adminResponse.trim() || isSubmitting}
+                            >
+                                {isSubmitting ? 'Submitting...' : 'Submit Response'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </>
         );
-    }
-
-    if (!session) {
+    }    // Redirect non-admin users
+    if (!session || !isAdmin) {
         return null; // Will redirect in useEffect
     }
 
@@ -149,10 +285,10 @@ export default function MyFeedbackPage() {
             <div className="p-6">
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-foreground mb-2">
-                        My Feedback
+                        Feedback Management
                     </h1>
                     <p className="text-muted-foreground">
-                        Track and manage your submitted feedback
+                        View and manage all user feedback submissions
                     </p>
                 </div>
 
@@ -194,9 +330,6 @@ export default function MyFeedbackPage() {
                                 <p className="text-muted-foreground mb-4">
                                     No feedback found matching your filters.
                                 </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Use the feedback widget or visit the feedback page to submit your first feedback.
-                                </p>
                             </CardContent>
                         </Card>
                     ) : (
@@ -204,10 +337,17 @@ export default function MyFeedbackPage() {
                             <Card key={feedback.id}>
                                 <CardHeader>
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                        <CardTitle className="text-lg">
-                                            {feedback.subject}
-                                        </CardTitle>
-                                        <div className="flex gap-2">
+                                        <div>
+                                            <CardTitle className="text-lg">
+                                                {feedback.subject}
+                                            </CardTitle>
+                                            {feedback.user && (
+                                                <p className="text-sm text-muted-foreground mt-1">
+                                                    From: {feedback.user.name || 'Unknown'} ({feedback.user.email || 'No email'})
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
                                             <Badge variant={getStatusBadgeVariant(feedback.status) as "default" | "secondary" | "destructive" | "outline"}>
                                                 {feedback.status.replace('_', ' ')}
                                             </Badge>
@@ -247,6 +387,41 @@ export default function MyFeedbackPage() {
                                                 </p>
                                             </div>
                                         )}
+
+                                        {/* Admin Action Buttons */}
+                                        <div className="border-t pt-4 flex flex-wrap gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => updateFeedbackStatus(feedback.id, 'IN_PROGRESS')}
+                                                disabled={feedback.status === 'IN_PROGRESS'}
+                                            >
+                                                Mark In Progress
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => updateFeedbackStatus(feedback.id, 'RESOLVED')}
+                                                disabled={feedback.status === 'RESOLVED'}
+                                            >
+                                                Mark Resolved
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => updateFeedbackStatus(feedback.id, 'CLOSED')}
+                                                disabled={feedback.status === 'CLOSED'}
+                                            >
+                                                Close
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => openResponseDialog(feedback.id)}
+                                            >
+                                                {feedback.adminResponse ? 'Edit Response' : 'Add Response'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>

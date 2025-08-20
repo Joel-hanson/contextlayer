@@ -21,9 +21,12 @@ import {
   Zap
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Dashboard() {
+  // Add reference to track initial load
+  const initialLoadComplete = useRef(false);
+
   const {
     bridges,
     loading,
@@ -35,6 +38,17 @@ export default function Dashboard() {
 
   const [showBridgeForm, setShowBridgeForm] = useState(false);
   const [editingBridge, setEditingBridge] = useState<BridgeConfig | undefined>();
+
+  // Control initial load to prevent multiple refreshes
+  useEffect(() => {
+    // Only refresh on mount, not on every render
+    if (!initialLoadComplete.current) {
+      initialLoadComplete.current = true;
+      // If needed, you can uncomment this to trigger an initial refresh, but it should
+      // already be handled by the useBridges hook
+      // refreshBridges();
+    }
+  }, []);
 
   const handleSaveBridge = async (bridge: BridgeConfig) => {
     try {
@@ -50,15 +64,24 @@ export default function Dashboard() {
       setEditingBridge(undefined);
       setShowBridgeForm(false);
     } catch (error) {
-      console.error('Failed to save bridge:', error);
+      console.error('Failed to save MCP server:', error);
       // Error handling is done in the hook
     }
   };
 
-  const createNewBridge = () => {
+  // Define a safe refresh function to prevent multiple refreshes
+  const handleRefresh = () => {
+    if (!loading) {
+      refreshBridges();
+    }
+  };
+
+  const createNewServer = () => {
     setEditingBridge(undefined);
     setShowBridgeForm(true);
-  }; const runningBridges = bridges.filter(b => b.enabled).length;
+  };
+
+  const runningBridges = bridges.filter(b => b.enabled).length;
   const activeBridges = bridges.filter(b => b.enabled);
 
   return (
@@ -86,7 +109,7 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={refreshBridges}
+                onClick={handleRefresh}
                 className="ml-auto"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -111,7 +134,7 @@ export default function Dashboard() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
               <Button
                 variant="outline"
-                onClick={refreshBridges}
+                onClick={handleRefresh}
                 disabled={loading}
                 className="w-full sm:w-auto touch-manipulation"
               >
@@ -119,7 +142,7 @@ export default function Dashboard() {
                 Refresh
               </Button>
               <Button
-                onClick={createNewBridge}
+                onClick={createNewServer}
                 className="w-full sm:w-auto touch-manipulation"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -141,7 +164,7 @@ export default function Dashboard() {
                     Transform any REST API into a Model Context Protocol server that AI assistants can use. Get started by creating your first MCP server.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <Button onClick={createNewBridge} size="lg" className="touch-manipulation">
+                    <Button onClick={createNewServer} size="lg" className="touch-manipulation">
                       <Plus className="h-5 w-5 mr-2" />
                       Create Your First MCP Server
                     </Button>
@@ -332,13 +355,13 @@ export default function Dashboard() {
                     <CardDescription>Common tasks and helpful resources</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button onClick={createNewBridge} className="w-full justify-start h-auto p-4" variant="ghost">
+                    <Button onClick={createNewServer} className="w-full justify-start h-auto p-4" variant="ghost">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                           <Plus className="h-4 w-4 text-primary" />
                         </div>
                         <div className="text-left">
-                          <div className="font-medium">Create New Bridge</div>
+                          <div className="font-medium">Create New MCP Server</div>
                           <div className="text-sm text-muted-foreground">Add a new REST API connection</div>
                         </div>
                       </div>
