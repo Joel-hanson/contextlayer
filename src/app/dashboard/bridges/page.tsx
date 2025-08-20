@@ -250,7 +250,7 @@ export default function BridgesPage() {
                                             <DropdownMenuItem
                                                 key={template.id}
                                                 onClick={() => applyTemplate(template)}
-                                                className="flex items-center gap-3 py-3"
+                                                className="flex items-center gap-3 py-3 cursor-pointer"
                                             >
                                                 <div className={`w-8 h-8 rounded-md ${template.color} flex items-center justify-center shrink-0`}>
                                                     <IconComponent className="h-4 w-4 text-white" />
