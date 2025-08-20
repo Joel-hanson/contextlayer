@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, Send } from 'lucide-react';
+import { Route } from 'next';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -45,7 +46,7 @@ export function FeedbackWidget() {
     const handleOpenChange = (isOpen: boolean) => {
         if (isOpen && status !== 'loading' && !session) {
             // Redirect to sign in if user is not authenticated
-            router.push('/auth/signin?callbackUrl=' + encodeURIComponent(window.location.pathname));
+            router.push(('/auth/signin?callbackUrl=' + encodeURIComponent(window.location.pathname)) as Route);
             return;
         }
         setOpen(isOpen);
