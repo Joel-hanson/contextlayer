@@ -10,7 +10,7 @@ const responseSchema = z.object({
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         // Apply rate limiting
@@ -35,7 +35,8 @@ export async function POST(
         }
 
         // Get feedback ID from route params - access directly from params
-        const feedbackId = params.id;
+        const resolvedParams = await params;
+        const feedbackId = resolvedParams.id;
         if (!feedbackId) {
             return NextResponse.json(
                 { error: 'Feedback ID is required' },
