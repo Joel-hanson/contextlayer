@@ -22,6 +22,7 @@ import {
     LogOut,
     LucideIcon,
     Menu,
+    MessageCircle,
     Settings,
     User,
     X
@@ -47,7 +48,6 @@ export function DashboardLayout({ children }: SidebarProps) {
         { name: 'MCP Servers', href: '/dashboard/bridges', icon: Database, current: pathname === '/dashboard/bridges' },
         { name: 'Quick Guide', href: '/guide', icon: BookOpen, current: pathname === '/guide' },
         { name: 'Documentation', href: '/dashboard/docs', icon: FileText, current: pathname === '/dashboard/docs' },
-        // { name: 'My Feedback', href: '/dashboard/feedback', icon: MessageCircle, current: pathname === '/dashboard/feedback' },
         { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: pathname === '/dashboard/settings' },
     ];
 
@@ -57,6 +57,7 @@ export function DashboardLayout({ children }: SidebarProps) {
 
     if (isAdmin) {
         navigation.push({ name: 'Admin Dashboard', href: '/admin', icon: BrainCogIcon, current: pathname === '/admin' })
+        navigation.push({ name: 'Feedback Management', href: '/dashboard/feedback', icon: MessageCircle, current: pathname === '/dashboard/feedback' })
     }
 
     const handleSignOut = () => {
