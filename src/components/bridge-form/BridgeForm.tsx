@@ -40,7 +40,6 @@ interface BridgeFormProps {
 
 export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: BridgeFormProps) {
     const [activeTab, setActiveTab] = useState('basic');
-    const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showGuide, setShowGuide] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -687,99 +686,7 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
         }
     };
 
-    const testEndpoint = async (endpoint: McpEndpoint) => {
-        // Validate required fields
-        if (!endpoint.name || !endpoint.path) {
-            toast({
-                title: "Test Failed",
-                description: "Endpoint name and path are required for testing",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        const formValues = form.getValues();
-        if (!formValues.apiConfig.baseUrl) {
-            toast({
-                title: "Test Failed",
-                description: "API Base URL is required for testing",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        setTestingEndpoint(endpoint.name);
-        try {
-            const baseUrl = formValues.apiConfig.baseUrl;
-            const auth = formValues.apiConfig.authentication;
-
-            // Build the full URL
-            const url = `${baseUrl.replace(/\/$/, '')}${endpoint.path.startsWith('/') ? '' : '/'}${endpoint.path}`;
-
-            // Build headers
-            const headers: Record<string, string> = {
-                'Content-Type': 'application/json',
-                ...formValues.apiConfig.headers,
-            };
-
-            // Add authentication headers
-            if (auth?.type === 'bearer' && auth.token) {
-                headers['Authorization'] = `Bearer ${auth.token}`;
-            } else if (auth?.type === 'apikey' && auth.apiKey) {
-                const headerName = auth.headerName || 'X-API-Key';
-                headers[headerName] = auth.apiKey;
-            } else if (auth?.type === 'basic' && auth.username && auth.password) {
-                headers['Authorization'] = `Basic ${btoa(`${auth.username}:${auth.password}`)}`;
-            }
-
-            // Make the request with a timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-            const response = await fetch(url, {
-                method: endpoint.method,
-                headers,
-                signal: controller.signal,
-            });
-
-            clearTimeout(timeoutId);
-
-            // Check if the response is ok
-            if (response.ok) {
-                toast({
-                    title: "Test Successful",
-                    description: `Endpoint "${endpoint.name}" responded with status ${response.status}`,
-                    variant: "default",
-                });
-            } else {
-                toast({
-                    title: "Test Failed",
-                    description: `Endpoint "${endpoint.name}" returned status ${response.status}: ${response.statusText}`,
-                    variant: "destructive",
-                });
-            }
-        } catch (error) {
-            let errorMessage = `Endpoint test failed: ${error}`;
-
-            if (error instanceof Error) {
-                if (error.name === 'AbortError') {
-                    errorMessage = 'Request timed out after 10 seconds';
-                } else if (error.message.includes('fetch')) {
-                    errorMessage = 'Failed to connect to the API endpoint';
-                } else {
-                    errorMessage = error.message;
-                }
-            }
-
-            toast({
-                title: "Test Failed",
-                description: errorMessage,
-                variant: "destructive",
-            });
-        } finally {
-            setTestingEndpoint(null);
-        }
-    }; const getTabIcon = (tabName: string) => {
+    const getTabIcon = (tabName: string) => {
         const hasErrors = form.formState.errors;
 
         switch (tabName) {
@@ -942,8 +849,6 @@ export function BridgeForm({ bridge, open, onOpenChange, onSave, onDelete }: Bri
                                 <EndpointsTab
                                     form={form}
                                     endpointFields={endpointFields}
-                                    testingEndpoint={testingEndpoint}
-                                    onTestEndpoint={testEndpoint}
                                 />
                             </TabsContent>
 

@@ -285,7 +285,7 @@ function getExampleValue(type: string): string {
     }
 }
 
-export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndpoint }: EndpointsTabProps) {
+export function EndpointsTab({ form, endpointFields }: EndpointsTabProps) {
     const { fields, append, remove } = endpointFields;
     const [openPreview, setOpenPreview] = useState<number[]>([]);
 
@@ -682,7 +682,7 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
                                     </Collapsible>
                                 </div>
 
-                                {onTestEndpoint && (
+                                {/* {onTestEndpoint && (
                                     <div className="pt-2 border-t">
                                         <Button
                                             type="button"
@@ -695,7 +695,7 @@ export function EndpointsTab({ form, endpointFields, testingEndpoint, onTestEndp
                                             {testingEndpoint === form.watch(`apiConfig.endpoints.${index}.name`) ? 'Testing...' : 'Test Endpoint'}
                                         </Button>
                                     </div>
-                                )}
+                                )} */}
                             </CardContent>
                         </Card>
                     ))}

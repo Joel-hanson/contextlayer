@@ -27,11 +27,13 @@ import {
     User,
     X
 } from 'lucide-react';
+import { Route } from 'next';
 import { signOut, useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { UrlObject } from 'url';
 
 interface SidebarProps {
     children: React.ReactNode;
@@ -226,7 +228,7 @@ export function DashboardLayout({ children }: SidebarProps) {
 interface SidebarContentProps {
     navigation: Array<{
         name: string;
-        href: string;
+        href: string | UrlObject;
         icon: LucideIcon;
         current: boolean;
     }>;
@@ -272,7 +274,7 @@ function SidebarContent({ navigation, onClose, session, onSignOut, collapsed }: 
                             {navigation.map((item) => (
                                 <li key={item.name}>
                                     <Link
-                                        href={item.href}
+                                        href={item.href as Route}
                                         className={cn(
                                             item.current
                                                 ? 'bg-muted text-foreground'
