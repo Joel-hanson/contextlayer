@@ -140,10 +140,8 @@ export default function DocsPage() {
                                         <pre className="whitespace-pre">{`{
   "servers": {
     "my-api-bridge": {
-      "transport": {
         "type": "http",
         "url": "${baseUrl}/mcp/YOUR_BRIDGE_ID"
-      }
     }
   }
 }`}</pre>
