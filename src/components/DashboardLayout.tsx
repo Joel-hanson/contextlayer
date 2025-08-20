@@ -304,7 +304,7 @@ function SidebarContent({ navigation, onClose, session, onSignOut, collapsed }: 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className={cn(
-                                        "w-full h-auto font-normal transition-all",
+                                        "w-full h-auto font-normal transition-all cursor-pointer",
                                         collapsed ? "justify-center p-1" : "justify-start p-2 -mx-2"
                                     )}>
                                         <div className={cn(
@@ -325,9 +325,9 @@ function SidebarContent({ navigation, onClose, session, onSignOut, collapsed }: 
                                                 )}
                                             </div>
                                             {!collapsed && (
-                                                <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
-                                                    <div className="flex items-center gap-2 w-full min-w-0">
-                                                        <p className="text-sm font-medium truncate flex-1">
+                                                <div className="flex items-center justify-start min-w-0 flex-1 overflow-hidden">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <p className="text-sm font-medium truncate">
                                                             {session.user.name || session.user.username || 'User'}
                                                         </p>
                                                         {session.user.email === 'demo@contextlayer.app' && (
@@ -336,23 +336,29 @@ function SidebarContent({ navigation, onClose, session, onSignOut, collapsed }: 
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground truncate w-full">
-                                                        {session.user.email}
-                                                    </p>
                                                 </div>
                                             )}
                                         </div>
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-56">
+                                    <div className="px-3 py-2">
+                                        <p className="text-sm font-medium truncate">
+                                            {session.user.name || session.user.username || 'User'}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {session.user.email}
+                                        </p>
+                                    </div>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
-                                        <Link href="/dashboard/settings" onClick={onClose}>
+                                        <Link href="/dashboard/settings" onClick={onClose} className='cursor-pointer'>
                                             <Settings className="mr-2 h-4 w-4" />
                                             Settings
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={onSignOut}>
+                                    <DropdownMenuItem onClick={onSignOut} className='cursor-pointer'>
                                         <LogOut className="mr-2 h-4 w-4" />
                                         Sign out
                                     </DropdownMenuItem>
