@@ -164,7 +164,7 @@ export default function LandingPage() {
             </div>
             <div className="mx-auto max-w-[980px] text-center px-4">
               <h1 className="text-3xl font-bold leading-tight tracking-tighter sm:text-4xl md:text-6xl lg:leading-[1.1]">
-                Bridge REST APIs to{' '}
+                Transform REST APIs to{' '}
                 <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   Model Context Protocol
                 </span>
@@ -188,7 +188,7 @@ export default function LandingPage() {
                 // Not authenticated - sign in to get started
                 <Link href="/auth/signin" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full touch-manipulation">
-                    Start Building Bridges
+                    Start Creating MCP Servers
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -223,7 +223,7 @@ export default function LandingPage() {
           <section id="features" className="container py-16 sm:py-24 bg-muted/20">
             <div className="mx-auto max-w-[980px] text-center mb-12 sm:mb-16 px-4">
               <h2 className="text-2xl font-bold leading-tight tracking-tighter sm:text-3xl md:text-5xl">
-                Everything you need to bridge APIs
+                Everything you need to transform APIs
               </h2>
               <p className="mx-auto mt-4 max-w-[750px] text-base sm:text-lg text-muted-foreground">
                 Powerful features designed to make API integration seamless and efficient.
@@ -238,7 +238,7 @@ export default function LandingPage() {
                   </div>
                   <CardTitle className="text-base sm:text-lg">Quick Setup</CardTitle>
                   <CardDescription className="text-sm sm:text-base">
-                    Configure your API bridge through our web interface. Authentication and endpoint configuration made easy.
+                    Configure your API connection through our web interface. Authentication and endpoint configuration made easy.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -284,9 +284,9 @@ export default function LandingPage() {
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                     <Cpu className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
-                  <CardTitle className="text-base sm:text-lg">Bridge Management</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">MCP Server Management</CardTitle>
                   <CardDescription className="text-sm sm:text-base">
-                    Manage your bridges with database storage, start/stop controls, and configuration templates.
+                    Manage your MCP servers with database storage, start/stop controls, and configuration templates.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -298,7 +298,7 @@ export default function LandingPage() {
                   </div>
                   <CardTitle className="text-base sm:text-lg">Configuration Templates</CardTitle>
                   <CardDescription className="text-sm sm:text-base">
-                    Built-in templates for popular APIs and export/import your bridge configurations for backup.
+                    Built-in templates for popular APIs and export/import your MCP server configurations for backup.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -369,7 +369,7 @@ export default function LandingPage() {
                       <Globe className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold">Weather API Bridge</h3>
+                      <h3 className="text-xl font-semibold">Weather API to MCP</h3>
                       <p className="text-muted-foreground">OpenWeatherMap to MCP conversion</p>
                     </div>
                   </div>
@@ -403,7 +403,7 @@ export default function LandingPage() {
                       <Code2 className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold">GitHub API Bridge</h3>
+                      <h3 className="text-xl font-semibold">GitHub API to MCP</h3>
                       <p className="text-muted-foreground">Repository management for AI</p>
                     </div>
                   </div>
@@ -433,7 +433,7 @@ export default function LandingPage() {
             <div className="text-center mt-8">
               <Link href="/dashboard/bridges">
                 <Button size="lg">
-                  Start Creating Your Bridges
+                  Start Creating Your MCP Servers
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -444,7 +444,7 @@ export default function LandingPage() {
           <section className="container py-24">
             <div className="mx-auto max-w-[980px] text-center">
               <h2 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl">
-                Ready to bridge your APIs?
+                Ready to transform your APIs?
               </h2>
               <p className="mx-auto mt-4 max-w-[750px] text-lg text-muted-foreground mb-8">
                 Start connecting your REST APIs to the Model Context Protocol ecosystem today.
@@ -452,11 +452,11 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 {session ? (
-                  // Authenticated user - go to bridges
+                  // Authenticated user - go to MCP servers
                   <Link href="/dashboard/bridges">
                     <Button size="lg" className="w-full sm:w-auto">
                       <User className="mr-2 h-4 w-4" />
-                      Manage Your Bridges
+                      Manage Your MCP Servers
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
