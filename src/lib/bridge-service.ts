@@ -28,6 +28,7 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
         slug: bridge.slug,
         description: bridge.description || '',
         enabled: bridge.enabled,
+        isPublic: bridge.isPublic,
         createdAt: bridge.createdAt.toISOString(),
         updatedAt: bridge.updatedAt.toISOString(),
         apiConfig: {
@@ -79,10 +80,12 @@ function transformBridgeToBridgeConfig(bridge: Bridge & { endpoints: ApiEndpoint
             name: string;
             description?: string;
             mimeType?: string;
+            content?: string;
         }>) || [],
         mcpPrompts: (bridge.mcpPrompts as Array<{
             name: string;
             description?: string;
+            content?: string;
             arguments?: Array<{
                 name: string;
                 required: boolean;
@@ -154,6 +157,7 @@ function transformBridgeConfigToPrismaData(config: BridgeConfig) {
         mcpResources: config.mcpResources && config.mcpResources.length > 0 ? config.mcpResources : undefined,
 
         enabled: config.enabled ?? true, // Default to enabled
+        isPublic: config.isPublic ?? false, // Default to private
         createdAt: config.createdAt ? new Date(config.createdAt) : new Date(),
         updatedAt: config.updatedAt ? new Date(config.updatedAt) : new Date(),
     }

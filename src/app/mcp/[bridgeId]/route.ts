@@ -141,6 +141,7 @@ interface Bridge {
     id: string;
     name: string;
     enabled: boolean;
+    isPublic?: boolean;
     baseUrl: string;
     authConfig: AuthConfig;
     endpoints: Endpoint[];
@@ -1273,7 +1274,10 @@ async function handleResourcesRead(jsonRpcRequest: any, bridge: any) {
         content = `# ${schemaName} Schema\n\nSchema information would be available here.`;
         mimeType = 'text/markdown';
     } else {
-        content = resource.description || 'Resource content not available';
+        // Use the resource content if available, fallback to description
+        content = resource.content || resource.description || 'Resource content not available';
+        // Ensure we use the resource's specified MIME type
+        mimeType = resource.mimeType || 'text/plain';
     }
 
     return NextResponse.json(
@@ -1579,6 +1583,7 @@ function convertDatabaseBridge(dbBridge: any): Bridge {
         id: dbBridge.id,
         name: dbBridge.name,
         enabled: true,
+        isPublic: dbBridge.isPublic,
         baseUrl: dbBridge.baseUrl,
         authConfig: dbBridge.authConfig as AuthConfig,
         endpoints: dbBridge.endpoints.map((endpoint: any) => ({

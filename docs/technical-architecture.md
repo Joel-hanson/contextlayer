@@ -75,6 +75,7 @@ interface BridgeConfig {
   mcpTools: McpTool[];
   port: number;
   enabled: boolean;
+  isPublic: boolean;
   createdAt: string;
   updatedAt: string;
 }

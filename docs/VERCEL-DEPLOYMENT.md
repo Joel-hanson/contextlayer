@@ -113,7 +113,7 @@ npm run db:seed-prod
 
 ### Demo Data
 
-- [ ] Login with: `demo@contextlayer.com` / `demo123!`
+- [ ] Login with: `demo@contextlayer.tech` / `demo123!`
 - [ ] Test sample bridges
 - [ ] Create your own bridges
 

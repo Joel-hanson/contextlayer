@@ -85,6 +85,7 @@ async function main() {
             baseUrl: 'https://jsonplaceholder.typicode.com',
             authConfig: { type: 'none' },
             enabled: true,
+            isPublic: false, // Demo bridges are private by default
             userId: demoUser.id,
             endpoints: {
                 create: [
@@ -178,6 +179,7 @@ async function main() {
             baseUrl: 'https://httpbin.org',
             authConfig: { type: 'none' },
             enabled: true,
+            isPublic: false, // Demo bridges are private by default
             userId: demoUser.id,
             endpoints: {
                 create: [
@@ -242,6 +244,7 @@ async function main() {
             baseUrl: 'https://jsonplaceholder.typicode.com',
             authConfig: { type: 'none' }, // Use correct authConfig structure
             enabled: true,
+            isPublic: true, // Make this one public for testing
             userId: testUser.id,
             endpoints: {
                 create: [
@@ -452,6 +455,7 @@ async function main() {
             baseUrl: 'https://httpbin.org',
             authConfig: { type: 'none' }, // Use new authConfig structure
             enabled: true,
+            isPublic: false, // Keep this one private
             userId: testUser.id,
             endpoints: {
                 create: [

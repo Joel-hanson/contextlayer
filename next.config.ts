@@ -74,6 +74,22 @@ const nextConfig: NextConfig = {
       fallback: [],
     };
   },
+
+  // Add redirects for SEO (example redirects)
+  redirects: async () => {
+    return [
+      {
+        source: '/docs',
+        destination: '/dashboard/docs',
+        permanent: true,
+      },
+      {
+        source: '/bridges',
+        destination: '/public-bridges',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       { hostname: 'lh3.googleusercontent.com' },

@@ -29,7 +29,7 @@ npm run test
 
 **Recommendation: Yes, buy a domain**
 
-- `contextlayer.com` or `contextlayer.io` (professional)
+- `contextlayer.tech` or `contextlayer.io` (professional)
 - `contextbridge.com` (alternative)
 - Cost: $10-15/year - minimal investment for credibility
 

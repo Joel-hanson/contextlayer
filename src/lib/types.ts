@@ -74,6 +74,9 @@ export const McpResourceSchema = z.object({
     name: z.string(),
     description: z.string().optional(),
     mimeType: z.string().optional(),
+    content: z.string()
+        .max(100000, 'Content must be less than 100,000 characters (100KB)')
+        .optional(),
 });
 
 export type McpResource = z.infer<typeof McpResourceSchema>;
@@ -82,6 +85,9 @@ export type McpResource = z.infer<typeof McpResourceSchema>;
 export const McpPromptSchema = z.object({
     name: z.string(),
     description: z.string().optional(),
+    content: z.string()
+        .max(50000, 'Content must be less than 50,000 characters (50KB)')
+        .optional(),
     arguments: z.array(z.object({
         name: z.string(),
         description: z.string().optional(),
@@ -102,6 +108,7 @@ export const BridgeConfigSchema = z.object({
     mcpResources: z.array(McpResourceSchema).optional().default([]),
     mcpPrompts: z.array(McpPromptSchema).optional().default([]),
     enabled: z.boolean(),
+    isPublic: z.boolean().default(false),
 
     // Access control - simplified
     access: z.object({

@@ -21,6 +21,7 @@ import {
     Copy,
     Database,
     Edit,
+    Globe,
     Play,
     Plus,
     RefreshCw,
@@ -331,9 +332,17 @@ export default function BridgesPage() {
                                                             {bridge.description || 'No description provided'}
                                                         </CardDescription>
                                                     </div>
-                                                    <Badge variant={isRunning ? 'default' : 'secondary'} className="shrink-0">
-                                                        {isRunning ? 'Running' : 'Stopped'}
-                                                    </Badge>
+                                                    <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                                                        {bridge.isPublic && (
+                                                            <div className="inline-flex items-center" title="Public MCP Server">
+                                                                <Globe className="h-4 w-4 text-blue-700" aria-hidden="true" />
+                                                                <span className="sr-only">Public MCP Server</span>
+                                                            </div>
+                                                        )}
+                                                        <Badge variant={isRunning ? 'default' : 'secondary'}>
+                                                            {isRunning ? 'Running' : 'Stopped'}
+                                                        </Badge>
+                                                    </div>
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="space-y-4 pt-0">

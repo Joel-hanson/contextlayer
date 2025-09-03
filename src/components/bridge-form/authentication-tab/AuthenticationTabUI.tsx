@@ -12,57 +12,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Code2, KeyRound } from 'lucide-react';
-import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { type McpBridgeFormData } from './types';
+import { McpBridgeFormData } from '../utils/types';
+import { useAuthenticationTab } from './use-authentication-tab';
 
-interface AuthenticationTabProps {
+interface AuthenticationTabUIProps {
     form: UseFormReturn<McpBridgeFormData>;
 }
 
-function generateAuthPreview(form: UseFormReturn<McpBridgeFormData>) {
-    const authType = form.watch('apiConfig.authentication.type');
-
-    switch (authType) {
-        case 'bearer':
-            return {
-                header: 'Authorization',
-                value: `Bearer ${form.watch('apiConfig.authentication.token') || '[YOUR_TOKEN]'}`
-            };
-        case 'apikey': {
-            const keyLocation = form.watch('apiConfig.authentication.keyLocation') || 'header';
-            const apiKey = form.watch('apiConfig.authentication.apiKey') || '[YOUR_API_KEY]';
-
-            if (keyLocation === 'header') {
-                const headerName = form.watch('apiConfig.authentication.headerName') || 'X-API-Key';
-                return {
-                    header: headerName,
-                    value: apiKey
-                };
-            } else {
-                const paramName = form.watch('apiConfig.authentication.paramName') || 'api_key';
-                return {
-                    query: `?${paramName}=${apiKey}`
-                };
-            }
-        }
-        case 'basic': {
-            const username = form.watch('apiConfig.authentication.username') || '[USERNAME]';
-            const password = form.watch('apiConfig.authentication.password') || '[PASSWORD]';
-            const encoded = btoa(`${username}:${password}`);
-            return {
-                header: 'Authorization',
-                value: `Basic ${encoded}`
-            };
-        }
-        default:
-            return null;
-    }
-}
-
-export function AuthenticationTab({ form }: AuthenticationTabProps) {
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-    const authType = form.watch('apiConfig.authentication.type') || 'none';
+export function AuthenticationTabUI({ form }: AuthenticationTabUIProps) {
+    const { isPreviewOpen, setIsPreviewOpen, authType, generateAuthPreview } = useAuthenticationTab(form);
 
     return (
         <Card>
@@ -251,7 +210,7 @@ export function AuthenticationTab({ form }: AuthenticationTabProps) {
                                             Your requests will include:
                                         </div>
                                         {(() => {
-                                            const preview = generateAuthPreview(form);
+                                            const preview = generateAuthPreview();
                                             if (!preview) return null;
 
                                             return (
