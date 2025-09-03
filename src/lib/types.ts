@@ -29,7 +29,7 @@ export const ApiConfigSchema = z.object({
             required: z.boolean(),
             description: z.string().optional(),
             defaultValue: z.any().optional(),
-            location: z.enum(['path', 'query', 'body']).optional(),
+            location: z.enum(['path', 'query', 'body', 'header']).optional(),
             style: z.enum(['parameter', 'replacement']).optional(),
         })).optional(),
         requestBody: z.object({

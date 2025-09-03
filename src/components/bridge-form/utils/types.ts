@@ -10,7 +10,7 @@ export const mcpParameterSchema = z.object({
     name: z.string(),
     required: z.boolean().default(false),
     description: z.string().default(''),
-    location: z.enum(['path', 'query', 'body']).default('query'),
+    location: z.enum(['path', 'query', 'body', 'header']).default('query'),
     style: z.enum(['parameter', 'replacement']).default('parameter'),
 });
 

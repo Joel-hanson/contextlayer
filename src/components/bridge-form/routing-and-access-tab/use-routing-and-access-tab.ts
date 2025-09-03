@@ -17,7 +17,6 @@ interface UseRoutingAndAccessTabResult {
     tokens: McpAccessToken[];
     bridgeHostname: string;
     bridgeUrl: string;
-    wsUrl: string;
     isSelfHosted: boolean;
     requiresAuthentication: boolean;
     setRequiresAuthentication: (requires: boolean) => void;
@@ -39,9 +38,8 @@ export function useRoutingAndAccessTab(
     );
     const [bridgeHostname, setBridgeHostname] = useState('');
     const [bridgeUrl, setBridgeUrl] = useState('');
-    const [wsUrl, setWsUrl] = useState('');
 
-    const { tokens, createToken, deleteToken, toggleToken } = useTokens(
+    const { tokens, createToken, deleteToken } = useTokens(
         bridgeConfig?.id || ''
     );
 
@@ -62,10 +60,8 @@ export function useRoutingAndAccessTab(
         setBridgeHostname(hostname);
 
         const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https' : 'http';
-        const wsProtocol = protocol === 'https' ? 'wss' : 'ws';
 
         setBridgeUrl(`${protocol}://${hostname}/mcp/${bridgeConfig.id}`);
-        setWsUrl(`${wsProtocol}://${hostname}/mcp/${bridgeConfig.id}/ws`);
 
         // Detect if we're running in self-hosted mode
         setIsSelfHosted(hostname.includes('localhost') || hostname.includes('127.0.0.1'));
@@ -88,7 +84,7 @@ export function useRoutingAndAccessTab(
                 title: 'Success',
                 description: 'Authentication token generated successfully',
             });
-        } catch (_error) {
+        } catch {
             toast({
                 title: 'Error',
                 description: 'Failed to generate authentication token',
@@ -110,7 +106,7 @@ export function useRoutingAndAccessTab(
                 title: 'Success',
                 description: 'Authentication token revoked successfully',
             });
-        } catch (_error) {
+        } catch {
             toast({
                 title: 'Error',
                 description: 'Failed to revoke authentication token',
@@ -133,7 +129,7 @@ export function useRoutingAndAccessTab(
                 title: 'Success',
                 description: 'All authentication tokens revoked successfully',
             });
-        } catch (_error) {
+        } catch {
             toast({
                 title: 'Error',
                 description: 'Failed to revoke authentication tokens',
@@ -154,7 +150,6 @@ export function useRoutingAndAccessTab(
         tokens,
         bridgeHostname,
         bridgeUrl,
-        wsUrl,
         isSelfHosted,
         requiresAuthentication,
         setRequiresAuthentication,

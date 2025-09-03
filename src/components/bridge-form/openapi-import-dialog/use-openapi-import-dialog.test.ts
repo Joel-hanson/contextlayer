@@ -70,7 +70,7 @@ describe('useOpenAPIImportDialog', () => {
             result.current.setJsonContent('{"openapi": "3.0.0"}');
             result.current.setActiveTab('text');
             // Set some mock result
-            // @ts-ignore - We're forcibly setting an internal state for testing
+            // @ts-expect-error - We're forcibly setting an internal state for testing
             result.current.result = { success: true, data: {} };
         });
 

@@ -108,7 +108,8 @@ export function EndpointParameterForm({
                             </Label>
                             <Select
                                 value={paramType}
-                                onValueChange={(value) => form.setValue(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.type`, value)}
+                                onValueChange={(value) => form.setValue(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.type`,
+                                    value as "string" | "number" | "boolean" | "object" | "array")}
                             >
                                 <SelectTrigger id={`param-type-${endpointIndex}-${paramIndex}`} className="h-8 text-sm">
                                     <SelectValue />
@@ -131,7 +132,10 @@ export function EndpointParameterForm({
                             </Label>
                             <Select
                                 value={paramLocation}
-                                onValueChange={(value) => form.setValue(`apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.location`, value)}
+                                onValueChange={(value) => form.setValue(
+                                    `apiConfig.endpoints.${endpointIndex}.parameters.${paramIndex}.location`,
+                                    value as "path" | "query" | "body" | "header"
+                                )}
                                 disabled={isPathParameter}
                             >
                                 <SelectTrigger id={`param-location-${endpointIndex}-${paramIndex}`} className="h-8 text-sm">

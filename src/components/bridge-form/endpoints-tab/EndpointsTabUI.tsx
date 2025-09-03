@@ -413,7 +413,7 @@ export function EndpointsTabUI({ form, endpointFields }: EndpointsTabUIProps) {
                                                                 </div>
                                                             ) : (
                                                                 <div className="space-y-3">
-                                                                    {parameters.map((param: any, paramIndex: number) => (
+                                                                    {parameters.map((param: EndpointParameter, paramIndex: number) => (
                                                                         <EndpointParameterForm
                                                                             key={param.id || `${endpoint.id}-param-${paramIndex}`}
                                                                             form={form}
@@ -476,4 +476,15 @@ export function EndpointsTabUI({ form, endpointFields }: EndpointsTabUIProps) {
             </div>
         </div>
     );
+}
+
+// Add this type definition after the imports section, before the component definition
+interface EndpointParameter {
+    name: string;
+    type: string;
+    required: boolean;
+    description: string;
+    location: string;
+    style: string;
+    id?: string;
 }

@@ -28,6 +28,7 @@ describe('useEndpointsTab', () => {
     });
 
     it('should initialize with default values', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { result } = renderHook(() => useEndpointsTab(mockForm as any, mockEndpointFields as any));
 
         expect(result.current.activeEndpointId).toBeNull();
@@ -37,6 +38,7 @@ describe('useEndpointsTab', () => {
     });
 
     it('should add a new endpoint', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { result } = renderHook(() => useEndpointsTab(mockForm as any, mockEndpointFields as any));
 
         // Mock Date.now for consistent ID generation in tests
@@ -61,6 +63,7 @@ describe('useEndpointsTab', () => {
     });
 
     it('should remove an endpoint', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { result } = renderHook(() => useEndpointsTab(mockForm as any, mockEndpointFields as any));
 
         act(() => {
@@ -71,6 +74,7 @@ describe('useEndpointsTab', () => {
     });
 
     it('should filter endpoints by search query', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { result } = renderHook(() => useEndpointsTab(mockForm as any, mockEndpointFields as any));
 
         act(() => {
@@ -81,6 +85,7 @@ describe('useEndpointsTab', () => {
     });
 
     it('should filter endpoints by method', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { result } = renderHook(() => useEndpointsTab(mockForm as any, mockEndpointFields as any));
 
         act(() => {
@@ -91,6 +96,7 @@ describe('useEndpointsTab', () => {
     });
 
     it('should handle both search query and method filter', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { result } = renderHook(() => useEndpointsTab(mockForm as any, mockEndpointFields as any));
 
         act(() => {

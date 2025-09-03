@@ -25,7 +25,6 @@ interface RoutingAndAccessTabUIProps {
     bridgeName?: string;
     bridgeHostname: string;
     bridgeUrl: string;
-    wsUrl: string;
     isSelfHosted: boolean;
     requiresAuthentication: boolean;
     setRequiresAuthentication: (requires: boolean) => void;
@@ -43,7 +42,6 @@ export function RoutingAndAccessTabUI({
     bridgeId,
     bridgeName,
     bridgeUrl,
-    wsUrl,
     isSelfHosted,
     requiresAuthentication,
     setRequiresAuthentication,
@@ -90,28 +88,6 @@ export function RoutingAndAccessTabUI({
                             </Button>
                         </div>
                     </div>
-
-                    {/* <div className="space-y-2">
-                        <Label className="text-xs font-medium">WebSocket Endpoint</Label>
-                        <div className="flex">
-                            <Input
-                                readOnly
-                                value={wsUrl}
-                                className="bg-gray-50 font-mono text-sm"
-                            />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="ml-2"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(wsUrl);
-                                }}
-                            >
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div> */}
 
                     {isSelfHosted && (
                         <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-sm text-yellow-800">

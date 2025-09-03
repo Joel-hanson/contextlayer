@@ -61,6 +61,7 @@ interface OpenAPIImportData {
     mcpPrompts?: Array<{
         name: string;
         description: string;
+        content?: string;
         arguments: Array<{
             name: string;
             description: string;
@@ -72,6 +73,7 @@ interface OpenAPIImportData {
         description: string;
         uri: string;
         mimeType: string;
+        content?: string;
     }>;
 }
 
@@ -143,6 +145,7 @@ export function useBasicInfoTab(form: UseFormReturn<McpBridgeFormData>) {
             const promptsWithDefaults = importData.mcpPrompts.map(prompt => ({
                 name: prompt.name,
                 description: prompt.description,
+                content: prompt.content || '',
                 arguments: prompt.arguments.map(arg => ({
                     name: arg.name,
                     description: arg.description,
@@ -157,7 +160,8 @@ export function useBasicInfoTab(form: UseFormReturn<McpBridgeFormData>) {
                 name: resource.name,
                 description: resource.description,
                 uri: resource.uri,
-                mimeType: resource.mimeType
+                mimeType: resource.mimeType,
+                content: resource.content || '',
             }));
             form.setValue('mcpResources', resourcesWithDefaults);
         }
