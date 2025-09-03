@@ -108,7 +108,8 @@ npm run db:seed-admin
 ### Default Admin Account
 
 If no `ADMIN_EMAILS` is set, a default admin account will be created:
-- Email: `admin@contextlayer.com`
+
+- Email: `admin@contextlayer.tech`
 - Password: `admin123`
 
 **Important**: Change these default credentials in production!

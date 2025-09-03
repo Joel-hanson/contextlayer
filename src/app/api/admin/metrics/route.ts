@@ -209,7 +209,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
         // Demo user statistics
         const demoUserCount = await prisma.user.count({
             where: {
-                email: 'demo@contextlayer.com'
+                email: 'demo@contextlayer.tech'
             }
         })
 
