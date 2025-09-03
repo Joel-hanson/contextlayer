@@ -83,7 +83,6 @@ describe('useRoutingAndAccessTab', () => {
         expect(result.current.isGeneratingToken).toBe(false);
         expect(result.current.isRevokingToken).toBe(false);
         expect(result.current.bridgeUrl).toBe('http://localhost:3000/mcp/test-bridge-123');
-        expect(result.current.wsUrl).toBe('ws://localhost:3000/mcp/test-bridge-123/ws');
         expect(result.current.isSelfHosted).toBe(true);
     });
 
@@ -114,7 +113,6 @@ describe('useRoutingAndAccessTab', () => {
         const { result } = renderHook(() => useRoutingAndAccessTab(mockForm, mockBridgeConfig as BridgeConfig));
 
         expect(result.current.bridgeUrl).toBe('https://example.com/mcp/test-bridge-123');
-        expect(result.current.wsUrl).toBe('wss://example.com/mcp/test-bridge-123/ws');
         expect(result.current.isSelfHosted).toBe(false);
     });    // Add more tests for token generation and revocation functionality
 });

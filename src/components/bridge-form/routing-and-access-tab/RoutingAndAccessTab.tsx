@@ -21,7 +21,6 @@ export function RoutingAndAccessTab({ form, bridgeConfig }: RoutingAndAccessTabP
         tokens,
         bridgeHostname,
         bridgeUrl,
-        wsUrl,
         isSelfHosted,
         requiresAuthentication,
         setRequiresAuthentication,
@@ -42,7 +41,6 @@ export function RoutingAndAccessTab({ form, bridgeConfig }: RoutingAndAccessTabP
             bridgeName={bridgeConfig?.name}
             bridgeHostname={bridgeHostname}
             bridgeUrl={bridgeUrl}
-            wsUrl={wsUrl}
             isSelfHosted={isSelfHosted}
             requiresAuthentication={requiresAuthentication}
             setRequiresAuthentication={setRequiresAuthentication}

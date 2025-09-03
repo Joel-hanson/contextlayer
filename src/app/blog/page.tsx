@@ -53,7 +53,7 @@ export default function BlogPage() {
                             <span>{post.readTime}</span>
                         </div>
                         <CardTitle>
-                            <Link href={`/blog/${post.id}` as const} className="hover:text-primary transition-colors">
+                            <Link href={{ pathname: '/blog/[id]', query: { id: post.id } }} className="hover:text-primary transition-colors">
                                 {post.title}
                             </Link>
                         </CardTitle>
@@ -61,7 +61,7 @@ export default function BlogPage() {
                     </CardHeader>
                     <CardContent>
                         <Link
-                            href={`/blog/${post.id}` as const}
+                            href={{ pathname: '/blog/[id]', query: { id: post.id } }}
                             className="text-primary hover:underline text-sm font-medium"
                         >
                             Read more →
