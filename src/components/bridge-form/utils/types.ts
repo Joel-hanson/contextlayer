@@ -26,16 +26,22 @@ export const mcpEndpointSchema = z.object({
 
 // Resource Schema
 export const mcpResourceSchema = z.object({
-    uri: z.string(),
-    name: z.string(),
-    description: z.string().default(''),
-    mimeType: z.string().default('application/json'),
+    uri: z.string().min(1, 'Resource URI is required'),
+    name: z.string().min(1, 'Resource name is required'),
+    description: z.string().min(1, 'Resource description is required'),
+    mimeType: z.string().default('text/markdown'),
+    content: z.string()
+        .min(1, 'Resource content is required')
+        .max(100000, 'Content must be less than 100,000 characters (100KB)'),
 });
 
 // Prompt Schema
 export const mcpPromptSchema = z.object({
     name: z.string().min(1, 'Prompt name is required'),
     description: z.string().default(''),
+    content: z.string()
+        .min(1, 'Prompt content is required')
+        .max(50000, 'Content must be less than 50,000 characters (50KB)'),
     arguments: z.array(z.object({
         name: z.string().min(1, 'Argument name is required'),
         description: z.string().default(''),
@@ -87,11 +93,10 @@ export const mcpAuthSchema = z.object({
 });
 
 // Access Control Schema
-
-// Access Control Schema
 export const mcpAccessSchema = z.object({
     allowedOrigins: z.array(z.string()).default([]),
-    authRequired: z.boolean().default(false),
+    allowAllOrigins: z.boolean().default(false),
+    requiresAuthentication: z.boolean().default(false),
     apiKey: z.string().optional(),
 });
 
@@ -109,6 +114,7 @@ export const mcpApiConfigSchema = z.object({
 export const mcpBridgeFormSchema = z.object({
     name: z.string().min(1, 'Bridge name is required'),
     description: z.string(),
+    isPublic: z.boolean().default(false),
     apiConfig: z.object({
         name: z.string().min(1, 'API name is required'),
         baseUrl: z.string().url('Must be a valid URL'),
@@ -130,10 +136,11 @@ export const mcpBridgeFormSchema = z.object({
     mcpResources: z.array(mcpResourceSchema).default([]),
     mcpPrompts: z.array(mcpPromptSchema).default([]),
     access: z.object({
-        allowedOrigins: z.array(z.string()),
-        authRequired: z.boolean(),
+        allowedOrigins: z.array(z.string()).default([]),
+        allowAllOrigins: z.boolean().default(false),
+        requiresAuthentication: z.boolean().default(false),
         apiKey: z.string().optional(),
-    }),
+    }).default({}),
 }).strict();
 
 // Type Exports

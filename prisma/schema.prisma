@@ -148,13 +148,16 @@ model Bridge {
     // Status - simplified to just enabled/disabled
     enabled Boolean @default(true) // Default to enabled for easier use
 
+    // Public access configuration
+    isPublic Boolean @default(false) // Whether this bridge is publicly discoverable
+
     // Simplified access control
     accessConfig Json? // { allowedOrigins?: string[], authRequired: boolean }
 
     // MCP Content - Store as JSON for flexibility
     mcpTools     Json? // Array of McpTool objects: [{ name: string, description: string, inputSchema: {...} }]
-    mcpPrompts   Json? // Array of McpPrompt objects: [{ name: string, description?: string, arguments?: [...] }]
-    mcpResources Json? // Array of McpResource objects: [{ uri: string, name: string, description?: string, mimeType?: string }]
+    mcpPrompts   Json? // Array of McpPrompt objects: [{ name: string, description?: string, content?: string, arguments?: [...] }]
+    mcpResources Json? // Array of McpResource objects: [{ uri: string, name: string, description?: string, mimeType?: string, content?: string }]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -170,6 +173,7 @@ model Bridge {
     @@index([userId])
     @@index([slug])
     @@index([enabled])
+    @@index([isPublic, enabled]) // For public bridge discovery
     @@map("bridges")
 }
 

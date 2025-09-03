@@ -3,6 +3,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getBaseUrl } from '@/lib/url';
 import { BookOpen, Code, ExternalLink, Terminal } from 'lucide-react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Documentation - MCP Setup & Configuration Guide',
+    description: 'Complete documentation for setting up Model Context Protocol (MCP) servers with Claude Desktop, VS Code, and other AI assistants. Step-by-step client configuration guides.',
+    keywords: [
+        'MCP documentation',
+        'Claude Desktop setup',
+        'VS Code MCP configuration',
+        'AI assistant setup',
+        'Model Context Protocol guide',
+        'API bridge documentation'
+    ],
+    openGraph: {
+        title: 'Documentation - ContextLayer',
+        description: 'Complete documentation for setting up Model Context Protocol (MCP) servers with AI assistants.',
+        type: 'article',
+    },
+};
 
 export default function DocsPage() {
     // Dynamic URL generation for examples

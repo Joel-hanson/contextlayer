@@ -4,12 +4,12 @@ Transform any REST API into a Model Context Protocol (MCP) server, making your A
 
 ## Features
 
-- 🌉 **Bridge REST APIs to MCP**: Convert any REST API into an MCP server
-- 🛠️ **Visual Configuration**: Easy-to-use web interface for API configuration
-- 🚀 **One-Click Deployment**: Start and stop MCP servers with a single click
-- 📊 **Real-time Monitoring**: Monitor server status and uptime
-- 🎨 **Modern UI**: Clean, responsive interface built with shadcn/ui
-- 💾 **Persistent Storage**: Configurations saved locally in browser storage
+- **Bridge REST APIs to MCP**: Convert any REST API into an MCP server
+- **Visual Configuration**: Easy-to-use web interface for API configuration
+- **One-Click Deployment**: Start and stop MCP servers with a single click
+- **Real-time Monitoring**: Monitor server status and uptime
+- **Modern UI**: Clean, responsive interface built with shadcn/ui
+- **Persistent Storage**: Configurations saved locally in browser storage
 
 ## Getting Started
 
@@ -80,6 +80,7 @@ npm run dev
 The application includes a comprehensive admin dashboard for monitoring and management:
 
 ### Features
+
 - User analytics and growth metrics
 - Bridge usage statistics
 - API endpoint monitoring

@@ -1,6 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { FieldErrors } from "react-hook-form";
-import { McpBridgeFormData } from "./types";
+import { McpBridgeFormData } from "./utils/types";
 
 interface FormValidationErrorsProps {
     errors: FieldErrors<McpBridgeFormData>;
@@ -88,7 +88,8 @@ export function FormValidationErrors({ errors, getValues }: FormValidationErrors
                         ...(Array.isArray(errors.mcpResources)
                             ? errors.mcpResources.map((error, index) =>
                                 `Resource ${index + 1}: ${safeString(error?.name?.message || error?.uri?.message ||
-                                    error?.mimeType?.message || error?.message || 'Invalid resource configuration')}`
+                                    error?.description?.message || error?.mimeType?.message || error?.content?.message ||
+                                    error?.message || 'Invalid resource configuration')}`
                             )
                             : []),
                         !Array.isArray(errors.mcpResources) ? safeString(errors.mcpResources.message) : ""
@@ -104,7 +105,8 @@ export function FormValidationErrors({ errors, getValues }: FormValidationErrors
                         ...(Array.isArray(errors.mcpPrompts)
                             ? errors.mcpPrompts.map((error, index) =>
                                 `Prompt ${index + 1}: ${safeString(error?.name?.message || error?.description?.message ||
-                                    error?.arguments?.message || error?.message || 'Invalid prompt configuration')}`
+                                    error?.content?.message || error?.arguments?.message ||
+                                    error?.message || 'Invalid prompt configuration')}`
                             )
                             : []),
                         !Array.isArray(errors.mcpPrompts) ? safeString(errors.mcpPrompts.message) : ""
@@ -117,7 +119,7 @@ export function FormValidationErrors({ errors, getValues }: FormValidationErrors
                 <ErrorSection
                     title="Access Settings"
                     errors={[
-                        safeString(errors.access.authRequired?.message),
+                        safeString(errors.access.requiresAuthentication?.message),
                         safeString(errors.access.apiKey?.message),
                         safeString(errors.access.allowedOrigins?.message),
                     ].filter(Boolean)}
