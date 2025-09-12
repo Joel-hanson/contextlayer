@@ -1,0 +1,25 @@
+# Docker Compose override for development
+# This file automatically extends docker-compose.yml when running `docker-compose up`
+
+version: "3.8"
+
+services:
+  app:
+    build:
+      target: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true # For file watching in Docker on some systems
+    command: npm run dev
+
+  postgres:
+    ports:
+      - "5432:5432" # Expose PostgreSQL port for local development tools
+
+  pgadmin:
+    ports:
+      - "5050:80" # Expose pgAdmin for easier database management

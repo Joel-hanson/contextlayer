@@ -1,0 +1,182 @@
+{
+    "name": "Slack API",
+    "description": "Slack Web API - Send messages, manage channels, and interact with workspaces",
+    "version": "1.0.0",
+    "baseUrl": "https://slack.com/api",
+    "documentation": "https://api.slack.com/methods",
+    "authentication": {
+        "type": "bearer",
+        "description": "Bot User OAuth Token or User OAuth Token",
+        "instructions": "Create a Slack app at https://api.slack.com/apps and install it to your workspace"
+    },
+    "rateLimiting": {
+        "requestsPerMinute": 100,
+        "burstLimit": 20,
+        "documentation": "https://api.slack.com/docs/rate-limits"
+    },
+    "endpoints": [
+        {
+            "name": "Send message",
+            "method": "POST",
+            "path": "/chat.postMessage",
+            "description": "Send a message to a channel",
+            "requestBody": {
+                "required": true,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "channel": {
+                            "type": "string",
+                            "description": "Channel ID or name (e.g., #general, C1234567890)"
+                        },
+                        "text": {
+                            "type": "string",
+                            "description": "Message text"
+                        },
+                        "blocks": {
+                            "type": "array",
+                            "description": "Structured message blocks"
+                        },
+                        "thread_ts": {
+                            "type": "string",
+                            "description": "Thread timestamp to reply to"
+                        }
+                    },
+                    "required": [
+                        "channel",
+                        "text"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "List channels",
+            "method": "GET",
+            "path": "/conversations.list",
+            "description": "List conversations (channels, groups, DMs)",
+            "parameters": [
+                {
+                    "name": "types",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Conversation types: public_channel,private_channel,mpim,im",
+                    "default": "public_channel"
+                },
+                {
+                    "name": "limit",
+                    "type": "integer",
+                    "location": "query",
+                    "description": "Number of results to return",
+                    "default": 100
+                }
+            ]
+        },
+        {
+            "name": "Get channel info",
+            "method": "GET",
+            "path": "/conversations.info",
+            "description": "Get information about a conversation",
+            "parameters": [
+                {
+                    "name": "channel",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Channel ID",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "Get channel history",
+            "method": "GET",
+            "path": "/conversations.history",
+            "description": "Get message history for a channel",
+            "parameters": [
+                {
+                    "name": "channel",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Channel ID",
+                    "required": true
+                },
+                {
+                    "name": "limit",
+                    "type": "integer",
+                    "location": "query",
+                    "description": "Number of messages to return",
+                    "default": 100
+                }
+            ]
+        },
+        {
+            "name": "List users",
+            "method": "GET",
+            "path": "/users.list",
+            "description": "List workspace users",
+            "parameters": [
+                {
+                    "name": "limit",
+                    "type": "integer",
+                    "location": "query",
+                    "description": "Number of users to return",
+                    "default": 100
+                }
+            ]
+        },
+        {
+            "name": "Get user info",
+            "method": "GET",
+            "path": "/users.info",
+            "description": "Get information about a user",
+            "parameters": [
+                {
+                    "name": "user",
+                    "type": "string",
+                    "location": "query",
+                    "description": "User ID",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "Upload file",
+            "method": "POST",
+            "path": "/files.upload",
+            "description": "Upload or create a file",
+            "requestBody": {
+                "required": true,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "channels": {
+                            "type": "string",
+                            "description": "Comma-separated list of channel IDs"
+                        },
+                        "content": {
+                            "type": "string",
+                            "description": "File content"
+                        },
+                        "filename": {
+                            "type": "string",
+                            "description": "Filename"
+                        },
+                        "title": {
+                            "type": "string",
+                            "description": "File title"
+                        },
+                        "initial_comment": {
+                            "type": "string",
+                            "description": "Initial comment about the file"
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "tags": [
+        "communication",
+        "team",
+        "messaging"
+    ],
+    "category": "Communication"
+}

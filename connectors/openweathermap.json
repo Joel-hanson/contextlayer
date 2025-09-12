@@ -1,0 +1,150 @@
+{
+    "name": "OpenWeatherMap API",
+    "description": "Access current weather data, forecasts, and weather maps",
+    "version": "1.0.0",
+    "baseUrl": "https://api.openweathermap.org/data/2.5",
+    "documentation": "https://openweathermap.org/api",
+    "authentication": {
+        "type": "apikey",
+        "keyLocation": "query",
+        "keyName": "appid",
+        "description": "API Key",
+        "instructions": "Get your free API key at https://openweathermap.org/api"
+    },
+    "rateLimiting": {
+        "requestsPerMinute": 60,
+        "burstLimit": 10,
+        "documentation": "https://openweathermap.org/price"
+    },
+    "endpoints": [
+        {
+            "name": "Get current weather",
+            "method": "GET",
+            "path": "/weather",
+            "description": "Get current weather data for a location",
+            "parameters": [
+                {
+                    "name": "q",
+                    "type": "string",
+                    "location": "query",
+                    "description": "City name, state code and country code divided by comma (e.g., London,uk)"
+                },
+                {
+                    "name": "lat",
+                    "type": "number",
+                    "location": "query",
+                    "description": "Latitude"
+                },
+                {
+                    "name": "lon",
+                    "type": "number",
+                    "location": "query",
+                    "description": "Longitude"
+                },
+                {
+                    "name": "units",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Units of measurement: standard, metric, imperial",
+                    "enum": [
+                        "standard",
+                        "metric",
+                        "imperial"
+                    ],
+                    "default": "metric"
+                },
+                {
+                    "name": "lang",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Language code for weather descriptions",
+                    "default": "en"
+                }
+            ]
+        },
+        {
+            "name": "Get 5-day forecast",
+            "method": "GET",
+            "path": "/forecast",
+            "description": "Get 5-day weather forecast with 3-hour intervals",
+            "parameters": [
+                {
+                    "name": "q",
+                    "type": "string",
+                    "location": "query",
+                    "description": "City name, state code and country code"
+                },
+                {
+                    "name": "lat",
+                    "type": "number",
+                    "location": "query",
+                    "description": "Latitude"
+                },
+                {
+                    "name": "lon",
+                    "type": "number",
+                    "location": "query",
+                    "description": "Longitude"
+                },
+                {
+                    "name": "units",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Units of measurement",
+                    "enum": [
+                        "standard",
+                        "metric",
+                        "imperial"
+                    ],
+                    "default": "metric"
+                },
+                {
+                    "name": "cnt",
+                    "type": "integer",
+                    "location": "query",
+                    "description": "Number of timestamps to return (max 40)"
+                }
+            ]
+        },
+        {
+            "name": "Get weather by coordinates",
+            "method": "GET",
+            "path": "/weather",
+            "description": "Get current weather by geographic coordinates",
+            "parameters": [
+                {
+                    "name": "lat",
+                    "type": "number",
+                    "location": "query",
+                    "description": "Latitude",
+                    "required": true
+                },
+                {
+                    "name": "lon",
+                    "type": "number",
+                    "location": "query",
+                    "description": "Longitude",
+                    "required": true
+                },
+                {
+                    "name": "units",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Units of measurement",
+                    "enum": [
+                        "standard",
+                        "metric",
+                        "imperial"
+                    ],
+                    "default": "metric"
+                }
+            ]
+        }
+    ],
+    "tags": [
+        "weather",
+        "data",
+        "location"
+    ],
+    "category": "Data & Analytics"
+}

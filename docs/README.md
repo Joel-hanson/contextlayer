@@ -1,38 +1,83 @@
-# Contextlayer Documentation
+# ContextLayer Documentation
 
-Welcome to the Contextlayer documentation. This folder contains comprehensive documentation about the project, including user journey analysis, feature planning, and technical specifications.
+Welcome to ContextLayer's comprehensive documentation. This documentation is organized into clear sections to help you get started quickly and find the information you need.
 
-## Documentation Structure
+## 📖 Documentation Structure
 
-### Planning & Analysis
+### 🚀 [Guides](./guides/)
 
-- [**User Journey & Feature Plan**](./user-journey-analysis.md) - Comprehensive analysis of user needs and feature roadmap
-- [**Technical Architecture**](./technical-architecture.md) - System design and implementation details
-- [**API Reference**](./api-reference.md) - API endpoints and data models
+Step-by-step guides for users and administrators:
 
-### Guides
+- [Getting Started](./guides/getting-started.md) - Quick start guide for new users
+- [Quick Guide](./guides/quick-guide.md) - Essential features overview
+- [Client Setup](./guides/client-setup.md) - AI assistant integration
+- [Authentication Setup](./guides/authentication-setup.md) - Configure OAuth and API keys
+- [OAuth Setup](./guides/oauth-setup.md) - Detailed OAuth configuration
 
-- [**Getting Started**](./getting-started.md) - Quick start guide for new users
-- [**Bridge Configuration**](./bridge-configuration.md) - Detailed guide on creating and configuring bridges
-- [**MCP Integration**](./mcp-integration.md) - How to connect with MCP clients
+### 📋 [API Reference](./api/)
 
-### Development
+Technical API documentation:
 
-- [**Development Setup**](./development-setup.md) - Local development environment setup
-- [**Contributing**](./contributing.md) - Guidelines for contributors
-- [**Release Notes**](./release-notes.md) - Version history and changes
+- [API Reference](./api/api-reference.md) - Complete API endpoint documentation
+- [Quick Reference](./api/quick-reference.md) - Essential API commands and examples
 
-## Quick Links
+### 🛠️ [Development](./development/)
 
-- [Project Overview](../README.md)
-- [Live Documentation](../src/app/dashboard/docs/page.tsx)
-- [GitHub Issues](https://github.com/your-repo/contextlayer/issues)
+For developers and contributors:
 
-## Getting Help
+- [Development Setup](./development/development-setup.md) - Local development environment
+- [Architecture](./development/architecture.md) - System design overview
+- [Technical Architecture](./development/technical-architecture.md) - Detailed technical specs
+- [Data Flow](./development/data-flow.md) - How data moves through the system
+- [Error Handling](./development/error-handling.md) - Error management patterns
+- [Rate Limiting](./development/rate-limiting.md) - API rate limiting implementation
 
-If you need help or have questions:
+### 🚀 [Deployment](./deployment/)
 
-1. Check the documentation in this folder
-2. Visit the in-app documentation at `/dashboard/docs`
-3. Open an issue on GitHub
-4. Join our community discussions
+Production deployment guides:
+
+- [Deployment Guide](./deployment/deployment.md) - Complete production deployment
+- [Docker Guide](./deployment/docker.md) - Containerized deployment
+- [Vercel Deployment](./deployment/vercel.md) - Deploy to Vercel
+- [Quick Deploy](./deployment/quick-deploy.md) - Fast deployment options
+
+## 🔗 Quick Links
+
+- **Main Project**: [README](../README.md)
+- **Contributing**: [CONTRIBUTING.md](../CONTRIBUTING.md)
+- **Security**: [SECURITY.md](../SECURITY.md)
+- **License**: [LICENSE](../LICENSE)
+- **Changelog**: [CHANGELOG.md](../CHANGELOG.md)
+
+## 🆘 Getting Help
+
+Need assistance? Here's how to get help:
+
+1. **📚 Check Documentation** - Search this documentation first
+2. **🐛 Report Issues** - [GitHub Issues](https://github.com/Joel-hanson/contextlayer/issues)
+3. **💬 Discussions** - [GitHub Discussions](https://github.com/Joel-hanson/contextlayer/discussions)
+4. **📧 Email Support** - support@contextlayer.tech
+
+## 🤝 Contributing to Documentation
+
+We welcome documentation improvements! To contribute:
+
+1. Fork the repository
+2. Make your changes in the `docs/` directory
+3. Follow our [contribution guidelines](../CONTRIBUTING.md)
+4. Submit a pull request
+
+### Documentation Standards
+
+- Use clear, concise language
+- Include practical examples
+- Keep file names lowercase with hyphens
+- Organize content logically
+- Test all code examples
+
+## 📱 Interactive Documentation
+
+For interactive tutorials and live examples, visit the in-app documentation at:
+
+- **Local**: `http://localhost:3000/dashboard/docs`
+- **Production**: Your deployed URL + `/dashboard/docs`

@@ -116,10 +116,10 @@ export function sanitizeBridgeForClient(bridge: BridgeData): BridgeData {
 }
 
 // Rate limiting check with user ID
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function checkUserRateLimit(userId: string) {
     // This would integrate with your rate limiter
-    // For now, return true
-    console.log(`Rate limit check for user: ${userId}`);
+    // For now, return true (TODO: Implement proper rate limiting)
     return true;
 }
 
