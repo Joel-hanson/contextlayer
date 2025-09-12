@@ -105,7 +105,7 @@ export function useAppSettings() {
             // Trigger notifications if enabled
             if (settings.notifications.emailNotifications) {
                 // In a real app, this would trigger an API call
-                console.log('Settings saved - email notification would be sent');
+                // TODO: Implement email notification service
             }
 
             if (settings.notifications.webhookUrl) {

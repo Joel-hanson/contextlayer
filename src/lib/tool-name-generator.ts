@@ -18,18 +18,11 @@ export function generateStandardToolName(method: string, path: string): string {
         .filter(Boolean) // Remove empty strings
         .map(part => part.toLowerCase());
 
-    console.log('Path parts after processing:', {
-        originalPath: path,
-        cleanedPath: pathParts.join('/'),
-        parts: pathParts
-    });
-
     // Determine the action based on method and path
     let action = '';
     const hasParams = path.includes('{');
     if (cleanedMethod === 'get') {
         action = hasParams ? 'read' : 'list';
-        console.log(`GET action determined:`, { hasParams, action });
     } else if (cleanedMethod === 'post') {
         action = 'create';
     } else if (cleanedMethod === 'put' || cleanedMethod === 'patch') {

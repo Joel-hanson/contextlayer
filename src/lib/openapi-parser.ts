@@ -92,15 +92,9 @@ export class OpenAPIParser {
      * Generate MCP tools based on API endpoints
      */
     public static generateMcpTools(endpoints: ApiConfig['endpoints']): McpTool[] {
-        console.log('Generating MCP tools from endpoints:', {
-            endpointCount: endpoints.length,
-            endpoints: endpoints.map(e => `${e.method} ${e.path}`)
-        });
-
         const tools = endpoints.map(endpoint => {
             // Skip invalid endpoints
             if (!endpoint || !endpoint.method || !endpoint.path) {
-                console.warn('Skipping invalid endpoint:', endpoint);
                 return null;
             }
 
@@ -117,20 +111,8 @@ export class OpenAPIParser {
                 }
             };
 
-            console.log('Generated MCP tool:', {
-                endpoint: `${endpoint.method} ${endpoint.path}`,
-                toolName,
-                parameterCount: Object.keys(params.properties).length,
-                requiredParams: params.required
-            });
-
             return tool;
         }).filter(Boolean) as McpTool[];
-
-        console.log('Completed MCP tool generation:', {
-            toolCount: tools.length,
-            toolNames: tools.map(t => t.name)
-        });
 
         return tools;
     }

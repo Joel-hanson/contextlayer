@@ -1,0 +1,195 @@
+{
+    "name": "GitHub API",
+    "description": "GitHub REST API v3 - Access repositories, issues, pull requests, and more",
+    "version": "1.0.0",
+    "baseUrl": "https://api.github.com",
+    "documentation": "https://docs.github.com/en/rest",
+    "authentication": {
+        "type": "bearer",
+        "description": "Personal Access Token or GitHub App token",
+        "instructions": "Create a Personal Access Token at https://github.com/settings/tokens"
+    },
+    "rateLimiting": {
+        "requestsPerHour": 5000,
+        "burstLimit": 100,
+        "documentation": "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting"
+    },
+    "endpoints": [
+        {
+            "name": "Get authenticated user",
+            "method": "GET",
+            "path": "/user",
+            "description": "Get details about the authenticated user",
+            "parameters": []
+        },
+        {
+            "name": "List user repositories",
+            "method": "GET",
+            "path": "/user/repos",
+            "description": "List repositories for the authenticated user",
+            "parameters": [
+                {
+                    "name": "type",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Repository type: all, owner, member",
+                    "enum": [
+                        "all",
+                        "owner",
+                        "member"
+                    ],
+                    "default": "all"
+                },
+                {
+                    "name": "sort",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Sort by: created, updated, pushed, full_name",
+                    "enum": [
+                        "created",
+                        "updated",
+                        "pushed",
+                        "full_name"
+                    ],
+                    "default": "created"
+                }
+            ]
+        },
+        {
+            "name": "Get repository",
+            "method": "GET",
+            "path": "/repos/{owner}/{repo}",
+            "description": "Get details about a specific repository",
+            "parameters": [
+                {
+                    "name": "owner",
+                    "type": "string",
+                    "location": "path",
+                    "description": "Repository owner username",
+                    "required": true
+                },
+                {
+                    "name": "repo",
+                    "type": "string",
+                    "location": "path",
+                    "description": "Repository name",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "List repository issues",
+            "method": "GET",
+            "path": "/repos/{owner}/{repo}/issues",
+            "description": "List issues for a repository",
+            "parameters": [
+                {
+                    "name": "owner",
+                    "type": "string",
+                    "location": "path",
+                    "description": "Repository owner username",
+                    "required": true
+                },
+                {
+                    "name": "repo",
+                    "type": "string",
+                    "location": "path",
+                    "description": "Repository name",
+                    "required": true
+                },
+                {
+                    "name": "state",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Issue state: open, closed, all",
+                    "enum": [
+                        "open",
+                        "closed",
+                        "all"
+                    ],
+                    "default": "open"
+                }
+            ]
+        },
+        {
+            "name": "Create issue",
+            "method": "POST",
+            "path": "/repos/{owner}/{repo}/issues",
+            "description": "Create a new issue",
+            "parameters": [
+                {
+                    "name": "owner",
+                    "type": "string",
+                    "location": "path",
+                    "description": "Repository owner username",
+                    "required": true
+                },
+                {
+                    "name": "repo",
+                    "type": "string",
+                    "location": "path",
+                    "description": "Repository name",
+                    "required": true
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "description": "Issue title"
+                        },
+                        "body": {
+                            "type": "string",
+                            "description": "Issue description"
+                        },
+                        "labels": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Labels to assign"
+                        }
+                    },
+                    "required": [
+                        "title"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Search repositories",
+            "method": "GET",
+            "path": "/search/repositories",
+            "description": "Search for repositories",
+            "parameters": [
+                {
+                    "name": "q",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Search query",
+                    "required": true
+                },
+                {
+                    "name": "sort",
+                    "type": "string",
+                    "location": "query",
+                    "description": "Sort by: stars, forks, updated",
+                    "enum": [
+                        "stars",
+                        "forks",
+                        "updated"
+                    ]
+                }
+            ]
+        }
+    ],
+    "tags": [
+        "version-control",
+        "collaboration",
+        "development"
+    ],
+    "category": "Developer Tools"
+}
