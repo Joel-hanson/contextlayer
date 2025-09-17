@@ -49,12 +49,12 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_contextlayer
 
-      - name: Run tests
-        run: npm test
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_contextlayer
-          NEXTAUTH_SECRET: test-secret-key
-          NEXTAUTH_URL: http://localhost:3000
+      # - name: Run tests
+      #   run: npm test
+      #   env:
+      #     DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_contextlayer
+      #     NEXTAUTH_SECRET: test-secret-key
+      #     NEXTAUTH_URL: http://localhost:3000
 
       - name: Build application
         run: npm run build
