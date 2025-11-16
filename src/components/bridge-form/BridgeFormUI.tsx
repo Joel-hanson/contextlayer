@@ -6,6 +6,7 @@ import { BridgeConfig } from '@/lib/types';
 import { AlertTriangle, BadgeAlert, CheckCircle, Lightbulb, Link, LockIcon, Save, Settings, Trash2 } from 'lucide-react';
 
 // Import modular components
+import { useEffect } from 'react';
 import { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
 import { AuthenticationTab } from './authentication-tab';
 import { BasicInfoTab } from './basic-info-tab';
@@ -52,6 +53,53 @@ export function BridgeFormUI({
     onSubmit,
     onDelete
 }: BridgeFormUIProps) {
+
+    // Watch form values for validation logging
+    const watchedName = form.watch('name');
+    const watchedApiConfigName = form.watch('apiConfig.name');
+    const watchedBaseUrl = form.watch('apiConfig.baseUrl');
+
+    // Log validation state for debugging
+    useEffect(() => {
+        const formValues = form.getValues();
+        const formErrors = form.formState.errors;
+        const isFormValid = form.formState.isValid;
+        const isDirty = form.formState.isDirty;
+
+        const nameValue = formValues.name?.trim();
+        const apiConfigNameValue = formValues.apiConfig?.name?.trim();
+        const baseUrlValue = formValues.apiConfig?.baseUrl?.trim();
+
+        const buttonDisabled = isSubmitting ||
+            !nameValue ||
+            !apiConfigNameValue ||
+            !baseUrlValue;
+
+        console.log('🔍 BridgeForm Validation State:', {
+            buttonDisabled,
+            isSubmitting,
+            isFormValid,
+            isDirty,
+            values: {
+                name: nameValue || '(empty)',
+                apiConfigName: apiConfigNameValue || '(empty)',
+                baseUrl: baseUrlValue || '(empty)',
+            },
+            disabledReasons: {
+                isSubmitting,
+                missingName: !nameValue,
+                missingApiConfigName: !apiConfigNameValue,
+                missingBaseUrl: !baseUrlValue,
+            },
+            errors: formErrors,
+            formState: {
+                isValid: isFormValid,
+                isDirty,
+                isValidating: form.formState.isValidating,
+                touchedFields: form.formState.touchedFields,
+            }
+        });
+    }, [form, isSubmitting, watchedName, watchedApiConfigName, watchedBaseUrl]);
 
     // Tab icon helper
     const getTabIcon = (tabName: string) => {
@@ -278,6 +326,44 @@ export function BridgeFormUI({
                                         !form.getValues('apiConfig.name')?.trim() ||
                                         !form.getValues('apiConfig.baseUrl')?.trim()}
                                     className="flex-1 sm:flex-none touch-manipulation"
+                                    onClick={(e) => {
+                                        const formValues = form.getValues();
+                                        const nameValue = formValues.name?.trim();
+                                        const apiConfigNameValue = formValues.apiConfig?.name?.trim();
+                                        const baseUrlValue = formValues.apiConfig?.baseUrl?.trim();
+
+                                        const buttonDisabled = isSubmitting ||
+                                            !nameValue ||
+                                            !apiConfigNameValue ||
+                                            !baseUrlValue;
+
+                                        console.log('🖱️ Button Click Event:', {
+                                            buttonDisabled,
+                                            isSubmitting,
+                                            event: {
+                                                type: e.type,
+                                                defaultPrevented: e.defaultPrevented,
+                                                currentTarget: e.currentTarget.tagName,
+                                            },
+                                            values: {
+                                                name: nameValue || '(empty)',
+                                                apiConfigName: apiConfigNameValue || '(empty)',
+                                                baseUrl: baseUrlValue || '(empty)',
+                                            },
+                                            disabledReasons: {
+                                                isSubmitting,
+                                                missingName: !nameValue,
+                                                missingApiConfigName: !apiConfigNameValue,
+                                                missingBaseUrl: !baseUrlValue,
+                                            },
+                                            formErrors: form.formState.errors,
+                                            formIsValid: form.formState.isValid,
+                                        });
+
+                                        if (buttonDisabled) {
+                                            console.warn('⚠️ Button is disabled, preventing submission');
+                                        }
+                                    }}
                                 >
                                     <Save className="h-4 w-4 mr-2" />
                                     {isSubmitting

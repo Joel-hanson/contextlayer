@@ -98,7 +98,8 @@ export class OpenAPIParser {
                 return null;
             }
 
-            const toolName = generateStandardToolName(endpoint.method, endpoint.path);
+            // Use user-provided name if available, otherwise generate one
+            const toolName = endpoint.name?.trim() || generateStandardToolName(endpoint.method, endpoint.path);
             const params = this.buildToolParameters(endpoint);
 
             const tool = {
