@@ -698,8 +698,10 @@ async function handleToolsList(jsonRpcRequest: JsonRpcRequest, bridge: Bridge) {
             };
 
             const inputSchema = buildInputSchema(endpointWithConfig);
+            // Use user-provided name if available, otherwise generate one
+            const toolName = endpoint.name?.trim() || generateToolName(endpoint);
             tools.push({
-                name: generateToolName(endpoint),
+                name: toolName,
                 description: buildToolDescription(endpointWithConfig),
                 inputSchema: {
                     type: 'object',
@@ -1616,5 +1618,6 @@ function convertDatabaseBridge(dbBridge: any): Bridge {
  * - DELETE /users/{id} -> delete_users_delete
  */
 function generateToolName(endpoint: Endpoint): string {
-    return generateStandardToolName(endpoint.method, endpoint.path);
+    // Use user-provided name if available, otherwise generate one
+    return endpoint.name?.trim() || generateStandardToolName(endpoint.method, endpoint.path);
 }

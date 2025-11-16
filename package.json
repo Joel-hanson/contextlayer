@@ -41,6 +41,7 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate && prisma migrate deploy",
+    "npm:dev": "dotenv -e .env.local -- npm run dev",
     "db:generate": "dotenv -e .env.local -- prisma generate",
     "db:push": "dotenv -e .env.local -- prisma db push",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
